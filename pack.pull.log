@@ -1,0 +1,6 @@
+Using default tag: latest
+latest: Pulling from library/busybox
+f810322bba2c: Already exists
+a3ed95caeb02: Already exists
+Digest: sha256:97473e34e311e6c1b3f61f2a721d038d1e5eef17d98d1353a513007cf46ca6bd
+Status: Image is up to date for busybox:latest
