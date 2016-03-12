@@ -17,20 +17,20 @@ def prepare_docker(nametag,workdir,do_cvmfs,do_grid):
         docker_mod += '--volumes-from {}'.format(socket.gethostname())
         
     if do_cvmfs:
-        if not 'YADAGE_CVMFS_LOCATION' in os.environ:
+        if not 'PACKTIVITY_CVMFS_LOCATION' in os.environ:
             docker_mod+=' -v /cvmfs:/cvmfs'
         else:
             docker_mod+=' -v {}:/cvmfs'.format(os.environ['YADAGE_CVMFS_LOCATION'])
     if do_grid:
-        if not 'YADAGE_AUTH_LOCATION' in os.environ:
+        if not 'PACKTIVITY_AUTH_LOCATION' in os.environ:
             docker_mod+=' -v /home/recast/recast_auth:/recast_auth'
         else:
             docker_mod+=' -v {}:/recast_auth'.format(os.environ['YADAGE_AUTH_LOCATION'])
-
+            
     docker_mod += ' --cidfile {}/{}.cid'.format(workdir,nametag)
-
+    
     return docker_mod
-
+    
 @environment('docker-encapsulated')
 def docker_enc_handler(nametag,environment,context,command):
     log  = logging.getLogger('step_logger_{}'.format(nametag))
@@ -70,17 +70,20 @@ resources: {resources}
 
     docker_mod = prepare_docker(nametag,workdir,do_cvmfs,do_grid)
 
-    fullest_command = 'docker run --rm {docker_mod} {container} sh -c \'{in_dock}\''.format(docker_mod = docker_mod, container = container, in_dock = in_docker_cmd)
+    fullest_command = 'docker run --rm {docker_mod} {container} sh -c \'{in_dock}\''.format(
+                        docker_mod = docker_mod,
+                        container = container,
+                        in_dock = in_docker_cmd
+                        )
     if do_cvmfs:
-        fullest_command = 'cvmfs_config probe && {}'.format(fullest_command)
-          # fullest_command = 'eval $(docker-machine env default) && echo cvmfs_config probe && {}'.format(fullest_command)
-
-
+        if not 'PACKTIVITY_WITHIN_DOCKER' in os.environ:
+            fullest_command = 'cvmfs_config probe && {}'.format(fullest_command)
+    
     docker_pull_cmd = 'docker pull {container}'.format(container = container)
-
+    
     log.debug('docker pull command: \n  {}'.format(docker_pull_cmd))
     log.debug('docker run  command: \n  {}'.format(fullest_command))
-
+    
     try:
       with open('{}/{}.pull.log'.format(workdir,nametag),'w') as logfile:
         proc = subprocess.Popen(docker_pull_cmd,shell = True, stderr = subprocess.STDOUT, stdout = logfile)
