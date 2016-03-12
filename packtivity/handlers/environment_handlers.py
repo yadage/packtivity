@@ -11,7 +11,7 @@ handlers,environment = utils.handler_decorator()
 
 def prepare_docker(nametag,workdir,do_cvmfs,do_grid):
     docker_mod = ''
-    if not 'YADAGE_WITHIN_DOCKER' in os.environ:
+    if not 'PACKTIVITY_WITHIN_DOCKER' in os.environ:
         docker_mod += '-v {}:/workdir'.format(os.path.abspath(workdir))
     else:
         docker_mod += '--volumes-from {}'.format(socket.gethostname())
