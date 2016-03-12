@@ -1,4 +1,3 @@
-import pkg_resources
 import json
 import os
 import jsonschema
