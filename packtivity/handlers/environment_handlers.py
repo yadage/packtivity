@@ -101,7 +101,7 @@ resources: {resources}
       raise e
     except subprocess.CalledProcessError as exc:
       log.exception('subprocess failed. code: {},  command {}'.format(exc.returncode,exc.cmd))
-      raise RuntimeError('failed docker subprocess in runStep.')
+      raise RuntimeError('failed docker subprocess in docker_enc_handler.')
     except:
       log.exception("Unexpected error: {}".format(sys.exc_info()))
       raise
@@ -122,10 +122,10 @@ resources: {resources}
             log.debug('moving on from run')
     except subprocess.CalledProcessError as exc:
         log.exception('subprocess failed. code: {},  command {}'.format(exc.returncode,exc.cmd))
-        raise RuntimeError('failed docker subprocess in runStep.')
+        raise RuntimeError('failed docker subprocess in docker_enc_handler.')
     except:
         log.exception("Unexpected error: {}".format(sys.exc_info()))
         raise
     finally:
         log.debug('finally for run')
-    log.debug('reached return for runStep')
+    log.debug('reached return for docker_enc_handler')
