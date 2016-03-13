@@ -4,7 +4,6 @@ import sys
 import time
 import psutil
 import utils
-import socket
 import logging
 
 handlers,environment = utils.handler_decorator()
