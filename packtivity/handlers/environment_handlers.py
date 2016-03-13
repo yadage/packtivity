@@ -6,6 +6,7 @@ import psutil
 import utils
 import socket
 import logging
+import docker
 
 handlers,environment = utils.handler_decorator()
 
