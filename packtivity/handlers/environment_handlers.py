@@ -33,6 +33,7 @@ def prepare_docker(nametag,workdir,do_cvmfs,do_grid):
 @environment('docker-encapsulated')
 def docker_enc_handler(nametag,environment,context,command):
     log  = logging.getLogger('step_logger_{}'.format(nametag))
+    log.setLevel(logging.DEBUG)
     logname = '{}/{}.step.log'.format(os.path.abspath(context['workdir']),nametag)
     fh  = logging.FileHandler(logname)
     fh.setLevel(logging.DEBUG)
