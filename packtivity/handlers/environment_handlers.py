@@ -11,10 +11,13 @@ handlers,environment = utils.handler_decorator()
 
 def prepare_docker(nametag,workdir,do_cvmfs,do_grid):
     docker_mod = ''
-    if not 'PACKTIVITY_WITHIN_DOCKER' in os.environ:
+    if 'PACKTIVITY_WITHIN_DOCKER' not in os.environ:
         docker_mod += '-v {}:/workdir'.format(os.path.abspath(workdir))
     else:
-        docker_mod += '--volumes-from {}'.format(socket.gethostname())
+        if 'PACKTIVITY_DOCKER_WORKDIRMOUNT' not in os.environ:
+            docker_mod += '-v {}:/workdir'.format(os.environ['PACKTIVITY_DOCKER_WORKDIRMOUNT'])        
+        else:
+            docker_mod += '--volumes-from {}'.format(socket.gethostname())
         
     if do_cvmfs:
         if not 'PACKTIVITY_CVMFS_LOCATION' in os.environ:
