@@ -19,4 +19,4 @@ def fromyaml_pub_handler(publisher,attributes,context):
     
 @publisher('dummy-pub')
 def dummy_pub_handler(publisher,attributes,context):
-    return  publish['publish']
+    return  publisher['publish']

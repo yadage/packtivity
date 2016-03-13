@@ -6,27 +6,23 @@ import psutil
 import utils
 import socket
 import logging
-import docker
 
 handlers,environment = utils.handler_decorator()
 
 def prepare_docker(nametag,workdir,do_cvmfs,do_grid):
     docker_mod = ''
-    if 'PACKTIVITY_WITHIN_DOCKER' not in os.environ:
+    if 'PACKTIVITY_WORKDIR_LOCATION' not in os.environ:
         docker_mod += '-v {}:/workdir'.format(os.path.abspath(workdir))
     else:
-        if 'PACKTIVITY_DOCKER_WORKDIRMOUNT' not in os.environ:
-            docker_mod += '-v {}:/workdir'.format(os.environ['PACKTIVITY_DOCKER_WORKDIRMOUNT'])        
-        else:
-            docker_mod += '--volumes-from {}'.format(socket.gethostname())
+        docker_mod += '-v {}:/workdir'.format(os.environ['PACKTIVITY_WORKDIR_LOCATION'])        
         
     if do_cvmfs:
-        if not 'PACKTIVITY_CVMFS_LOCATION' in os.environ:
+        if 'PACKTIVITY_CVMFS_LOCATION' not in os.environ:
             docker_mod+=' -v /cvmfs:/cvmfs'
         else:
             docker_mod+=' -v {}:/cvmfs'.format(os.environ['YADAGE_CVMFS_LOCATION'])
     if do_grid:
-        if not 'PACKTIVITY_AUTH_LOCATION' in os.environ:
+        if 'PACKTIVITY_AUTH_LOCATION' not in os.environ:
             docker_mod+=' -v /home/recast/recast_auth:/recast_auth'
         else:
             docker_mod+=' -v {}:/recast_auth'.format(os.environ['YADAGE_AUTH_LOCATION'])

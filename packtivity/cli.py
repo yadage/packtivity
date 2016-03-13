@@ -17,10 +17,9 @@ def runcli(spec,context,kwargs,name,workdir,source):
     ctx    = yaml.load(open(context))
     ctx.update(workdir = workdir)
     kwargs = yaml.load(open(kwargs))
-    pack = packtivity.packtivity(name,spec,ctx)
-    result = pack(**kwargs)
+    result = packtivity.packtivity(name,spec,kwargs,ctx)
     click.echo(result)
-    
+
 @click.command()
 @click.argument('spec')
 @click.option('-s','--source', default = None)
