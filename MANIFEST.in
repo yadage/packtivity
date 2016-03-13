@@ -1,2 +1,2 @@
-recursive-include yadage/schema/spec *
+recursive-include packtivity/schema *
 
