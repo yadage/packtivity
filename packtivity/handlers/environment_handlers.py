@@ -38,12 +38,12 @@ def docker_enc_handler(nametag,environment,context,command):
     fh.setLevel(logging.DEBUG)
     log.addHandler(fh)
     log.debug('starting log for step: %s',nametag)
-
+    
     log.debug('context: \n {}'.format(context))
     workdir = context['workdir']
-
+    
     container = environment['image']
-
+    
     report = '''\n\
 --------------
 run in docker container: {container}
@@ -59,16 +59,16 @@ resources: {resources}
   
     do_cvmfs = 'CVMFS' in environment['resources']
     do_grid  = 'GRIDProxy'  in environment['resources']
-
+    
     log.debug(report)
     log.debug('dogrid: {} do_cvmfs: {}'.format(do_grid,do_cvmfs))
-
+    
     envmod = 'source {} &&'.format(environment['envscript']) if environment['envscript'] else ''
-
+    
     in_docker_cmd = '{envmodifier} {command}'.format(envmodifier = envmod, command = command)
-
+    
     docker_mod = prepare_docker(nametag,workdir,do_cvmfs,do_grid)
-
+    
     fullest_command = 'docker run --rm {docker_mod} {container} sh -c \'{in_dock}\''.format(
                         docker_mod = docker_mod,
                         container = container,
