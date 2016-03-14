@@ -40,7 +40,7 @@ def docker_enc_handler(nametag,environment,context,command):
     log.addHandler(fh)
     log.debug('starting log for step: %s',nametag)
     
-    log.debug('context: \n {}'.format(context))
+    log.debug('context: \n %s',context)
     workdir = context['workdir']
     
     container = environment['image']
@@ -62,7 +62,7 @@ resources: {resources}
     do_grid  = 'GRIDProxy'  in environment['resources']
     
     log.debug(report)
-    log.debug('dogrid: {} do_cvmfs: {}'.format(do_grid,do_cvmfs))
+    log.debug('dogrid: %s do_cvmfs: %s',do_grid,do_cvmfs)
     
     envmod = 'source {} &&'.format(environment['envscript']) if environment['envscript'] else ''
     
@@ -81,17 +81,17 @@ resources: {resources}
     
     docker_pull_cmd = 'docker pull {container}'.format(container = container)
     
-    log.debug('docker pull command: \n  {}'.format(docker_pull_cmd))
-    log.debug('docker run  command: \n  {}'.format(fullest_command))
+    log.debug('docker pull command: \n  %s',docker_pull_cmd)
+    log.debug('docker run  command: \n  %s',fullest_command)
     
     try:
         with open('{}/{}.pull.log'.format(workdir,nametag),'w') as logfile:
             proc = subprocess.Popen(docker_pull_cmd,shell = True, stderr = subprocess.STDOUT, stdout = logfile)
-            log.debug('started pull subprocess with pid {}. now wait to finish'.format(proc.pid))
+            log.debug('started pull subprocess with pid %s. now wait to finish',proc.pid)
             time.sleep(0.5)
-            log.debug('process children: {}'.format([x for x in psutil.Process(proc.pid).children(recursive = True)]))
+            log.debug('process children: %s',[x for x in psutil.Process(proc.pid).children(recursive = True)])
             proc.communicate()
-            log.debug('pull subprocess finished. return code: {}'.format(proc.returncode))
+            log.debug('pull subprocess finished. return code: %s',proc.returncode)
             if proc.returncode:
                 log.error('non-zero return code raising exception')
                 raise subprocess.CalledProcessError(returncode =  proc.returncode, cmd = docker_pull_cmd)
@@ -100,10 +100,10 @@ resources: {resources}
         log.exception('caught RuntimeError')
         raise e
     except subprocess.CalledProcessError as exc:
-        log.exception('subprocess failed. code: {},  command {}'.format(exc.returncode,exc.cmd))
+        log.exception('subprocess failed. code: %s,  command %s',exc.returncode,exc.cmd)
         raise RuntimeError('failed docker subprocess in docker_enc_handler.')
     except:
-        log.exception("Unexpected error: {}".format(sys.exc_info()))
+        log.exception("Unexpected error: %s",sys.exc_info())
         raise
     finally:
         log.debug('finally for pull')
@@ -111,20 +111,20 @@ resources: {resources}
     try:
         with open('{}/{}.run.log'.format(workdir,nametag),'w') as logfile:
             proc = subprocess.Popen(fullest_command,shell = True, stderr = subprocess.STDOUT, stdout = logfile)
-            log.debug('started run subprocess with pid {}. now wait to finish'.format(proc.pid))
+            log.debug('started run subprocess with pid %s. now wait to finish',proc.pid)
             time.sleep(0.5)
-            log.debug('process children: {}'.format([x for x in psutil.Process(proc.pid).children(recursive = True)]))
+            log.debug('process children: %s',[x for x in psutil.Process(proc.pid).children(recursive = True)])
             proc.communicate()
-            log.debug('pull subprocess finished. return code: {}'.format(proc.returncode))
+            log.debug('pull subprocess finished. return code: %s',proc.returncode)
             if proc.returncode:
                 log.error('non-zero return code raising exception')
                 raise subprocess.CalledProcessError(returncode =  proc.returncode, cmd = fullest_command)
             log.debug('moving on from run')
     except subprocess.CalledProcessError as exc:
-        log.exception('subprocess failed. code: {},  command {}'.format(exc.returncode,exc.cmd))
+        log.exception('subprocess failed. code: %s,  command %s',exc.returncode,exc.cmd)
         raise RuntimeError('failed docker subprocess in docker_enc_handler.')
     except:
-        log.exception("Unexpected error: {}".format(sys.exc_info()))
+        log.exception("Unexpected error: %s",sys.exc_info())
         raise
     finally:
         log.debug('finally for run')

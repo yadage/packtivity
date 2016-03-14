@@ -14,4 +14,7 @@ script:
   - pyflakes packtivity
   - pip install -e .
   - docker build -t lukasheinrich/packtivity .
+  - echo {} > dummy.yml
+  - packtivity-run dummy_analysis/dummystep.yml -s from-github dummy.yml dummy.yml
   - ls -lrt /var/run
+  - env|grep DOCKER
