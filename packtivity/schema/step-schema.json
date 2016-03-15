@@ -14,7 +14,8 @@
             "oneOf":[
               {"$ref": "fromattr-pub-schema.json#"},
               {"$ref": "fromyaml-pub-schema.json#"},
-              {"$ref": "dummy-pub-schema.json#"}
+              {"$ref": "dummy-pub-schema.json#"},
+              {"$ref": "fromglob-pub-schema.json#"}
             ]
         },
         "environment": {

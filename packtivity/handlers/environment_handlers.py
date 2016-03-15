@@ -84,6 +84,7 @@ resources: {resources}
     log.debug('docker pull command: \n  %s',docker_pull_cmd)
     log.debug('docker run  command: \n  %s',fullest_command)
     
+    
     try:
         with open('{}/{}.pull.log'.format(workdir,nametag),'w') as logfile:
             proc = subprocess.Popen(docker_pull_cmd,shell = True, stderr = subprocess.STDOUT, stdout = logfile)

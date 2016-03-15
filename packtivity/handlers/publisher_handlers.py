@@ -1,5 +1,6 @@
 import yaml
 import utils
+import glob
 
 handlers, publisher = utils.handler_decorator()
 
@@ -16,6 +17,11 @@ def fromyaml_pub_handler(publisher,attributes,context):
     yamlfile =  yamlfile.replace('/workdir',context['workdir'])
     pubdata = yaml.load(open(yamlfile))
     return pubdata
+
+@publisher('fromglob-pub')
+def fromyaml_pub_handler(publisher,attributes,context):
+    globexpr =  publisher['globexpression']
+    return {publisher['outputkey']:glob.glob('{}/{}'.format(context['workdir'],globexpr))}
     
 @publisher('dummy-pub')
 def dummy_pub_handler(publisher,attributes,context):

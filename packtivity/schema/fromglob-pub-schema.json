@@ -1,0 +1,22 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "publisher-type": {
+      "type": "string",
+      "enum": [
+        "fromglob-pub"
+      ]
+    },
+    "globexpression": {
+      "type": "string"
+    },
+    "outputkey":{
+      "type": "string"
+    }
+  },
+  "required": [
+    "publisher-type"
+  ]
+}
