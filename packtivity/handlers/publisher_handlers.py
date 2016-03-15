@@ -19,7 +19,7 @@ def fromyaml_pub_handler(publisher,attributes,context):
     return pubdata
 
 @publisher('fromglob-pub')
-def fromyaml_pub_handler(publisher,attributes,context):
+def glob_pub_handler(publisher,attributes,context):
     globexpr =  publisher['globexpression']
     return {publisher['outputkey']:glob.glob('{}/{}'.format(context['workdir'],globexpr))}
     
