@@ -7,18 +7,17 @@ from packtivity.loader import load_and_validate
 
 @click.command()
 @click.argument('spec')
-@click.argument('kwargs', default = None)
+@click.argument('parameters', default = '')
 @click.option('-c','--context', default = None)
 @click.option('-n','--name', default = 'pack')
 @click.option('-w','--workdir', default = os.getcwd())
 @click.option('-s','--source', default = None)
-def runcli(spec,kwargs,context,name,workdir,source):
+def runcli(spec,parameters,context,name,workdir,source):
     spec   = load_and_validate(spec,source,'step-schema')
-
     ctx    = yaml.load(open(context)) if context else {}
     ctx.update(workdir = workdir)
-    kwargs = yaml.load(open(kwargs))
-    result = packtivity.packtivity(name,spec,kwargs,ctx)
+    parameters = yaml.load(open(kwargs)) if parameters else {}
+    result = packtivity.packtivity(name,spec,parameters,ctx)
     click.echo(result)
 
 @click.command()
