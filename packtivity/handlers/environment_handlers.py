@@ -76,7 +76,7 @@ resources: {resources}
                         in_dock = in_docker_cmd
                         )
     if do_cvmfs:
-        if not 'PACKTIVITY_WITHIN_DOCKER' in os.environ:
+        if 'PACKTIVITY_WITHIN_DOCKER' not in os.environ:
             fullest_command = 'cvmfs_config probe && {}'.format(fullest_command)
     
     docker_pull_cmd = 'docker pull {container}'.format(container = container)
