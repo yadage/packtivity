@@ -16,7 +16,7 @@ def runcli(spec,parameters,context,name,workdir,source):
     spec   = load_and_validate(spec,source,'step-schema')
     ctx    = yaml.load(open(context)) if context else {}
     ctx.update(workdir = workdir)
-    parameters = yaml.load(open(kwargs)) if parameters else {}
+    parameters = yaml.load(open(parameters)) if parameters else {}
     result = packtivity.packtivity(name,spec,parameters,ctx)
     click.echo(result)
 
