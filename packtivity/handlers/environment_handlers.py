@@ -57,7 +57,7 @@ def docker_pull(docker_pull_cmd,log,workdir,nametag):
         log.debug('finally for pull')
     
 def docker_run(fullest_command,log,workdir,nametag):
-    log.debug('docker run  command: \n  %s',fullest_command)
+    log.debug('docker run  command: \n%s',fullest_command)
     try:
         with open('{}/{}.run.log'.format(workdir,nametag),'w') as logfile:
             proc = subprocess.Popen(fullest_command,shell = True, stderr = subprocess.STDOUT, stdout = logfile)
@@ -65,7 +65,7 @@ def docker_run(fullest_command,log,workdir,nametag):
             time.sleep(0.5)
             log.debug('process children: %s',[x for x in psutil.Process(proc.pid).children(recursive = True)])
             proc.communicate()
-            log.debug('pull subprocess finished. return code: %s',proc.returncode)
+            log.debug('docker run subprocess finished. return code: %s',proc.returncode)
             if proc.returncode:
                 log.error('non-zero return code raising exception')
                 raise subprocess.CalledProcessError(returncode =  proc.returncode, cmd = fullest_command)
@@ -127,9 +127,9 @@ resources: {resources}
         if 'PACKTIVITY_WITHIN_DOCKER' not in os.environ:
             fullest_command = 'cvmfs_config probe && {}'.format(fullest_command)
     
-    docker_pull_cmd = 'docker pull {container}'.format(container = container)
-    
-    docker_pull(docker_pull_cmd,log,workdir,nametag)
+    if 'PACKTIVITY_DOCKER_NOPULL' not in os.environ:
+        docker_pull_cmd = 'docker pull {container}'.format(container = container)
+        docker_pull(docker_pull_cmd,log,workdir,nametag)
+
     docker_run(fullest_command,log,workdir,nametag)
-    
     log.debug('reached return for docker_enc_handler')
