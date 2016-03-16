@@ -16,6 +16,6 @@ script:
   - docker build -t lukasheinrich/packtivity .
   - echo {} > dummy.yml
   - packtivity-run dummy_analysis/dummystep.yml -s from-github -c dummy.yml dummy.yml
-  - echo {'par_one': 1, 'par_two': 2, 'output': out} > pars.yml
+  - "echo {'par_one': 1, 'par_two': 2, 'output': out} > pars.yml"
   - packtivity-run complex_analysis/getsignal.yml -s from-github pars.yml
 
