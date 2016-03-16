@@ -8,7 +8,7 @@ import logging
 
 handlers,environment = utils.handler_decorator()
 
-def prepare_docker(nametag,workdir,do_cvmfs,do_grid):
+def prepare_docker(nametag,workdir,do_cvmfs,do_grid,log):
     docker_mod = ''
     if 'PACKTIVITY_WORKDIR_LOCATION' not in os.environ:
         docker_mod += '-v {}:/workdir'.format(os.path.abspath(workdir))
@@ -26,7 +26,11 @@ def prepare_docker(nametag,workdir,do_cvmfs,do_grid):
         else:
             docker_mod+=' -v {}:/recast_auth'.format(os.environ['YADAGE_AUTH_LOCATION'])
             
-    docker_mod += ' --cidfile {}/{}.cid'.format(workdir,nametag)
+    cidfile = '{}/{}.cid'.format(workdir,nametag)
+
+    if os.path.exists(cidfile):
+        log.warning('cid file %s seems to exist, docker run will crash',cidfile)
+    docker_mod += ' --cidfile {}'.format(cidfile)
     
     return docker_mod
 
@@ -116,7 +120,7 @@ resources: {resources}
     
     in_docker_cmd = '{envmodifier} {command}'.format(envmodifier = envmod, command = command)
     
-    docker_mod = prepare_docker(nametag,workdir,do_cvmfs,do_grid)
+    docker_mod = prepare_docker(nametag,workdir,do_cvmfs,do_grid,log)
     
     fullest_command = 'docker run --rm {docker_mod} {container} sh -c \'{in_dock}\''.format(
                         docker_mod = docker_mod,
