@@ -4,7 +4,7 @@ import glob
 
 handlers, publisher = utils.handler_decorator()
 
-@publisher('process-attr-pub')
+@publisher('frompar-pub')
 def process_attr_pub_handler(publisher,attributes,context):
     outputs = {}
     for k,v in publisher['outputmap'].iteritems():
@@ -23,6 +23,6 @@ def glob_pub_handler(publisher,attributes,context):
     globexpr =  publisher['globexpression']
     return {publisher['outputkey']:glob.glob('{}/{}'.format(context['workdir'],globexpr))}
     
-@publisher('dummy-pub')
+@publisher('constant-pub')
 def dummy_pub_handler(publisher,attributes,context):
     return  publisher['publish']

@@ -28,7 +28,8 @@ def runcli(spec,parameters,context,name,workdir,source):
 def validatecli(spec,source,schemasource,schemaname):
     try:
         spec   = load_and_validate(spec,source,schemaname, schemadir = schemasource)
-    except jsonschema.exceptions.ValidationError:
+    except jsonschema.exceptions.ValidationError as e:
+        click.echo(e)
         raise click.ClickException(click.style('not valid',fg = 'red'))
     click.secho('valid',fg = 'green')
     
