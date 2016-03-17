@@ -22,10 +22,12 @@ def runcli(spec,parameters,context,name,workdir,source):
 
 @click.command()
 @click.argument('spec')
-@click.option('-s','--source', default = None)
-def validatecli(spec,source):
+@click.option('-s','--source', default = os.getcwd())
+@click.option('-c','--schemasource', default = os.getcwd())
+@click.option('-n','--schemaname', default = 'step-schema')
+def validatecli(spec,source,schemasource,schemaname):
     try:
-        spec   = load_and_validate(spec,source,'step-schema')
+        spec   = load_and_validate(spec,source,schemaname, schemadir = schemasource)
     except jsonschema.exceptions.ValidationError:
         raise click.ClickException(click.style('not valid',fg = 'red'))
     click.secho('valid',fg = 'green')

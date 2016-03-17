@@ -56,12 +56,18 @@ def loader(toplevel):
     return load
 
 def validator(schema_name,schemadir):
-    relpath     = '{}/{}.json'.format(schemadir,schema_name)
-    abspath = os.path.abspath(relpath)
-    absbase = os.path.dirname(abspath)
-    schema_base_uri = 'file://' + absbase + '/'
-    schema   = json.load(open(relpath))
-    resolver = jsonschema.RefResolver(schema_base_uri, schema)
+    schemabase = None
+    if schemadir == 'from-github':
+        schemabase = 'https://raw.githubusercontent.com/lukasheinrich/cap-schemas/master/schemas'
+    else:
+        schemabase = 'file://'+os.path.abspath(schemadir)
+
+    abspath = '{}/{}.json'.format(schemabase,schema_name)
+    this_base_uri = abspath.rsplit('/',1)[0]+'/'
+
+    print abspath
+    schema   = json.loads(urllib2.urlopen(abspath).read())
+    resolver = jsonschema.RefResolver(this_base_uri, schema)
     return DefaultValidatingDraft4Validator(schema, resolver = resolver)
 
 def load_and_validate(source, toplevel, schema_name = 'step-schema', schemadir = None):
