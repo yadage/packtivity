@@ -34,6 +34,42 @@ def prepare_docker(nametag,workdir,do_cvmfs,do_grid,log):
     
     return docker_mod
 
+def prepare_full_docker_cmd(nametag,workdir,environment,command,log):
+    container = environment['image']
+    report = '''\n\
+--------------
+run in docker container: {container}
+with env: {env}
+command: {command}
+resources: {resources}
+--------------
+    '''.format(container = container,
+               command = command,
+               env = environment['envscript'] if environment['envscript'] else 'default env',
+               resources = environment['resources']
+              )
+    log.debug(report)
+
+    do_cvmfs = 'CVMFS' in environment['resources']
+    do_grid  = 'GRIDProxy'  in environment['resources']
+    log.debug('dogrid: %s do_cvmfs: %s',do_grid,do_cvmfs)
+    
+    envmod = 'source {} &&'.format(environment['envscript']) if environment['envscript'] else ''
+    
+    in_docker_cmd = '{envmodifier} {command}'.format(envmodifier = envmod, command = command)
+    
+    docker_mod = prepare_docker(nametag,workdir,do_cvmfs,do_grid,log)
+    
+    fullest_command = 'docker run --rm {docker_mod} {container} sh -c \'{in_dock}\''.format(
+                        docker_mod = docker_mod,
+                        container = container,
+                        in_dock = in_docker_cmd
+                        )
+    if do_cvmfs:
+        if 'PACKTIVITY_WITHIN_DOCKER' not in os.environ:
+            fullest_command = 'cvmfs_config probe && {}'.format(fullest_command)
+    return fullest_command
+
 def docker_pull(docker_pull_cmd,log,workdir,nametag):
     log.debug('docker pull command: \n  %s',docker_pull_cmd)
     try:
@@ -82,7 +118,8 @@ def docker_run(fullest_command,log,workdir,nametag):
         raise
     finally:
         log.debug('finally for run')
-    
+
+
 @environment('docker-encapsulated')
 def docker_enc_handler(nametag,environment,context,command):
     log  = logging.getLogger('step_logger_{}'.format(nametag))
@@ -92,48 +129,17 @@ def docker_enc_handler(nametag,environment,context,command):
     fh.setLevel(logging.DEBUG)
     log.addHandler(fh)
     log.debug('starting log for step: %s',nametag)
-    
     log.debug('context: \n %s',context)
+    
     workdir = context['workdir']
     
-    container = environment['image']
-    
-    report = '''\n\
---------------
-run in docker container: {container}
-with env: {env}
-command: {command}
-resources: {resources}
---------------
-    '''.format(container = container,
-               command = command,
-               env = environment['envscript'] if environment['envscript'] else 'default env',
-               resources = environment['resources']
-              )
-    log.debug(report)
-    
-    do_cvmfs = 'CVMFS' in environment['resources']
-    do_grid  = 'GRIDProxy'  in environment['resources']
-    log.debug('dogrid: %s do_cvmfs: %s',do_grid,do_cvmfs)
-    
-    envmod = 'source {} &&'.format(environment['envscript']) if environment['envscript'] else ''
-    
-    in_docker_cmd = '{envmodifier} {command}'.format(envmodifier = envmod, command = command)
-    
-    docker_mod = prepare_docker(nametag,workdir,do_cvmfs,do_grid,log)
-    
-    fullest_command = 'docker run --rm {docker_mod} {container} sh -c \'{in_dock}\''.format(
-                        docker_mod = docker_mod,
-                        container = container,
-                        in_dock = in_docker_cmd
-                        )
-    if do_cvmfs:
-        if 'PACKTIVITY_WITHIN_DOCKER' not in os.environ:
-            fullest_command = 'cvmfs_config probe && {}'.format(fullest_command)
-    
     if 'PACKTIVITY_DOCKER_NOPULL' not in os.environ:
-        docker_pull_cmd = 'docker pull {container}'.format(container = container)
+        docker_pull_cmd = 'docker pull {container}:{tag}'.format(
+            container = environment['image'],
+            tag = environment['imagetag']
+        )
         docker_pull(docker_pull_cmd,log,workdir,nametag)
 
-    docker_run(fullest_command,log,workdir,nametag)
+    docker_run_cmd = prepare_full_docker_cmd(nametag,workdir,environment,command,log)
+    docker_run(docker_run_cmd,log,workdir,nametag)
     log.debug('reached return for docker_enc_handler')
