@@ -119,7 +119,6 @@ def docker_run(fullest_command,log,workdir,nametag):
     finally:
         log.debug('finally for run')
 
-
 @environment('docker-encapsulated')
 def docker_enc_handler(nametag,environment,context,command):
     log  = logging.getLogger('step_logger_{}'.format(nametag))
@@ -143,3 +142,9 @@ def docker_enc_handler(nametag,environment,context,command):
     docker_run_cmd = prepare_full_docker_cmd(nametag,workdir,environment,command,log)
     docker_run(docker_run_cmd,log,workdir,nametag)
     log.debug('reached return for docker_enc_handler')
+    
+@environment('noop-env')
+def dryrun_docker_enc_handler(nametag,environment,context,command):
+    log  = logging.getLogger('step_logger_{}'.format(nametag))
+    log.info('context is: %s',context)
+    log.info('would be running this command: %s',command)
