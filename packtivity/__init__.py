@@ -1,4 +1,5 @@
 import pkg_resources
+import logging
 schemadir = pkg_resources.resource_filename('packtivity','schema')
     
 def publish(publisher,attributes,context):
@@ -20,7 +21,12 @@ def run_in_env(nametag,environment,command,context):
     return handler(nametag,environment,context,command)
     
 def packtivity(uniquetag,step,attributes,context):
-    command = build_command(step['process'],attributes)
-    run_in_env(uniquetag,step['environment'],command,context)
-    output  = publish(step['publisher'],attributes,context)
-    return output
+    log = logging.getLogger('step_logger_{}'.format(uniquetag))
+    try:
+        command = build_command(step['process'],attributes)
+        run_in_env(uniquetag,step['environment'],command,context)
+        output  = publish(step['publisher'],attributes,context)
+        log.debug('{} result: {}'.format(uniquetag,output))
+        return output
+    except:
+        log.exception('{} raised exception'.format(uniquetag))

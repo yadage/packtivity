@@ -11,10 +11,12 @@ handlers,environment = utils.handler_decorator()
 def prepare_docker(nametag,workdir,do_cvmfs,do_grid,log):
     docker_mod = ''
     if 'PACKTIVITY_WORKDIR_LOCATION' not in os.environ:
-        docker_mod += '-v {}:/workdir'.format(os.path.abspath(workdir))
+        docker_mod += '-v {0}:{0}'.format(os.path.abspath(workdir))
     else:
-        docker_mod += '-v {}:/workdir'.format(os.environ['PACKTIVITY_WORKDIR_LOCATION'])        
-        
+        old,new = os.environ['PACKTIVITY_WORKDIR_LOCATION'].split(':')
+        dockerpath = new+workdir.rsplit(old,1)[1]
+        docker_mod += '-v {0}:{1}'.format(dockerpath,workdir)
+
     if do_cvmfs:
         if 'PACKTIVITY_CVMFS_LOCATION' not in os.environ:
             docker_mod+=' -v /cvmfs:/cvmfs'
@@ -144,7 +146,7 @@ def docker_enc_handler(nametag,environment,context,command):
     log.debug('reached return for docker_enc_handler')
     
 @environment('noop-env')
-def dryrun_docker_enc_handler(nametag,environment,context,command):
+def noop_env(nametag,environment,context,command):
     log  = logging.getLogger('step_logger_{}'.format(nametag))
     log.info('context is: %s',context)
     log.info('would be running this command: %s',command)
