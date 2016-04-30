@@ -30,3 +30,4 @@ def packtivity(uniquetag,step,attributes,context):
         return output
     except:
         log.exception('{} raised exception'.format(uniquetag))
+        raise
