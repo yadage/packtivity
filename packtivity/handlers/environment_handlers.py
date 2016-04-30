@@ -8,22 +8,23 @@ import logging
 
 handlers,environment = utils.handler_decorator()
 
+def sourcepath(path):
+    if 'PACKTIVITY_WORKDIR_LOCATION' in os.environ:
+        old,new = os.environ['PACKTIVITY_WORKDIR_LOCATION'].split(':')
+        dockerpath = new+path.rsplit(old,1)[1]
+        return dockerpath
+    else:
+        return path
+
 def prepare_docker(nametag,context,do_cvmfs,do_grid,log):
     workdir  = context['workdir']
     metadir  = context['metadir']
     readonly = context.get('readonly',None)
 
     docker_mod = ''
-    if 'PACKTIVITY_WORKDIR_LOCATION' not in os.environ:
-        docker_mod += '-v {0}:{0}:rw'.format(os.path.abspath(workdir))
-        if readonly:
-            docker_mod += ' -v {0}:{0}:ro'.format(readonly)
-    else:
-        old,new = os.environ['PACKTIVITY_WORKDIR_LOCATION'].split(':')
-        dockerpath = new+workdir.rsplit(old,1)[1]
-        docker_mod += ' -v {0}:{1}:rw'.format(dockerpath,workdir)
-
-
+    docker_mod += '-v {}:{}:rw'.format(sourcepath(os.path.abspath(workdir)),workdir)
+    if readonly:
+        docker_mod += ' -v {}:{}:ro'.format(sourcepath(readonly),readonly)
 
     if do_cvmfs:
         if 'PACKTIVITY_CVMFS_LOCATION' not in os.environ:
@@ -111,7 +112,7 @@ def docker_run(fullest_command,log,context,nametag):
     log.debug('docker run  command: \n%s',fullest_command)
     metadir = context['metadir']
 
-    #return
+    # return
     try:
         with open('{}/{}.run.log'.format(metadir,nametag),'w') as logfile:
             proc = subprocess.Popen(fullest_command,shell = True, stderr = subprocess.STDOUT, stdout = logfile)
