@@ -8,14 +8,22 @@ import logging
 
 handlers,environment = utils.handler_decorator()
 
-def prepare_docker(nametag,workdir,do_cvmfs,do_grid,log):
+def prepare_docker(nametag,context,do_cvmfs,do_grid,log):
+    workdir  = context['workdir']
+    metadir  = context['metadir']
+    readonly = context.get('readonly',None)
+
     docker_mod = ''
     if 'PACKTIVITY_WORKDIR_LOCATION' not in os.environ:
-        docker_mod += '-v {0}:{0}'.format(os.path.abspath(workdir))
+        docker_mod += '-v {0}:{0}:rw'.format(os.path.abspath(workdir))
+        if readonly:
+            docker_mod += ' -v {0}:{0}:ro'.format(readonly)
     else:
         old,new = os.environ['PACKTIVITY_WORKDIR_LOCATION'].split(':')
         dockerpath = new+workdir.rsplit(old,1)[1]
-        docker_mod += '-v {0}:{1}'.format(dockerpath,workdir)
+        docker_mod += ' -v {0}:{1}:rw'.format(dockerpath,workdir)
+
+
 
     if do_cvmfs:
         if 'PACKTIVITY_CVMFS_LOCATION' not in os.environ:
@@ -28,7 +36,7 @@ def prepare_docker(nametag,workdir,do_cvmfs,do_grid,log):
         else:
             docker_mod+=' -v {}:/recast_auth'.format(os.environ['YADAGE_AUTH_LOCATION'])
             
-    cidfile = '{}/{}.cid'.format(workdir,nametag)
+    cidfile = '{}/{}.cid'.format(metadir,nametag)
 
     if os.path.exists(cidfile):
         log.warning('cid file %s seems to exist, docker run will crash',cidfile)
@@ -36,7 +44,7 @@ def prepare_docker(nametag,workdir,do_cvmfs,do_grid,log):
     
     return docker_mod
 
-def prepare_full_docker_cmd(nametag,workdir,environment,command,log):
+def prepare_full_docker_cmd(nametag,context,environment,command,log):
     container = environment['image']
     report = '''\n\
 --------------
@@ -60,7 +68,7 @@ resources: {resources}
     
     in_docker_cmd = '{envmodifier} {command}'.format(envmodifier = envmod, command = command)
     
-    docker_mod = prepare_docker(nametag,workdir,do_cvmfs,do_grid,log)
+    docker_mod = prepare_docker(nametag,context,do_cvmfs,do_grid,log)
     
     fullest_command = 'docker run --rm {docker_mod} {container} sh -c \'{in_dock}\''.format(
                         docker_mod = docker_mod,
@@ -72,10 +80,11 @@ resources: {resources}
             fullest_command = 'cvmfs_config probe && {}'.format(fullest_command)
     return fullest_command
 
-def docker_pull(docker_pull_cmd,log,workdir,nametag):
+def docker_pull(docker_pull_cmd,log,context,nametag):
     log.debug('docker pull command: \n  %s',docker_pull_cmd)
+    metadir  = context['metadir']
     try:
-        with open('{}/{}.pull.log'.format(workdir,nametag),'w') as logfile:
+        with open('{}/{}.pull.log'.format(metadir,nametag),'w') as logfile:
             proc = subprocess.Popen(docker_pull_cmd,shell = True, stderr = subprocess.STDOUT, stdout = logfile)
             log.debug('started pull subprocess with pid %s. now wait to finish',proc.pid)
             time.sleep(0.5)
@@ -98,10 +107,13 @@ def docker_pull(docker_pull_cmd,log,workdir,nametag):
     finally:
         log.debug('finally for pull')
     
-def docker_run(fullest_command,log,workdir,nametag):
+def docker_run(fullest_command,log,context,nametag):
     log.debug('docker run  command: \n%s',fullest_command)
+    metadir = context['metadir']
+
+    #return
     try:
-        with open('{}/{}.run.log'.format(workdir,nametag),'w') as logfile:
+        with open('{}/{}.run.log'.format(metadir,nametag),'w') as logfile:
             proc = subprocess.Popen(fullest_command,shell = True, stderr = subprocess.STDOUT, stdout = logfile)
             log.debug('started run subprocess with pid %s. now wait to finish',proc.pid)
             time.sleep(0.5)
@@ -125,7 +137,12 @@ def docker_run(fullest_command,log,workdir,nametag):
 def docker_enc_handler(nametag,environment,context,command):
     log  = logging.getLogger('step_logger_{}'.format(nametag))
     log.setLevel(logging.DEBUG)
-    logname = '{}/{}.step.log'.format(os.path.abspath(context['workdir']),nametag)
+    metadir  = '{}/_packtivity'.format(context['workdir'])
+    context['metadir'] = metadir
+    if not os.path.exists(metadir):
+        os.makedirs(metadir)
+
+    logname = '{}/{}.step.log'.format(metadir,nametag)
     fh  = logging.FileHandler(logname)
     fh.setLevel(logging.DEBUG)
     log.addHandler(fh)
@@ -139,10 +156,10 @@ def docker_enc_handler(nametag,environment,context,command):
             container = environment['image'],
             tag = environment['imagetag']
         )
-        docker_pull(docker_pull_cmd,log,workdir,nametag)
+        docker_pull(docker_pull_cmd,log,context,nametag)
 
-    docker_run_cmd = prepare_full_docker_cmd(nametag,workdir,environment,command,log)
-    docker_run(docker_run_cmd,log,workdir,nametag)
+    docker_run_cmd = prepare_full_docker_cmd(nametag,context,environment,command,log)
+    docker_run(docker_run_cmd,log,context,nametag)
     log.debug('reached return for docker_enc_handler')
     
 @environment('noop-env')
