@@ -3,7 +3,7 @@ import packtivity
 import os
 import jsonschema
 import yaml
-from packtivity.loader import load_and_validate
+from capschemas import load
 
 @click.command()
 @click.argument('spec')
@@ -28,7 +28,7 @@ def runcli(spec,parameters,context,name,workdir,source,schemasource):
 @click.option('-n','--schemaname', default = 'packtivity/packtivity-schema')
 def validatecli(spec,source,schemasource,schemaname):
     try:
-        spec   = load_and_validate(spec,source,schemaname, schemadir = schemasource)
+        spec   = load(spec,source,schemaname, schemadir = schemasource)
     except jsonschema.exceptions.ValidationError as e:
         click.echo(e)
         raise click.ClickException(click.style('not valid',fg = 'red'))

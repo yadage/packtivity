@@ -26,5 +26,6 @@ setup(
       ],
   },
   dependency_links = [
+      'https://github.com/lukasheinrich/cap-schemas/tarball/schemav3#egg=cap-schemas-0.0.1'
   ]
 )
