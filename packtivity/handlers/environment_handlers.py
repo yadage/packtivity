@@ -17,14 +17,15 @@ def sourcepath(path):
         return path
 
 def prepare_docker(nametag,context,do_cvmfs,do_grid,log):
-    workdir  = context['workdir']
     metadir  = context['metadir']
-    readonly = context.get('readonly',None)
+    readwrites  = context['readwrite']
+    readonlies = context['readonly']
 
     docker_mod = ''
-    docker_mod += '-v {}:{}:rw'.format(sourcepath(os.path.abspath(workdir)),workdir)
-    if readonly:
-        docker_mod += ' -v {}:{}:ro'.format(sourcepath(readonly),readonly)
+    for rw in readwrites:
+        docker_mod += '-v {}:{}:rw'.format(sourcepath(os.path.abspath(rw)),rw)
+    for ro in readonlies:
+        docker_mod += ' -v {}:{}:ro'.format(sourcepath(ro),ro)
 
     if do_cvmfs:
         if 'PACKTIVITY_CVMFS_LOCATION' not in os.environ:
@@ -135,10 +136,10 @@ def docker_run(fullest_command,log,context,nametag):
         log.debug('finally for run')
 
 @environment('docker-encapsulated')
-def docker_enc_handler(nametag,environment,context,command):
+def docker_enc_handler(nametag,environment,context,job):
     log  = logging.getLogger('step_logger_{}'.format(nametag))
     log.setLevel(logging.DEBUG)
-    metadir  = '{}/_packtivity'.format(context['workdir'])
+    metadir  = '{}/_packtivity'.format(context['readwrite'][0])
     context['metadir'] = metadir
     if not os.path.exists(metadir):
         os.makedirs(metadir)
@@ -149,9 +150,7 @@ def docker_enc_handler(nametag,environment,context,command):
     log.addHandler(fh)
     log.debug('starting log for step: %s',nametag)
     log.debug('context: \n %s',context)
-    
-    workdir = context['workdir']
-    
+        
     if 'PACKTIVITY_DOCKER_NOPULL' not in os.environ:
         docker_pull_cmd = 'docker pull {container}:{tag}'.format(
             container = environment['image'],
@@ -159,12 +158,12 @@ def docker_enc_handler(nametag,environment,context,command):
         )
         docker_pull(docker_pull_cmd,log,context,nametag)
 
-    docker_run_cmd = prepare_full_docker_cmd(nametag,context,environment,command,log)
+    docker_run_cmd = prepare_full_docker_cmd(nametag,context,environment,job['command'],log)
     docker_run(docker_run_cmd,log,context,nametag)
     log.debug('reached return for docker_enc_handler')
     
 @environment('noop-env')
-def noop_env(nametag,environment,context,command):
+def noop_env(nametag,environment,context,job):
     log  = logging.getLogger('step_logger_{}'.format(nametag))
     log.info('context is: %s',context)
-    log.info('would be running this command: %s',command)
+    log.info('would be running this job: %s',job)

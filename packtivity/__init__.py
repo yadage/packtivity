@@ -8,7 +8,7 @@ def publish(publisher,attributes,context):
     handler = pub_handlers[pub_type]
     return handler(publisher,attributes,context)
     
-def build_command(process,attributes):
+def build_job(process,attributes):
     proc_type =  process['process_type']
     from handlers.process_handlers import handlers as proc_handlers
     handler = proc_handlers[proc_type]
@@ -23,8 +23,8 @@ def run_in_env(nametag,environment,command,context):
 def packtivity(uniquetag,step,attributes,context):
     log = logging.getLogger('step_logger_{}'.format(uniquetag))
     try:
-        command = build_command(step['process'],attributes)
-        run_in_env(uniquetag,step['environment'],command,context)
+        job = build_job(step['process'],attributes)
+        run_in_env(uniquetag,step['environment'],job,context)
         output  = publish(step['publisher'],attributes,context)
         log.debug('{} result: {}'.format(uniquetag,output))
         return output
