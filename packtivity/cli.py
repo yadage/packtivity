@@ -14,7 +14,7 @@ from capschemas import load
 @click.option('-s','--source', default = None)
 @click.option('-o','--schemasource', default = 'from-github')
 def runcli(spec,parameters,context,name,workdir,source,schemasource):
-    spec   = load_and_validate(spec,source,'packtivity/packtivity-schema',schemadir = schemasource)
+    spec   = load(spec,source,'packtivity/packtivity-schema',schemadir = schemasource)
     ctx    = yaml.load(open(context)) if context else {}
     ctx.update(workdir = workdir)
     parameters = yaml.load(open(parameters)) if parameters else {}
