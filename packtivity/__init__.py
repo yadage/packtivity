@@ -41,11 +41,11 @@ class packtivity_callable(object):
             run_in_env(self.uniquetag,self.step['environment'],job,self.context)
             if not self.published_data:
                 self.published_data = publish(self.step['publisher'],self.attributes,self.context)
-            log.debug('{} result: {}'.format(self.uniquetag,self.published_data))
+            log.debug('%s result: {}',self.uniquetag,self.published_data)
             return self.published_data
 
         except:
-            log.exception('{} raised exception'.format(self.uniquetag))
+            log.exception('%s raised exception',self.uniquetag)
             raise
     
 def packtivity(uniquetag,step,attributes,context):
