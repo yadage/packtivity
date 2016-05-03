@@ -17,7 +17,7 @@ def runcli(spec,parameters,context,name,workdir,source,schemasource):
     spec   = capschemas.load(spec,source,'packtivity/packtivity-schema',schemadir = schemasource)
     parameters = yaml.load(open(parameters)) if parameters else {}
     ctx    = yaml.load(open(context)) if context else {}
-    if not 'readwrite' in ctx:
+    if 'readwrite' not in ctx:
         ctx['readwrite'] = [workdir]
     else:
         ctx['readwrite'] += [workdir]
