@@ -45,7 +45,7 @@ class packtivity_callable(object):
             return self.published_data
 
         except:
-            self.log.exception('{} raised exception'.format(self.uniquetag))
+            log.exception('{} raised exception'.format(self.uniquetag))
             raise
     
 def packtivity(uniquetag,step,attributes,context):
