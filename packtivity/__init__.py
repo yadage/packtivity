@@ -19,15 +19,35 @@ def run_in_env(nametag,environment,command,context):
     from handlers.environment_handlers import handlers as env_handlers
     handler = env_handlers[env_type]
     return handler(nametag,environment,context,command)
+
+def prepublish(publisher_type):
+    return publisher_type in ['frompar-pub','consant-pub']
+
+class packtivity_callable(object):
+    def __init__(self,uniquetag,step,attributes,context):
+        self.uniquetag = uniquetag
+        self.step = step
+        self.attributes = attributes
+        self.context = context
+        self.published_data = None
+    
+        if prepublish(self.step['publisher']['publisher_type']):
+            self.published_data = publish(self.step['publisher'],self.attributes,self.context)
+    
+    def __call__(self):
+        log = logging.getLogger('step_logger_{}'.format(self.uniquetag))
+        try:
+            job = build_job(self.step['process'],self.attributes)
+            run_in_env(self.uniquetag,self.step['environment'],job,self.context)
+            if not self.published_data:
+                self.published_data = publish(self.step['publisher'],self.attributes,self.context)
+            log.debug('{} result: {}'.format(self.uniquetag,self.published_data))
+            return self.published_data
+
+        except:
+            self.log.exception('{} raised exception'.format(self.uniquetag))
+            raise
     
 def packtivity(uniquetag,step,attributes,context):
-    log = logging.getLogger('step_logger_{}'.format(uniquetag))
-    try:
-        job = build_job(step['process'],attributes)
-        run_in_env(uniquetag,step['environment'],job,context)
-        output  = publish(step['publisher'],attributes,context)
-        log.debug('{} result: {}'.format(uniquetag,output))
-        return output
-    except:
-        log.exception('{} raised exception'.format(uniquetag))
-        raise
+    p = packtivity_callable(uniquetag,step,attributes,context)
+    return p()

@@ -113,7 +113,8 @@ def docker_run(fullest_command,log,context,nametag):
     log.debug('docker run  command: \n%s',fullest_command)
     metadir = context['metadir']
 
-    # return
+    if 'PACKTIVITY_DRYRUN' in os.environ:
+        return
     try:
         with open('{}/{}.run.log'.format(metadir,nametag),'w') as logfile:
             proc = subprocess.Popen(fullest_command,shell = True, stderr = subprocess.STDOUT, stdout = logfile)
