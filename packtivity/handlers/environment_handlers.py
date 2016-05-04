@@ -1,10 +1,11 @@
 import os
 import subprocess
 import sys
+import utils
 import time
 import psutil
-import utils
 import logging
+import shlex
 
 handlers,environment = utils.handler_decorator()
 
@@ -158,7 +159,7 @@ def docker_enc_handler(nametag,environment,context,job):
             tag = environment['imagetag']
         )
         docker_pull(docker_pull_cmd,log,context,nametag)
-
+        
     docker_run_cmd = prepare_full_docker_cmd(nametag,context,environment,job['command'],log)
     docker_run(docker_run_cmd,log,context,nametag)
     log.debug('reached return for docker_enc_handler')
@@ -168,3 +169,12 @@ def noop_env(nametag,environment,context,job):
     log  = logging.getLogger('step_logger_{}'.format(nametag))
     log.info('context is: %s',context)
     log.info('would be running this job: %s',job)
+    
+@environment('localproc-env')
+def localproc_env(nametag,environment,context,job):
+    log  = logging.getLogger('step_logger_{}'.format(nametag))
+    log.info('running local command %s',job['command'])
+    try:
+        subprocess.check_call(job['command'], shell = True)
+    except:
+        log.exception('local job failed. job: %s',job)

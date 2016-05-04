@@ -25,7 +25,7 @@ def runcli(spec,parameters,context,name,workdir,source,schemasource):
     prepub = p.published_data is not None
     if p.published_data:
         click.echo(str(p.published_data)+(' (prepublished)' if prepub else ''))
-
+        
     result = p()
     click.echo(result)
 
