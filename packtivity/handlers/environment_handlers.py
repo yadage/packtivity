@@ -143,6 +143,7 @@ def docker_enc_handler(nametag,environment,context,job):
     log.setLevel(logging.DEBUG)
     metadir  = '{}/_packtivity'.format(context['readwrite'][0])
     context['metadir'] = metadir
+    log.debug('creating metadirectory %s if necessary: %s',metadir,os.path.exists(metadir))
     if not os.path.exists(metadir):
         os.makedirs(metadir)
 
