@@ -4,6 +4,8 @@ import os
 import jsonschema
 import yaml
 import capschemas
+import logging
+log = logging.basicSetup(level = logging.INFO)
 
 @click.command()
 @click.argument('spec')
