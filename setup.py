@@ -17,7 +17,8 @@ setup(
       'pyyaml',
       'functools32',
       'click',
-      'psutil'
+      'psutil',
+      'cap-schemas'
   ],
   entry_points = {
       'console_scripts': [
@@ -26,6 +27,6 @@ setup(
       ],
   },
   dependency_links = [
-      'https://github.com/lukasheinrich/cap-schemas/tarball/schemav3#egg=cap-schemas-0.0.1'
+      'https://github.com/lukasheinrich/cap-schemas/tarball/master#egg=cap-schemas-0.0.1'
   ]
 )

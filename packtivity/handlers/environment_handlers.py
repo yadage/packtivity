@@ -85,6 +85,9 @@ resources: {resources}
 
 def docker_pull(docker_pull_cmd,log,context,nametag):
     log.debug('docker pull command: \n  %s',docker_pull_cmd)
+    if 'PACKTIVITY_DRYRUN' in os.environ:
+        return
+
     metadir  = context['metadir']
     try:
         with open('{}/{}.pull.log'.format(metadir,nametag),'w') as logfile:
