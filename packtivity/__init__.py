@@ -20,19 +20,19 @@ def run_in_env(nametag,environment,command,context):
     handler = env_handlers[env_type]
     return handler(nametag,environment,context,command)
 
-def prepublish(publisher_type):
-    return publisher_type in ['frompar-pub','consant-pub']
-
+def prepublish(step,attributes,context):
+    pub = step['publisher']
+    if pub['publisher_type'] in ['frompar-pub','consant-pub']:
+        return publish(pub,attributes,context)
+    return None
+    
 class packtivity_callable(object):
     def __init__(self,uniquetag,step,attributes,context):
         self.uniquetag = uniquetag
         self.step = step
         self.attributes = attributes
         self.context = context
-        self.published_data = None
-    
-        if prepublish(self.step['publisher']['publisher_type']):
-            self.published_data = publish(self.step['publisher'],self.attributes,self.context)
+        self.published_data = prepublish(self.step,self.attributes,self.context)
     
     def __call__(self):
         log = logging.getLogger('step_logger_{}'.format(self.uniquetag))
