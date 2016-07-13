@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 setup(
   name = 'packtivity',
-  version = '0.0.2',
+  version = '0.0.3',
   description = 'packtivity - general purpose schema + bindings for PROV activities',
   url = '',
   author = 'Lukas Heinrich',
@@ -27,6 +27,5 @@ setup(
       ],
   },
   dependency_links = [
-      'https://github.com/lukasheinrich/cap-schemas/tarball/master#egg=cap-schemas-0.0.1'
   ]
 )
