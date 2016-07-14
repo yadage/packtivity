@@ -38,13 +38,13 @@ def prepare_docker(nametag,context,do_cvmfs,do_grid,log):
             docker_mod+=' -v /home/recast/recast_auth:/recast_auth'
         else:
             docker_mod+=' -v {}:/recast_auth'.format(os.environ['YADAGE_AUTH_LOCATION'])
-            
+
     cidfile = '{}/{}.cid'.format(metadir,nametag)
 
     if os.path.exists(cidfile):
         log.warning('cid file %s seems to exist, docker run will crash',cidfile)
     docker_mod += ' --cidfile {}'.format(cidfile)
-    
+
     return docker_mod
 
 def prepare_full_docker_cmd(nametag,context,environment,command,log):
@@ -66,13 +66,13 @@ resources: {resources}
     do_cvmfs = 'CVMFS' in environment['resources']
     do_grid  = 'GRIDProxy'  in environment['resources']
     log.debug('dogrid: %s do_cvmfs: %s',do_grid,do_cvmfs)
-    
+
     envmod = 'source {} &&'.format(environment['envscript']) if environment['envscript'] else ''
-    
+
     in_docker_cmd = '{envmodifier} {command}'.format(envmodifier = envmod, command = command)
-    
+
     docker_mod = prepare_docker(nametag,context,do_cvmfs,do_grid,log)
-    
+
     fullest_command = 'docker run --rm {docker_mod} {container} sh -c \'{in_dock}\''.format(
                         docker_mod = docker_mod,
                         container = container,
@@ -112,7 +112,7 @@ def docker_pull(docker_pull_cmd,log,context,nametag):
         raise
     finally:
         log.debug('finally for pull')
-    
+
 def docker_run(fullest_command,log,context,nametag):
     log.debug('docker run  command: \n%s',fullest_command)
     metadir = context['metadir']
@@ -165,24 +165,24 @@ def docker_enc_handler(nametag,environment,context,job):
     log.addHandler(fh)
     log.debug('starting log for step: %s',nametag)
     log.debug('context: \n %s',context)
-        
+
     if 'PACKTIVITY_DOCKER_NOPULL' not in os.environ:
         docker_pull_cmd = 'docker pull {container}:{tag}'.format(
             container = environment['image'],
             tag = environment['imagetag']
         )
         docker_pull(docker_pull_cmd,log,context,nametag)
-        
+
     docker_run_cmd = prepare_full_docker_cmd(nametag,context,environment,job['command'],log)
     docker_run(docker_run_cmd,log,context,nametag)
     log.debug('reached return for docker_enc_handler')
-    
+
 @environment('noop-env')
 def noop_env(nametag,environment,context,job):
     log  = logging.getLogger('step_logger_{}'.format(nametag))
     log.info('context is: %s',context)
     log.info('would be running this job: %s',job)
-    
+
 @environment('localproc-env')
 def localproc_env(nametag,environment,context,job):
     log  = logging.getLogger('step_logger_{}'.format(nametag))
