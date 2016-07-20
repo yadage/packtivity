@@ -1,5 +1,6 @@
 import pkg_resources
 import logging
+log = logging.getLogger(__name__)
 schemadir = pkg_resources.resource_filename('packtivity','schema')
 
 def publish(publisher,attributes,context):
@@ -25,7 +26,7 @@ def prepublish(step,attributes,context):
     attempts to prepublish output data, returns None if not possible
     '''
     pub = step['publisher']
-    if pub['publisher_type'] in ['frompar-pub','consant-pub']:
+    if pub['publisher_type'] in ['frompar-pub','constant-pub']:
         return publish(pub,attributes,context)
     return None
 
