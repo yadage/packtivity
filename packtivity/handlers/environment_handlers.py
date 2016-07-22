@@ -49,7 +49,6 @@ def prepare_docker(context,do_cvmfs,do_grid,log):
     return docker_mod
 
 def prepare_full_docker_cmd(context,environment,command,log):
-    nametag = context['nametag']
     container = environment['image']
     report = '''\n\
 --------------
