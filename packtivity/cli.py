@@ -29,11 +29,10 @@ def finalize_input(json,context):
 @click.argument('spec')
 @click.argument('parameters', default = '')
 @click.option('-c','--context', default = None)
-@click.option('-n','--name', default = 'pack')
 @click.option('-w','--workdir', default = os.getcwd())
 @click.option('-s','--source', default = os.getcwd())
 @click.option('-o','--schemasource', default = capschemas.schemadir)
-def runcli(spec,parameters,context,name,workdir,source,schemasource):
+def runcli(spec,parameters,context,workdir,source,schemasource):
     spec   = capschemas.load(spec,source,'packtivity/packtivity-schema',schemadir = schemasource)
     parameters = yaml.load(open(parameters)) if parameters else {}
 
@@ -46,10 +45,13 @@ def runcli(spec,parameters,context,name,workdir,source,schemasource):
     if 'readonly' not in ctx:
         ctx['readonly'] = []
 
+    if 'nametag' not in ctx:
+        ctx['nametag'] = 'pack'
+
     #interpolate parameters out of courtesy
     parameters = finalize_input(parameters,ctx)
 
-    p = packtivity.packtivity_callable(name,spec,parameters,ctx)
+    p = packtivity.packtivity_callable(spec,parameters,ctx)
     prepub = p.published_data is not None
     if p.published_data:
         click.echo(str(p.published_data)+(' (prepublished)' if prepub else ''))

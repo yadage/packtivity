@@ -17,7 +17,8 @@ def sourcepath(path):
     else:
         return path
 
-def prepare_docker(nametag,context,do_cvmfs,do_grid,log):
+def prepare_docker(context,do_cvmfs,do_grid,log):
+    nametag = context['nametag']
     metadir  = context['metadir']
     readwrites  = context['readwrite']
     readonlies = context['readonly']
@@ -47,7 +48,8 @@ def prepare_docker(nametag,context,do_cvmfs,do_grid,log):
 
     return docker_mod
 
-def prepare_full_docker_cmd(nametag,context,environment,command,log):
+def prepare_full_docker_cmd(context,environment,command,log):
+    nametag = context['nametag']
     container = environment['image']
     report = '''\n\
 --------------
@@ -71,7 +73,7 @@ resources: {resources}
 
     in_docker_cmd = '{envmodifier} {command}'.format(envmodifier = envmod, command = command)
 
-    docker_mod = prepare_docker(nametag,context,do_cvmfs,do_grid,log)
+    docker_mod = prepare_docker(context,do_cvmfs,do_grid,log)
 
     fullest_command = 'docker run --rm {docker_mod} {container} sh -c \'{in_dock}\''.format(
                         docker_mod = docker_mod,
@@ -151,7 +153,8 @@ def mkdir_p(path):
             raise
 
 @environment('docker-encapsulated')
-def docker_enc_handler(nametag,environment,context,job):
+def docker_enc_handler(environment,context,job):
+    nametag = context['nametag']
     log  = logging.getLogger('step_logger_{}'.format(nametag))
     log.setLevel(logging.DEBUG)
     metadir  = '{}/_packtivity'.format(context['readwrite'][0])
@@ -173,18 +176,20 @@ def docker_enc_handler(nametag,environment,context,job):
         )
         docker_pull(docker_pull_cmd,log,context,nametag)
 
-    docker_run_cmd = prepare_full_docker_cmd(nametag,context,environment,job['command'],log)
+    docker_run_cmd = prepare_full_docker_cmd(context,environment,job['command'],log)
     docker_run(docker_run_cmd,log,context,nametag)
     log.debug('reached return for docker_enc_handler')
 
 @environment('noop-env')
-def noop_env(nametag,environment,context,job):
+def noop_env(environment,context,job):
+    nametag = context['nametag']
     log  = logging.getLogger('step_logger_{}'.format(nametag))
     log.info('context is: %s',context)
     log.info('would be running this job: %s',job)
 
 @environment('localproc-env')
-def localproc_env(nametag,environment,context,job):
+def localproc_env(environment,context,job):
+    nametag = ctx['nametag']
     log  = logging.getLogger('step_logger_{}'.format(nametag))
     log.info('running local command %s',job['command'])
     try:

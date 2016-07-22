@@ -15,11 +15,11 @@ def build_job(process,attributes):
     handler = proc_handlers[proc_type]
     return handler(process,attributes)
 
-def run_in_env(nametag,environment,command,context):
+def run_in_env(environment,command,context):
     env_type = environment['environment_type']
     from handlers.environment_handlers import handlers as env_handlers
     handler = env_handlers[env_type]
-    return handler(nametag,environment,context,command)
+    return handler(environment,context,command)
 
 def prepublish(step,attributes,context):
     '''
@@ -31,27 +31,27 @@ def prepublish(step,attributes,context):
     return None
 
 class packtivity_callable(object):
-    def __init__(self,uniquetag,step,attributes,context):
-        self.uniquetag = uniquetag
+    def __init__(self,step,attributes,context):
         self.step = step
         self.attributes = attributes
         self.context = context
         self.published_data = prepublish(self.step,self.attributes,self.context)
 
     def __call__(self):
-        log = logging.getLogger('step_logger_{}'.format(self.uniquetag))
+        nametag = self.context['nametag']
+        log = logging.getLogger('step_logger_{}'.format(nametag))
         try:
             job = build_job(self.step['process'],self.attributes)
-            run_in_env(self.uniquetag,self.step['environment'],job,self.context)
+            run_in_env(self.step['environment'],job,self.context)
             if not self.published_data:
                 self.published_data = publish(self.step['publisher'],self.attributes,self.context)
-            log.debug('%s result: %s',self.uniquetag,self.published_data)
+            log.debug('%s result: %s',nametag,self.published_data)
             return self.published_data
 
         except:
-            log.exception('%s raised exception',self.uniquetag)
+            log.exception('%s raised exception',nametag)
             raise
 
-def packtivity(uniquetag,step,attributes,context):
-    p = packtivity_callable(uniquetag,step,attributes,context)
+def packtivity(step,attributes,context):
+    p = packtivity_callable(step,attributes,context)
     return p()
