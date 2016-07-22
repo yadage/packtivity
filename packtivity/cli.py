@@ -5,7 +5,9 @@ import jsonschema
 import yaml
 import capschemas
 import logging
-log = logging.basicConfig(level = logging.INFO)
+
+log = logging.getLogger(__name__)
+
 
 #stolen from yadage
 def finalize_value(value,context):

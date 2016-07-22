@@ -189,7 +189,7 @@ def noop_env(environment,context,job):
 
 @environment('localproc-env')
 def localproc_env(environment,context,job):
-    nametag = ctx['nametag']
+    nametag = context['nametag']
     log  = logging.getLogger('step_logger_{}'.format(nametag))
     log.info('running local command %s',job['command'])
     try:
