@@ -1,5 +1,6 @@
 import itertools
 import os
+import shutil
 
 def make_new_context(name,oldcontext = None):
     '''
@@ -23,3 +24,9 @@ def make_new_context(name,oldcontext = None):
     if oldcontext:
         newcontext['readonly'] += [ro for ro in itertools.chain(oldcontext['readonly'],oldcontext['readwrite'])]
     return newcontext
+
+def reset_state(context):
+    '''delete readwriteable locations of this context'''
+    for rw in context['readwrite']:
+        shutil.rmtree(rw)
+        os.makedirs(rw)
