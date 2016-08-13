@@ -1,4 +1,4 @@
-import packtivity.utils
+import packtivity.utils as utils
 
 handlers,process = utils.handler_decorator()
 

@@ -1,5 +1,5 @@
 import yaml
-import packtivity.utils
+import packtivity.utils as utils
 import glob
 
 handlers, publisher = utils.handler_decorator()
