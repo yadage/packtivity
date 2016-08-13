@@ -1,7 +1,7 @@
 import os
 import subprocess
 import sys
-import utils
+import packtivity.utils as utils
 import time
 import psutil
 import logging
@@ -141,15 +141,6 @@ def docker_run(fullest_command,log,context,nametag):
     finally:
         log.debug('finally for run')
 
-def mkdir_p(path):
-    #http://stackoverflow.com/questions/600268/mkdir-p-functionality-in-python
-    try:
-        os.makedirs(path)
-    except OSError as exc:  # Python >2.5
-        if exc.errno == errno.EEXIST and os.path.isdir(path):
-            pass
-        else:
-            raise
 
 @environment('docker-encapsulated')
 def docker_enc_handler(environment,context,job):
@@ -159,7 +150,7 @@ def docker_enc_handler(environment,context,job):
     metadir  = '{}/_packtivity'.format(context['readwrite'][0])
     context['metadir'] = metadir
     log.debug('creating metadirectory %s if necessary: %s',metadir,os.path.exists(metadir))
-    mkdir_p(metadir)
+    utils.mkdir_p(metadir)
 
     logname = '{}/{}.step.log'.format(metadir,nametag)
     fh  = logging.FileHandler(logname)

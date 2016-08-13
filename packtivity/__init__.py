@@ -15,11 +15,11 @@ def build_job(process,attributes):
     handler = proc_handlers[proc_type]
     return handler(process,attributes)
 
-def run_in_env(environment,command,context):
+def run_in_env(environment,job,context):
     env_type = environment['environment_type']
     from handlers.environment_handlers import handlers as env_handlers
     handler = env_handlers[env_type]
-    return handler(environment,context,command)
+    return handler(environment,context,job)
 
 def prepublish(step,attributes,context):
     '''
