@@ -5,7 +5,6 @@ import packtivity.utils as utils
 import time
 import psutil
 import logging
-import errno
 
 handlers,environment = utils.handler_decorator()
 
