@@ -178,10 +178,16 @@ def noop_env(environment,context,job):
 
 @environment('localproc-env')
 def localproc_env(environment,context,job):
+    olddir = os.path.realpath(os.curdir)
+    workdir = context['readwrite'][0]
     nametag = context['nametag']
     log  = logging.getLogger('step_logger_{}'.format(nametag))
     log.info('running local command %s',job['command'])
     try:
+        log.info('changing to workdirectory %s',workdir)
+        os.chdir(workdir)
         subprocess.check_call(job['command'], shell = True)
     except:
         log.exception('local job failed. job: %s',job)
+    finally:
+        log.info('changing back to original directory %s',olddir)

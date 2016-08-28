@@ -13,15 +13,16 @@ def process_attr_pub_handler(publisher,attributes,context):
 
 @publisher('fromyaml-pub')
 def fromyaml_pub_handler(publisher,attributes,context):
+    workdir  = context['readwrite'][0]
     yamlfile =  publisher['yamlfile']
-    yamlfile =  yamlfile.replace('/workdir',context['workdir'])
-    pubdata = yaml.load(open(yamlfile))
+    pubdata = yaml.load(open('{}/{}'.format(workdir,yamlfile)))
     return pubdata
 
 @publisher('fromglob-pub')
 def glob_pub_handler(publisher,attributes,context):
+    workdir = context['readwrite'][0]
     globexpr =  publisher['globexpression']
-    return {publisher['outputkey']:glob.glob('{}/{}'.format(context['workdir'],globexpr))}
+    return {publisher['outputkey']:glob.glob('{}/{}'.format(workdir,globexpr))}
 
 @publisher('constant-pub')
 def dummy_pub_handler(publisher,attributes,context):

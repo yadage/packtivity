@@ -8,7 +8,6 @@ import logging
 
 log = logging.getLogger(__name__)
 
-
 #stolen from yadage
 def finalize_value(value,context):
     if type(value)==list:
