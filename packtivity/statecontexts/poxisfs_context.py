@@ -18,7 +18,7 @@ def make_new_context(name,oldcontext = None):
     utils.mkdir_p(new_readwrite)
 
     newcontext = {
-        'nametag':name,
+        'nametag':name.replace('/','_'), #replace in case name is nested path
         'readwrite':[new_readwrite],
         'readonly':[]
     }
