@@ -7,6 +7,7 @@ import capschemas
 import logging
 
 log = logging.getLogger(__name__)
+logging.basicConfig(level = logging.INFO)
 
 #stolen from yadage
 def finalize_value(value,context):
@@ -33,8 +34,9 @@ def finalize_input(json,context):
 @click.option('-w','--workdir', default = os.getcwd())
 @click.option('-s','--source', default = os.getcwd())
 @click.option('-o','--schemasource', default = capschemas.schemadir)
-def runcli(spec,parameters,context,workdir,source,schemasource):
-    spec   = capschemas.load(spec,source,'packtivity/packtivity-schema',schemadir = schemasource)
+@click.option('--validate/--no-validate', default = True)
+def runcli(spec,parameters,context,workdir,source,schemasource,validate):
+    spec   = capschemas.load(spec,source,'packtivity/packtivity-schema',schemadir = schemasource, validate = validate)
     parameters = yaml.load(open(parameters)) if parameters else {}
 
 
@@ -54,11 +56,11 @@ def runcli(spec,parameters,context,workdir,source,schemasource):
 
     p = packtivity.packtivity_callable(spec,parameters,ctx)
     prepub = p.published_data is not None
-    if p.published_data:
+    if prepub:
         click.echo(str(p.published_data)+(' (prepublished)' if prepub else ''))
 
     result = p()
-    if not p.published_data:
+    if not prepub:
         click.echo(result)
 
 @click.command()

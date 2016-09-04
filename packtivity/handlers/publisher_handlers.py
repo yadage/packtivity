@@ -27,3 +27,23 @@ def glob_pub_handler(publisher,attributes,context):
 @publisher('constant-pub')
 def dummy_pub_handler(publisher,attributes,context):
     return  publisher['publish']
+
+import json
+import yaml
+import click
+@publisher('manual-publishing')
+def dummy_pub_handler(publisher,attributes,context):
+    instructions = publisher['instructions']
+    click.secho(instructions, fg = 'magenta')
+    while True:
+        published_json = raw_input("Enter JSON data to publish: ")
+        try:
+            data = json.loads(published_json)
+        except:
+            click.secho('uhm something went wrong, enter valid JSON please', fg = 'red')
+            continue
+        shall = raw_input("got: \n {} \npublish? (y/N) ".format(yaml.safe_dump(data,default_flow_style = False))).lower() == 'y'
+        if shall:
+            break
+    click.secho('publishing', fg = 'green')
+    return data

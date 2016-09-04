@@ -191,3 +191,12 @@ def localproc_env(environment,context,job):
         log.exception('local job failed. job: %s',job)
     finally:
         log.info('changing back to original directory %s',olddir)
+
+import click
+import yaml
+@environment('manual-env')
+def localproc_env(environment,context,job):
+    instructions = environment['instructions']
+    ctx = yaml.safe_dump(context,default_flow_style = False)
+    click.secho(instructions, fg = 'blue')
+    click.secho(ctx, fg = 'cyan')
