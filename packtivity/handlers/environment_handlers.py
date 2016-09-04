@@ -5,6 +5,8 @@ import packtivity.utils as utils
 import time
 import psutil
 import logging
+import click
+import yaml
 
 handlers,environment = utils.handler_decorator()
 
@@ -192,10 +194,8 @@ def localproc_env(environment,context,job):
     finally:
         log.info('changing back to original directory %s',olddir)
 
-import click
-import yaml
 @environment('manual-env')
-def localproc_env(environment,context,job):
+def manual_env(environment,context,job):
     instructions = environment['instructions']
     ctx = yaml.safe_dump(context,default_flow_style = False)
     click.secho(instructions, fg = 'blue')

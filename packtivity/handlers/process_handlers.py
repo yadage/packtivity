@@ -11,7 +11,7 @@ def stringinterp_handler(process_spec,attributes):
     }
 
 @process('manual-instructions-proc')
-def stringinterp_handler(process_spec,attributes):
+def manual_proc(process_spec,attributes):
     instructions = process_spec['instructions']
     attrs = yaml.safe_dump(attributes,default_flow_style = False)
     click.secho(instructions, fg = 'blue')

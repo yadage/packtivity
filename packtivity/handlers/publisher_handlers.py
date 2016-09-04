@@ -1,6 +1,8 @@
 import yaml
 import packtivity.utils as utils
 import glob
+import json
+import click
 
 handlers, publisher = utils.handler_decorator()
 
@@ -28,11 +30,8 @@ def glob_pub_handler(publisher,attributes,context):
 def dummy_pub_handler(publisher,attributes,context):
     return  publisher['publish']
 
-import json
-import yaml
-import click
 @publisher('manual-publishing')
-def dummy_pub_handler(publisher,attributes,context):
+def manual_pub(publisher,attributes,context):
     instructions = publisher['instructions']
     click.secho(instructions, fg = 'magenta')
     while True:
