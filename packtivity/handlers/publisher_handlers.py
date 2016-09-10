@@ -46,3 +46,8 @@ def manual_pub(publisher,attributes,context):
             break
     click.secho('publishing', fg = 'green')
     return data
+
+@publisher('gridoutput-pub')
+def gridoutput_pub(publisher,attributes,context):
+    import grid_handlers
+    return grid_handlers.publish_grid_job(publisher,attributes,context)

@@ -49,17 +49,16 @@ def prepare_docker(context,do_cvmfs,do_grid,log):
 
     return docker_mod
 
-def prepare_full_docker_cmd(context,environment,command,log):
+
+def prepare_docker_context(context,environment,log):
     container = environment['image']
     report = '''\n\
 --------------
 run in docker container: {container}
 with env: {env}
-command: {command}
 resources: {resources}
 --------------
     '''.format(container = container,
-               command = command,
                env = environment['envscript'] if environment['envscript'] else 'default env',
                resources = environment['resources']
               )
@@ -69,17 +68,73 @@ resources: {resources}
     do_grid  = 'GRIDProxy'  in environment['resources']
     log.debug('dogrid: %s do_cvmfs: %s',do_grid,do_cvmfs)
 
-    envmod = 'source {} &&'.format(environment['envscript']) if environment['envscript'] else ''
 
-    in_docker_cmd = '{envmodifier} {command}'.format(envmodifier = envmod, command = command)
 
     docker_mod = prepare_docker(context,do_cvmfs,do_grid,log)
+    return docker_mod
 
-    fullest_command = 'docker run --rm {docker_mod} {container} sh -c \'{in_dock}\''.format(
+def run_docker_with_script(context,environment,script,log):
+    metadir  = context['metadir']
+    image = environment['image']
+    nametag = context['nametag']
+
+    do_cvmfs = 'CVMFS' in environment['resources']
+    log.debug('script is:')
+    log.debug('\n--------------\n'+script+'\n--------------')
+    docker_mod = prepare_docker_context(context,environment,log)
+    if 'PACKTIVITY_DRYRUN' in os.environ:
+        return
+
+    indocker = 'sh'
+    envmod = 'source {} && '.format(environment['envscript']) if environment['envscript'] else ''
+    indocker = envmod+indocker
+
+    try:
+        with open('{}/{}.run.log'.format(metadir,nametag),'w') as logfile:
+            if do_cvmfs:
+                if 'PACKTIVITY_WITHIN_DOCKER' not in os.environ:
+                    subprocess.check_call('cvmfs_config probe')
+            subcmd = 'docker run -i {docker_mod} {image} sh -c \'{indocker}\' '.format(image = image, docker_mod = docker_mod, indocker = indocker)
+            proc = subprocess.Popen(subcmd,shell = True, stdin = subprocess.PIPE, stderr = subprocess.STDOUT, stdout = logfile)
+            log.debug('started run subprocess with pid %s. now piping script',proc.pid)
+            proc.communicate(script)
+            log.debug('docker run subprocess finished. return code: %s',proc.returncode)
+            if proc.returncode:
+                log.error('non-zero return code raising exception')
+                raise subprocess.CalledProcessError(returncode =  proc.returncode, cmd = subcmd)
+            log.debug('moving on from run')
+    except subprocess.CalledProcessError as exc:
+        log.exception('subprocess failed. code: %s,  command %s',exc.returncode,exc.cmd)
+        raise RuntimeError('failed docker subprocess in docker_enc_handler.')
+    except:
+        log.exception("Unexpected error: %s",sys.exc_info())
+        raise
+    finally:
+        log.debug('finally for run')
+
+def prepare_full_docker_with_oneliner(context,environment,command,log):
+    image = environment['image']
+    do_cvmfs = 'CVMFS' in environment['resources']
+
+    report = '''\n\
+--------------
+running one liner in container.
+command: {command}
+--------------
+    '''.format(command = command)
+    log.debug(report)
+
+    docker_mod = prepare_docker_context(context,environment,log)
+
+    envmod = 'source {} &&'.format(environment['envscript']) if environment['envscript'] else ''
+    in_docker_cmd = '{envmodifier} {command}'.format(envmodifier = envmod, command = command)
+
+    fullest_command = 'docker run --rm {docker_mod} {image} sh -c \'{in_dock}\''.format(
                         docker_mod = docker_mod,
-                        container = container,
+                        image = image,
                         in_dock = in_docker_cmd
                         )
+
     if do_cvmfs:
         if 'PACKTIVITY_WITHIN_DOCKER' not in os.environ:
             fullest_command = 'cvmfs_config probe && {}'.format(fullest_command)
@@ -115,7 +170,7 @@ def docker_pull(docker_pull_cmd,log,context,nametag):
     finally:
         log.debug('finally for pull')
 
-def docker_run(fullest_command,log,context,nametag):
+def docker_run_cmd(fullest_command,log,context,nametag):
     log.debug('docker run  command: \n%s',fullest_command)
     metadir = context['metadir']
 
@@ -167,9 +222,15 @@ def docker_enc_handler(environment,context,job):
         )
         docker_pull(docker_pull_cmd,log,context,nametag)
 
-    docker_run_cmd = prepare_full_docker_cmd(context,environment,job['command'],log)
-    docker_run(docker_run_cmd,log,context,nametag)
-    log.debug('reached return for docker_enc_handler')
+    if 'command' in job:
+        log.info('running oneliner command')
+        docker_run_cmd_str = prepare_full_docker_with_oneliner(context,environment,job['command'],log)
+        docker_run_cmd(docker_run_cmd_str,log,context,nametag)
+        log.debug('reached return for docker_enc_handler')
+    elif 'script' in job:
+        run_docker_with_script(context,environment,job['script'],log)
+    else:
+        raise RuntimeError('do not know yet how to run this...')
 
 @environment('noop-env')
 def noop_env(environment,context,job):
@@ -200,3 +261,8 @@ def manual_env(environment,context,job):
     ctx = yaml.safe_dump(context,default_flow_style = False)
     click.secho(instructions, fg = 'blue')
     click.secho(ctx, fg = 'cyan')
+
+@environment('pathena-submit-env')
+def pathena_submit_env(environment,context,job):
+    import grid_handlers
+    return grid_handlers.execute_grid_job(environment,context,job)
