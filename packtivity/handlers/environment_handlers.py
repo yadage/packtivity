@@ -94,7 +94,7 @@ def run_docker_with_script(context,environment,script,log):
             if do_cvmfs:
                 if 'PACKTIVITY_WITHIN_DOCKER' not in os.environ:
                     subprocess.check_call('cvmfs_config probe')
-            subcmd = 'docker run -i {docker_mod} {image} sh -c \'{indocker}\' '.format(image = image, docker_mod = docker_mod, indocker = indocker)
+            subcmd = 'docker run --rm -i {docker_mod} {image} sh -c \'{indocker}\' '.format(image = image, docker_mod = docker_mod, indocker = indocker)
             proc = subprocess.Popen(subcmd,shell = True, stdin = subprocess.PIPE, stderr = subprocess.STDOUT, stdout = logfile)
             log.debug('started run subprocess with pid %s. now piping script',proc.pid)
             proc.communicate(script)
