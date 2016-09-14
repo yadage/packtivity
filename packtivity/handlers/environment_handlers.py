@@ -76,6 +76,7 @@ resources: {resources}
 def run_docker_with_script(context,environment,script,log):
     metadir  = context['metadir']
     image = environment['image']
+    imagetag = environment['imagetag']
     nametag = context['nametag']
 
     do_cvmfs = 'CVMFS' in environment['resources']
@@ -94,7 +95,7 @@ def run_docker_with_script(context,environment,script,log):
             if do_cvmfs:
                 if 'PACKTIVITY_WITHIN_DOCKER' not in os.environ:
                     subprocess.check_call('cvmfs_config probe')
-            subcmd = 'docker run --rm -i {docker_mod} {image} sh -c \'{indocker}\' '.format(image = image, docker_mod = docker_mod, indocker = indocker)
+            subcmd = 'docker run --rm -i {docker_mod} {image}:{imagetag} sh -c \'{indocker}\' '.format(image = image, imagetag = imagetag, docker_mod = docker_mod, indocker = indocker)
             proc = subprocess.Popen(subcmd,shell = True, stdin = subprocess.PIPE, stderr = subprocess.STDOUT, stdout = logfile)
             log.debug('started run subprocess with pid %s. now piping script',proc.pid)
             proc.communicate(script)
@@ -114,6 +115,7 @@ def run_docker_with_script(context,environment,script,log):
 
 def prepare_full_docker_with_oneliner(context,environment,command,log):
     image = environment['image']
+    imagetag = environment['imagetag']
     do_cvmfs = 'CVMFS' in environment['resources']
 
     report = '''\n\
@@ -129,9 +131,10 @@ command: {command}
     envmod = 'source {} &&'.format(environment['envscript']) if environment['envscript'] else ''
     in_docker_cmd = '{envmodifier} {command}'.format(envmodifier = envmod, command = command)
 
-    fullest_command = 'docker run --rm {docker_mod} {image} sh -c \'{in_dock}\''.format(
+    fullest_command = 'docker run --rm {docker_mod} {image}:{imagetag} sh -c \'{in_dock}\''.format(
                         docker_mod = docker_mod,
                         image = image,
+                        imagetag = imagetag,
                         in_dock = in_docker_cmd
                         )
 
