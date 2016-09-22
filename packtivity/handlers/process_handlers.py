@@ -11,7 +11,7 @@ def stringinterp_handler(process_spec,attributes):
     }
 
 @process('interpolated-script-cmd')
-def stringinterp_handler(process_spec,attributes):
+def interp_script(process_spec,attributes):
     flattened = {k:v if not (type(v)==list) else ' '.join([str(x) for x in v]) for k,v in attributes.iteritems()}
     return {
         'script':process_spec['script'].format(**flattened),
