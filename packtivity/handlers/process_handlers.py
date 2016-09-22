@@ -14,7 +14,8 @@ def stringinterp_handler(process_spec,attributes):
 def stringinterp_handler(process_spec,attributes):
     flattened = {k:v if not (type(v)==list) else ' '.join([str(x) for x in v]) for k,v in attributes.iteritems()}
     return {
-        'script':process_spec['script'].format(**flattened)
+        'script':process_spec['script'].format(**flattened),
+        'interpreter':process_spec['interpreter']
     }
 
 

@@ -73,11 +73,14 @@ resources: {resources}
     docker_mod = prepare_docker(context,do_cvmfs,do_grid,log)
     return docker_mod
 
-def run_docker_with_script(context,environment,script,log):
+def run_docker_with_script(context,environment,job,log):
     metadir  = context['metadir']
     image = environment['image']
     imagetag = environment['imagetag']
     nametag = context['nametag']
+
+    script = job['script']
+    interpreter = job['interpreter']
 
     do_cvmfs = 'CVMFS' in environment['resources']
     log.debug('script is:')
@@ -86,7 +89,7 @@ def run_docker_with_script(context,environment,script,log):
     if 'PACKTIVITY_DRYRUN' in os.environ:
         return
 
-    indocker = 'sh'
+    indocker = interpreter
     envmod = 'source {} && '.format(environment['envscript']) if environment['envscript'] else ''
     indocker = envmod+indocker
 
@@ -96,6 +99,7 @@ def run_docker_with_script(context,environment,script,log):
                 if 'PACKTIVITY_WITHIN_DOCKER' not in os.environ:
                     subprocess.check_call('cvmfs_config probe')
             subcmd = 'docker run --rm -i {docker_mod} {image}:{imagetag} sh -c \'{indocker}\' '.format(image = image, imagetag = imagetag, docker_mod = docker_mod, indocker = indocker)
+            log.debug('running docker cmd: %s',subcmd)
             proc = subprocess.Popen(subcmd,shell = True, stdin = subprocess.PIPE, stderr = subprocess.STDOUT, stdout = logfile)
             log.debug('started run subprocess with pid %s. now piping script',proc.pid)
             proc.communicate(script)
@@ -231,7 +235,7 @@ def docker_enc_handler(environment,context,job):
         docker_run_cmd(docker_run_cmd_str,log,context,nametag)
         log.debug('reached return for docker_enc_handler')
     elif 'script' in job:
-        run_docker_with_script(context,environment,job['script'],log)
+        run_docker_with_script(context,environment,job,log)
     else:
         raise RuntimeError('do not know yet how to run this...')
 
