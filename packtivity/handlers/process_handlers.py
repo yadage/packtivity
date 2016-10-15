@@ -18,7 +18,6 @@ def interp_script(process_spec,attributes):
         'interpreter':process_spec['interpreter']
     }
 
-
 @process('manual-instructions-proc')
 def manual_proc(process_spec,attributes):
     instructions = process_spec['instructions']

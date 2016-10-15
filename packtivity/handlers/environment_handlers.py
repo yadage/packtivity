@@ -110,7 +110,7 @@ def run_docker_with_script(context,environment,job,log):
             log.debug('moving on from run')
     except subprocess.CalledProcessError as exc:
         log.exception('subprocess failed. code: %s,  command %s',exc.returncode,exc.cmd)
-        raise RuntimeError('failed docker subprocess in docker_enc_handler.')
+        raise RuntimeError('failed docker run subprocess in docker_enc_handler.')
     except:
         log.exception("Unexpected error: %s",sys.exc_info())
         raise
@@ -170,7 +170,7 @@ def docker_pull(docker_pull_cmd,log,context,nametag):
         raise e
     except subprocess.CalledProcessError as exc:
         log.exception('subprocess failed. code: %s,  command %s',exc.returncode,exc.cmd)
-        raise RuntimeError('failed docker subprocess in docker_enc_handler.')
+        raise RuntimeError('failed docker pull subprocess in docker_enc_handler.')
     except:
         log.exception("Unexpected error: %s",sys.exc_info())
         raise
@@ -209,7 +209,7 @@ def docker_run_cmd(fullest_command,log,context,nametag):
 def docker_enc_handler(environment,context,job):
     nametag = context['nametag']
     log  = logging.getLogger('step_logger_{}'.format(nametag))
-    log.setLevel(logging.DEBUG)
+    # log.setLevel(logging.DEBUG)
     metadir  = '{}/_packtivity'.format(context['readwrite'][0])
     context['metadir'] = metadir
     log.debug('creating metadirectory %s if necessary: %s',metadir,os.path.exists(metadir))
@@ -230,7 +230,7 @@ def docker_enc_handler(environment,context,job):
         docker_pull(docker_pull_cmd,log,context,nametag)
 
     if 'command' in job:
-        log.info('running oneliner command')
+        # log.info('running oneliner command')
         docker_run_cmd_str = prepare_full_docker_with_oneliner(context,environment,job['command'],log)
         docker_run_cmd(docker_run_cmd_str,log,context,nametag)
         log.debug('reached return for docker_enc_handler')
