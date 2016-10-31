@@ -26,7 +26,7 @@ def prepare_docker(context,do_cvmfs,do_grid,log):
 
     docker_mod = ''
     for rw in readwrites:
-        docker_mod += '-v {}:{}:rw'.format(sourcepath(os.path.abspath(rw)),rw)
+        docker_mod += ' -v {}:{}:rw'.format(sourcepath(os.path.abspath(rw)),rw)
     for ro in readonlies:
         docker_mod += ' -v {}:{}:ro'.format(sourcepath(ro),ro)
 
