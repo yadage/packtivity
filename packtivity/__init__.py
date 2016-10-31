@@ -1,5 +1,6 @@
-import pkg_resources
 import logging
+import pkg_resources
+
 log = logging.getLogger(__name__)
 schemadir = pkg_resources.resource_filename('packtivity','schema')
 
@@ -32,6 +33,7 @@ def prepublish(step,attributes,context):
 
 class packtivity_callable(object):
     def __init__(self,step,attributes,context):
+        '''instantiate packtivity object (a callable with fixed parameters)'''
         self.step = step
         self.attributes = attributes
         self.context = context
@@ -53,5 +55,6 @@ class packtivity_callable(object):
             raise
 
 def packtivity(step,attributes,context):
+    ''''simple blocking packtivity'''
     p = packtivity_callable(step,attributes,context)
     return p()

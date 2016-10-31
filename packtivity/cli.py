@@ -27,19 +27,47 @@ def finalize_input(json,context):
             result[k] = [finalize_value(element,context) for element in v]
     return result
 
+def getinit_data(initfiles,parameters):
+    '''
+    get initial data from both a list of files and a list of 'pname=pvalue'
+    strings as they are passed in the command line <pvalue> is assumed to be a
+    YAML parsable string.
+    '''
+    initdata = {}
+    for initfile in initfiles:
+        initdata.update(**yaml.load(open(initfile)))
+
+    for x in parameters:
+        key,value = x.split('=')
+        initdata[key]=yaml.load(value)
+    return initdata
+
 @click.command()
-@click.argument('spec')
-@click.argument('parameters', default = '')
+@click.option('--parameter', '-p', multiple=True)
 @click.option('-c','--context', default = None)
 @click.option('-w','--workdir', default = os.getcwd())
 @click.option('-s','--source', default = os.getcwd())
 @click.option('-o','--schemasource', default = capschemas.schemadir)
 @click.option('--validate/--no-validate', default = True)
-def runcli(spec,parameters,context,workdir,source,schemasource,validate):
-    spec   = capschemas.load(spec,source,'packtivity/packtivity-schema',schemadir = schemasource, validate = validate)
-    parameters = yaml.load(open(parameters)) if parameters else {}
+@click.argument('spec')
+@click.argument('initfiles', nargs = -1)
+def runcli(spec,initfiles,parameter,context,workdir,source,schemasource,validate):
+
+    #in case that spec is a json reference string, we will treat it as such
+    #if it's just a filename, this should not affect it...
+    spec   = capschemas.load(
+            {'$ref':spec},
+            source,
+            'packtivity/packtivity-schema',
+            schemadir = schemasource,
+            validate = validate,
+            initialload = False
+    )
+
+    parameters = getinit_data(initfiles,parameter)
 
 
+    workdir = os.path.realpath(workdir)
     ctx    = yaml.load(open(context)) if context else {}
     if 'readwrite' not in ctx:
         ctx['readwrite'] = [workdir]

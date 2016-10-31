@@ -197,7 +197,7 @@ def docker_run_cmd(fullest_command,log,context,nametag):
             log.debug('moving on from run')
     except subprocess.CalledProcessError as exc:
         log.exception('subprocess failed. code: %s,  command %s',exc.returncode,exc.cmd)
-        raise RuntimeError('failed docker subprocess in docker_enc_handler.')
+        raise RuntimeError('failed docker run subprocess in docker_enc_handler.')
     except:
         log.exception("Unexpected error: %s",sys.exc_info())
         raise
