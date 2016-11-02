@@ -7,7 +7,6 @@ import capschemas
 import logging
 
 log = logging.getLogger(__name__)
-logging.basicConfig(level = logging.INFO)
 
 #stolen from yadage
 def finalize_value(value,context):
@@ -48,10 +47,12 @@ def getinit_data(initfiles,parameters):
 @click.option('-w','--workdir', default = os.getcwd())
 @click.option('-s','--source', default = os.getcwd())
 @click.option('-o','--schemasource', default = capschemas.schemadir)
+@click.option('-v','--verbosity', default = 'INFO')
 @click.option('--validate/--no-validate', default = True)
 @click.argument('spec')
 @click.argument('initfiles', nargs = -1)
-def runcli(spec,initfiles,parameter,context,workdir,source,schemasource,validate):
+def runcli(spec,initfiles,parameter,context,workdir,source,schemasource,validate,verbosity):
+    logging.basicConfig(level = getattr(logging,verbosity))
 
     #in case that spec is a json reference string, we will treat it as such
     #if it's just a filename, this should not affect it...
