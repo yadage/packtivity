@@ -41,29 +41,33 @@ def getinit_data(initfiles,parameters):
         initdata[key]=yaml.load(value)
     return initdata
 
-@click.command()
-@click.option('--parameter', '-p', multiple=True)
-@click.option('-c','--context', default = None)
-@click.option('-w','--workdir', default = os.getcwd())
-@click.option('-s','--source', default = os.getcwd())
-@click.option('-o','--schemasource', default = capschemas.schemadir)
-@click.option('-v','--verbosity', default = 'INFO')
-@click.option('--validate/--no-validate', default = True)
-@click.argument('spec')
-@click.argument('initfiles', nargs = -1)
-def runcli(spec,initfiles,parameter,context,workdir,source,schemasource,validate,verbosity):
-    logging.basicConfig(level = getattr(logging,verbosity))
-
+def load_pack(spec,toplevel,schemasource,validate):
     #in case that spec is a json reference string, we will treat it as such
     #if it's just a filename, this should not affect it...
     spec   = capschemas.load(
             {'$ref':spec},
-            source,
+            toplevel,
             'packtivity/packtivity-schema',
             schemadir = schemasource,
             validate = validate,
             initialload = False
     )
+    return spec
+
+@click.command()
+@click.option('--parameter', '-p', multiple=True)
+@click.option('-c','--context', default = None)
+@click.option('-w','--workdir', default = os.getcwd())
+@click.option('-t','--toplevel', default = os.getcwd())
+@click.option('-s','--schemasource', default = capschemas.schemadir)
+@click.option('-v','--verbosity', default = 'INFO')
+@click.option('--validate/--no-validate', default = True)
+@click.argument('spec')
+@click.argument('initfiles', nargs = -1)
+def runcli(spec,initfiles,parameter,context,workdir,toplevel,schemasource,validate,verbosity):
+    logging.basicConfig(level = getattr(logging,verbosity))
+
+    spec = load_pack(spec,toplevel,schemasource,validate)
 
     parameters = getinit_data(initfiles,parameter)
 
@@ -94,13 +98,13 @@ def runcli(spec,initfiles,parameter,context,workdir,source,schemasource,validate
 
 @click.command()
 @click.argument('spec')
-@click.option('-s','--source', default = os.getcwd())
+@click.option('-t','--toplevel', default = os.getcwd())
 @click.option('-c','--schemasource', default = capschemas.schemadir)
 @click.option('-n','--schemaname', default = 'packtivity/packtivity-schema')
-def validatecli(spec,source,schemasource,schemaname):
+def validatecli(spec,toplevel,schemasource,schemaname):
     try:
-        spec   = capschemas.load(spec,source,schemaname, schemadir = schemasource)
+        spec = load_pack(spec,toplevel,schemasource,validate = True)
     except jsonschema.exceptions.ValidationError as e:
         click.echo(e)
-        raise click.ClickException(click.style('not valid',fg = 'red'))
-    click.secho('valid',fg = 'green')
+        raise click.ClickException(click.style('packtivity definition not valid',fg = 'red'))
+    click.secho('packtivity definition is valid',fg = 'green')
