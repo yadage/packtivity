@@ -1,7 +1,6 @@
 import itertools
 import os
 import shutil
-import packtivity.utils as utils
 
 def make_new_context(name,oldcontext = None, subdir = True):
     '''
