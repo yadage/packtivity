@@ -1,6 +1,7 @@
 import itertools
 import os
 import shutil
+import packtivity.utils as utils
 
 def make_new_context(name,oldcontext = None, subdir = True):
     '''
@@ -19,6 +20,7 @@ def make_new_context(name,oldcontext = None, subdir = True):
         new_readwrite = os.path.abspath(name)
     else:
         new_readwrite = '{}/{}'.format(oldcontext['readwrite'][0],name) if subdir else oldcontext['readwrite'][0]
+    utils.mkdir_p(new_readwrite)
     newcontext = {
         'nametag':name.replace('/','_'), #replace in case name is nested path
     }
