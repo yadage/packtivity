@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 setup(
   name = 'packtivity',
-  version = '0.4.10',
+  version = '0.4.11',
   description = 'packtivity - general purpose schema + bindings for PROV activities',
   url = '',
   author = 'Lukas Heinrich',
