@@ -207,6 +207,9 @@ def docker_run_cmd(fullest_command,log,context,nametag):
 
 @environment('docker-encapsulated')
 def docker_enc_handler(environment,context,job):
+    for rw in context['readwrite']:
+        utils.mkdir_p(rw)
+
     nametag = context['nametag']
     log  = logging.getLogger('step_logger_{}'.format(nametag))
     # log.setLevel(logging.DEBUG)

@@ -13,6 +13,15 @@ def process_attr_pub_handler(publisher,attributes,context):
         outputs[k] = attributes[v]
     return outputs
 
+@publisher('interpolated-pub')
+def interpolated_pub_handler(publisher,attributes,context):
+    forinterp = attributes.copy()
+    forinterp.update(workdir = context['readwrite'][0])
+    result = publisher['publish'].copy()
+    for k,v in  result.iteritems():
+        result[k] = v.format(**forinterp)
+    return result
+
 @publisher('fromyaml-pub')
 def fromyaml_pub_handler(publisher,attributes,context):
     workdir  = context['readwrite'][0]
