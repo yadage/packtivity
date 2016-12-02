@@ -15,7 +15,6 @@ def make_new_context(name,oldcontext = None, subdir = True):
     else the same readwrite/readonly configuration as the parent context is used
 
     '''
-
     if oldcontext is None:
         new_readwrite = os.path.abspath(name)
     else:

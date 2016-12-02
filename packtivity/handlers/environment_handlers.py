@@ -18,7 +18,7 @@ def sourcepath(path):
     else:
         return path
 
-def prepare_docker(context,do_cvmfs,do_grid,log):
+def prepare_docker(context,do_cvmfs,do_auth,log):
     nametag = context['nametag']
     metadir  = context['metadir']
     readwrites  = context['readwrite']
@@ -34,12 +34,12 @@ def prepare_docker(context,do_cvmfs,do_grid,log):
         if 'PACKTIVITY_CVMFS_LOCATION' not in os.environ:
             docker_mod+=' -v /cvmfs:/cvmfs'
         else:
-            docker_mod+=' -v {}:/cvmfs'.format(os.environ['YADAGE_CVMFS_LOCATION'])
-    if do_grid:
+            docker_mod+=' -v {}:/cvmfs'.format(os.environ['PACKTIVITY_CVMFS_LOCATION'])
+    if do_auth:
         if 'PACKTIVITY_AUTH_LOCATION' not in os.environ:
             docker_mod+=' -v /home/recast/recast_auth:/recast_auth'
         else:
-            docker_mod+=' -v {}:/recast_auth'.format(os.environ['YADAGE_AUTH_LOCATION'])
+            docker_mod+=' -v {}:/recast_auth'.format(os.environ['PACKTIVITY_AUTH_LOCATION'])
 
     cidfile = '{}/{}.cid'.format(metadir,nametag)
 
@@ -65,12 +65,12 @@ resources: {resources}
     log.debug(report)
 
     do_cvmfs = 'CVMFS' in environment['resources']
-    do_grid  = 'GRIDProxy'  in environment['resources']
-    log.debug('dogrid: %s do_cvmfs: %s',do_grid,do_cvmfs)
+    do_auth  = ('GRIDProxy'  in environment['resources']) or ('KRB5Auth' in environment['resources'])
+    log.debug('do_auth: %s do_cvmfs: %s',do_auth,do_cvmfs)
 
 
 
-    docker_mod = prepare_docker(context,do_cvmfs,do_grid,log)
+    docker_mod = prepare_docker(context,do_cvmfs,do_auth,log)
     return docker_mod
 
 def run_docker_with_script(context,environment,job,log):
@@ -209,10 +209,17 @@ def docker_run_cmd(fullest_command,log,context,nametag):
 def docker_enc_handler(environment,context,job):
     nametag = context['nametag']
     log  = logging.getLogger('step_logger_{}'.format(nametag))
-    # log.setLevel(logging.DEBUG)
+    log.setLevel(logging.DEBUG)
+
+    log.propagate = False
+    fh  = logging.StreamHandler()
+    fh.setLevel(logging.INFO)
+    log.addHandler(fh)
+
     metadir  = '{}/_packtivity'.format(context['readwrite'][0])
     context['metadir'] = metadir
-    log.debug('creating metadirectory %s if necessary: %s',metadir,os.path.exists(metadir))
+
+    log.info('creating metadirectory %s if necessary: %s',metadir,os.path.exists(metadir))
     utils.mkdir_p(metadir)
 
     logname = '{}/{}.step.log'.format(metadir,nametag)
