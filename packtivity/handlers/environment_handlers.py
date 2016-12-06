@@ -272,6 +272,7 @@ def localproc_env(environment,context,job):
     log.info('running local command %s',job['command'])
     try:
         log.info('changing to workdirectory %s',workdir)
+        utils.mkdir_p(workdir)
         os.chdir(workdir)
         subprocess.check_call(job['command'], shell = True)
     except:
