@@ -3,9 +3,9 @@ import errno
 
 def handler_decorator():
     handlers = {}
-    def decorator(name):
+    def decorator(name, implementation = 'default'):
         def wrap(func):
-            handlers[name] = func
+            handlers.setdefault(name,{})[implementation] = func
         return wrap
     return handlers,decorator
 
