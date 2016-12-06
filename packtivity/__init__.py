@@ -18,7 +18,7 @@ def publish(publisher,attributes,context, pack_config):
     pub_type   = publisher['publisher_type']
     impl = pack_config.get_impl('publisher',pub_type)
     from handlers.publisher_handlers import handlers as pub_handlers
-    handler = pub_handlers[pub_type][pack_config.get_impl('publisher',pub_type)]
+    handler = pub_handlers[pub_type][impl]
     return handler(publisher,attributes,context)
 
 def build_job(process,attributes,pack_config):
