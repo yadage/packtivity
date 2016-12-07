@@ -54,7 +54,7 @@ def prepublish(step,attributes,context,config = None):
 class packtivity_callable(object):
     def __init__(self,step,attributes,context, config = None):
         '''instantiate packtivity object (a callable with fixed parameters)'''
-        self.config = config or packconfig()
+        self.config = packconfig(**config) or packconfig()
         self.step = step
         self.attributes = attributes
         self.context = context
