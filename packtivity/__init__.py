@@ -42,13 +42,13 @@ def run_in_env(environment,job,context,pack_config):
     handler = env_handlers[env_type][impl]
     return handler(environment,context,job)
 
-def prepublish(step,attributes,context,config = None):
+def prepublish(step,attributes,context,pack_config = packconfig()):
     '''
     attempts to prepublish output data, returns None if not possible
     '''
     pub = step['publisher']
     if pub['publisher_type'] in ['frompar-pub','constant-pub']:
-        return publish(pub,attributes,context,config or packconfig())
+        return publish(pub,attributes,context,pack_config)
     return None
 
 class packtivity_callable(object):
