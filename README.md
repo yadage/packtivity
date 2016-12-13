@@ -72,3 +72,11 @@ You can replacing the `--asyncwait` with `--async` flag in order to get a JSONab
 And at a later point in time you can check via:
 
     packtivity-checkproxy proxy.json
+
+## External Backends
+
+Users can implement their own backends to handle the JSON documents describing the packtivities. It can be enabled
+by using the `fromenv` backend and setting an environment variable specifying the module holding the backend and proxy
+classes. The format of the environment variable is `module:backendclass:proxyclass`. E.g.:
+
+    export PACKTIVITY_ASYNCBACKEND="externalbackend:ExternalBackend:ExternalProxy"

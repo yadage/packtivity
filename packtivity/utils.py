@@ -26,10 +26,17 @@ def proxy_from_json(jsondata, best_effort_backend = True):
     if jsondata['proxyname'] == 'CeleryProxy':
         from asyncbackends import CeleryProxy
         proxy = CeleryProxy.fromJSON(jsondata)
-        if best_effort_backend:
-            _, backend = backend_from_string('celery')
-            return proxy, backend
-        return proxy
+        _, backend = backend_from_string('celery')
+    if 'PACKTIVITY_ASYNCBACKEND' in os.environ:
+        import importlib
+        module, _, proxyclass = os.environ['PACKTIVITY_ASYNCBACKEND'].split(':')
+        module = importlib.import_module(module)
+        proxyclass = getattr(module,proxyclass)
+        proxy = proxyclass.fromJSON(jsondata)
+        _, backend = backend_from_string('fromenv')
+    if best_effort_backend:
+        return proxy, backend
+    return proxy
 
 def backend_from_string(backendstring):
     '''
@@ -45,9 +52,15 @@ def backend_from_string(backendstring):
         _,poolsize = backendstring.split(':')
         backend = asyncbackends.MultiProcBackend(poolsize = poolsize)
         return is_async, backend
-    if backendstring.startswith('ipcluster'):
+    if  backendstring == 'ipcluster':
         backend = asyncbackends.IPythonParallelBackend()
         return is_async, backend
-    if backendstring.startswith('celery'):
+    if backendstring == 'celery':
         backend = asyncbackends.CeleryBackend()
         return is_async, backend
+    if backendstring == 'fromenv':
+        import importlib
+        module, backend, _ = os.environ['PACKTIVITY_ASYNCBACKEND'].split(':')
+        module = importlib.import_module(module)
+        backendclass = getattr(module,backend)
+        return is_async, backendclass()
