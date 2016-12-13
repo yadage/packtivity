@@ -1,7 +1,7 @@
 import time
 import logging
 import capschemas
-import syncbackend
+import syncbackends
 from datetime import datetime
 
 log = logging.getLogger(__name__)
