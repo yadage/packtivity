@@ -20,7 +20,7 @@ def load_pack(spec,toplevel,schemasource = capschemas.schemadir,validate = True)
     return spec
 
 def prepublish_default(spec,parameters,context):
-    backend = syncbackend.defaultsyncbackend()
+    backend = syncbackends.defaultsyncbackend()
     return backend.prepublish(spec,parameters,context)
 
 class pack_object(object):
@@ -28,7 +28,7 @@ class pack_object(object):
         self.spec = spec
 
     def __call__(self, parameters, context,
-                syncbackend = syncbackend.defaultsyncbackend(),
+                syncbackend = syncbackends.defaultsyncbackend(),
                 asyncbackend = None, asyncwait = False,
                 waitperiod = 0.01, timeout = 43200 ):   #default timeout is 12h
 
