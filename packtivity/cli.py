@@ -5,6 +5,8 @@ import jsonschema
 import yaml
 import capschemas
 import logging
+import json
+import packtivity.utils as utils
 
 log = logging.getLogger(__name__)
 
@@ -56,45 +58,53 @@ def load_pack(spec,toplevel,schemasource,validate):
 
 @click.command()
 @click.option('--parameter', '-p', multiple=True)
-@click.option('-c','--context', default = None)
-@click.option('-w','--workdir', default = os.getcwd())
+@click.option('-r', '--read', multiple=True, default = [])
+@click.option('-w', '--write', multiple=True, default = [os.curdir])
+@click.option('--contextualize/--no-contextualize', default = True)
+@click.option('-c','--context', default = '')
 @click.option('-t','--toplevel', default = os.getcwd())
 @click.option('-s','--schemasource', default = capschemas.schemadir)
-@click.option('-v','--verbosity', default = 'INFO')
+@click.option('-v','--verbosity', default = 'ERROR')
 @click.option('--validate/--no-validate', default = True)
+@click.option('--asyncwait/--async', default = True)
+@click.option('--backend',default = 'defaultsync')
 @click.argument('spec')
-@click.argument('initfiles', nargs = -1)
-def runcli(spec,initfiles,parameter,context,workdir,toplevel,schemasource,validate,verbosity):
+@click.argument('parfiles', nargs = -1)
+def runcli(spec,parfiles,context,parameter,read,write,toplevel,schemasource,asyncwait,contextualize,validate,verbosity,backend):
     logging.basicConfig(level = getattr(logging,verbosity))
 
     spec = load_pack(spec,toplevel,schemasource,validate)
 
-    parameters = getinit_data(initfiles,parameter)
+    parameters = getinit_data(parfiles,parameter)
 
+    context    = yaml.load(open(context)) if context else {}
 
-    workdir = os.path.realpath(workdir)
-    ctx    = yaml.load(open(context)) if context else {}
-    if 'readwrite' not in ctx:
-        ctx['readwrite'] = [workdir]
-    else:
-        ctx['readwrite'] += [workdir]
-    if 'readonly' not in ctx:
-        ctx['readonly'] = []
+    context.setdefault('readwrite',[]).extend(map(os.path.realpath,write))
+    context.setdefault('readonly',[]).extend(map(os.path.realpath,read))
 
-    if 'nametag' not in ctx:
-        ctx['nametag'] = 'pack'
+    if contextualize:
+        parameters = finalize_input(parameters,context)
 
-    #interpolate parameters out of courtesy
-    parameters = finalize_input(parameters,ctx)
+    is_sync, backend = utils.backend_from_string(backend)
+    backend_kwargs = {
+        'syncbackend': backend
+    } if is_sync else {
+        'asyncbackend':backend,
+        'asyncwait': asyncwait
+    }
 
-    p = packtivity.packtivity_callable(spec,parameters,ctx)
-    prepub = p.published_data is not None
+    prepub = backend.prepublish(spec,parameters,context)
     if prepub:
-        click.echo(str(p.published_data)+(' (prepublished)' if prepub else ''))
+        click.echo(str(prepub)+(' (prepublished)'))
 
-    result = p()
-    if not prepub:
-        click.echo(result)
+    pack = packtivity.pack_object(spec)
+
+    result = pack(parameters,context,**backend_kwargs)
+    if not is_sync and not asyncwait:
+        print 'this is a proxy'
+        click.secho('proxy-json {}'.format(json.dumps(result.json())))
+    else:
+        click.echo(str(result)+(' (post-run)' if prepub else ''))
 
 @click.command()
 @click.argument('spec')
@@ -108,3 +118,19 @@ def validatecli(spec,toplevel,schemasource,schemaname):
         click.echo(e)
         raise click.ClickException(click.style('packtivity definition not valid',fg = 'red'))
     click.secho('packtivity definition is valid',fg = 'green')
+
+@click.command()
+@click.argument('jsonfile')
+def checkproxy(jsonfile):
+    proxydata = json.load(open(jsonfile))
+    proxy, backend = utils.proxy_from_json(proxydata, best_effort_backend = True)
+
+    ready = backend.ready(proxy)
+
+    click.secho('ready: {}'.format(ready))
+    if ready:
+        successful = backend.successful(proxy)
+        click.secho('successful: {}'.format(successful))
+        if successful:
+            result = backend.result(proxy)
+            click.secho('result: {}'.format(json.dumps(result)))

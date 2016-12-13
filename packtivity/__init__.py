@@ -1,80 +1,48 @@
+import time
 import logging
-import pkg_resources
+import capschemas
+import syncbackend
+from datetime import datetime
 
 log = logging.getLogger(__name__)
-schemadir = pkg_resources.resource_filename('packtivity','schema')
 
-class packconfig(object):
-    def __init__(self,**kwargs):
-        self.handler_selection = kwargs
+def load_pack(spec,toplevel,schemasource = capschemas.schemadir,validate = True):
+    #in case that spec is a json reference string, we will treat it as such
+    #if it's just a filename, this should not affect it...
+    spec   = capschemas.load(
+            {'$ref':spec},
+            toplevel,
+            'packtivity/packtivity-schema',
+            schemadir = schemasource,
+            validate = validate,
+            initialload = False
+    )
+    return spec
 
-    def get_impl(self,category,handler):
-        try:
-            return self.handler_selection[category][handler]
-        except KeyError:
-            return 'default'
+def prepublish_default(spec,parameters,context):
+    backend = syncbackend.defaultsyncbackend()
+    return backend.prepublish(spec,parameters,context)
 
-def publish(publisher,attributes,context, pack_config):
-    pub_type   = publisher['publisher_type']
-    impl = pack_config.get_impl('publisher',pub_type)
-    from handlers.publisher_handlers import handlers as pub_handlers
-    handler = pub_handlers[pub_type][impl]
-    return handler(publisher,attributes,context)
+class pack_object(object):
+    def __init__(self,spec):
+        self.spec = spec
 
-def build_job(process,attributes,pack_config):
-    '''
-    takes a process description and builds a job out of it using a handler.
-    '''
-    proc_type =  process['process_type']
-    impl = pack_config.get_impl('process',proc_type)
-    from handlers.process_handlers import handlers as proc_handlers
-    handler = proc_handlers[proc_type][impl]
-    return handler(process,attributes)
+    def __call__(self, parameters, context,
+                syncbackend = syncbackend.defaultsyncbackend(),
+                asyncbackend = None, asyncwait = False,
+                waitperiod = 0.01, timeout = 43200 ):   #default timeout is 12h
 
-def run_in_env(environment,job,context,pack_config):
-    '''
-    takes a built job and runs it blockingly in the environment with
-    the state context attached
-    '''
-    env_type = environment['environment_type']
-    impl = pack_config.get_impl('environment',env_type)
-    from handlers.environment_handlers import handlers as env_handlers
-    handler = env_handlers[env_type][impl]
-    return handler(environment,context,job)
-
-def prepublish(step,attributes,context,pack_config = packconfig()):
-    '''
-    attempts to prepublish output data, returns None if not possible
-    '''
-    pub = step['publisher']
-    if pub['publisher_type'] in ['frompar-pub','constant-pub']:
-        return publish(pub,attributes,context,pack_config)
-    return None
-
-class packtivity_callable(object):
-    def __init__(self,step,attributes,context, config = None):
-        '''instantiate packtivity object (a callable with fixed parameters)'''
-        self.config = packconfig(**config) if config else packconfig()
-        self.step = step
-        self.attributes = attributes
-        self.context = context
-        self.published_data = prepublish(self.step,self.attributes,self.context,self.config)
-
-    def __call__(self):
-        nametag = self.context['nametag']
-        log = logging.getLogger('step_logger_{}'.format(nametag))
-        try:
-            job = build_job(self.step['process'],self.attributes,self.config)
-            run_in_env(self.step['environment'],job,self.context,self.config)
-            if not self.published_data:
-                self.published_data = publish(self.step['publisher'],self.attributes,self.context,self.config)
-            log.debug('%s result: %s',nametag,self.published_data)
-            return self.published_data
-        except:
-            log.exception('%s raised exception',nametag)
-            raise
-
-def packtivity(step,attributes,context):
-    ''''simple blocking packtivity'''
-    p = packtivity_callable(step,attributes,context)
-    return p()
+        if syncbackend and not asyncbackend:
+            return syncbackend.run(self.spec,parameters,context)
+        elif asyncbackend:
+            submit_time = datetime.fromtimestamp(time.time())
+            proxy = asyncbackend.submit(self.spec, parameters, context)
+            if not asyncwait:
+                return proxy
+            while True:
+                if asyncbackend.ready(proxy):
+                    return asyncbackend.result(proxy)
+                timestamp = datetime.fromtimestamp(time.time())
+                if (timestamp - submit_time).seconds > timeout:
+                    raise RuntimeError('Timeout!')
+                time.sleep(waitperiod)

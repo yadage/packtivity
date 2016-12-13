@@ -226,7 +226,7 @@ def docker_enc_handler(environment,context,job):
     metadir  = '{}/_packtivity'.format(context['readwrite'][0])
     context['metadir'] = metadir
 
-    log.info('creating metadirectory %s if necessary: %s',metadir,os.path.exists(metadir))
+    log.info('creating metadirectory %s if necessary. exists? : %s',metadir,os.path.exists(metadir))
     utils.mkdir_p(metadir)
 
     # Now that we have  place to store meta information we put a file based logger in place
@@ -265,10 +265,10 @@ def noop_env(environment,context,job):
 
 @environment('localproc-env')
 def localproc_env(environment,context,job):
-    olddir = os.path.realpath(os.curdir)
-    workdir = context['readwrite'][0]
     nametag = context['nametag']
     log  = logging.getLogger('step_logger_{}'.format(nametag))
+    olddir = os.path.realpath(os.curdir)
+    workdir = context['readwrite'][0]
     log.info('running local command %s',job['command'])
     try:
         log.info('changing to workdirectory %s',workdir)
@@ -279,6 +279,7 @@ def localproc_env(environment,context,job):
         log.exception('local job failed. job: %s',job)
     finally:
         log.info('changing back to original directory %s',olddir)
+        os.chdir(olddir)
 
 @environment('manual-env')
 def manual_env(environment,context,job):
