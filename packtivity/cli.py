@@ -67,10 +67,11 @@ def load_pack(spec,toplevel,schemasource,validate):
 @click.option('-v','--verbosity', default = 'ERROR')
 @click.option('--validate/--no-validate', default = True)
 @click.option('--asyncwait/--async', default = True)
-@click.option('--backend',default = 'defaultsync')
+@click.option('-b','--backend',default = 'defaultsync')
+@click.option('-x','--proxyfile',default = 'proxy.json')
 @click.argument('spec')
 @click.argument('parfiles', nargs = -1)
-def runcli(spec,parfiles,context,parameter,read,write,toplevel,schemasource,asyncwait,contextualize,validate,verbosity,backend):
+def runcli(spec,parfiles,context,parameter,read,write,toplevel,schemasource,asyncwait,contextualize,validate,verbosity,backend,proxyfile):
     logging.basicConfig(level = getattr(logging,verbosity))
 
     spec = load_pack(spec,toplevel,schemasource,validate)
@@ -99,10 +100,15 @@ def runcli(spec,parfiles,context,parameter,read,write,toplevel,schemasource,asyn
 
     pack = packtivity.pack_object(spec)
 
+
+    print 'calling pack with backend kwargs', backend_kwargs
     result = pack(parameters,context,**backend_kwargs)
+
     if not is_sync and not asyncwait:
         print 'this is a proxy'
         click.secho('proxy-json {}'.format(json.dumps(result.json())))
+        with open(proxyfile,'w') as p:
+            json.dump(result.json(),p)
     else:
         click.echo(str(result)+(' (post-run)' if prepub else ''))
 

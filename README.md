@@ -43,3 +43,30 @@ You can run the packtivity in a synchronous way by specifying the spec (can poin
       -p outputlhco="'{workdir}/output.lhco'" \
       -p delphes_card=delphes/cards/delphes_card_ATLAS.tcl \
       --read pythia --write outdir
+
+## Asynchronous Backends
+
+In order to facilitate usage of distributed resources, a number of Asynchronous
+backends can be specified. Here is an example for IPython Parallel clusters
+
+    packtivity-run -b ipcluster --asyncwait \
+    -t from-github/phenochain delphes.yml \
+    -p inputhepmc="$PWD/pythia/output.hepmc" \
+    -p outputroot="'{workdir}/output.root'" \
+    -p outputlhco="'{workdir}/output.lhco'" \
+    -p delphes_card=delphes/cards/delphes_card_ATLAS.tcl \
+    --read pythia --write outdir
+
+You can replacing the `--asyncwait` with `--async` flag in order to get a JSONable proxy representation with which to later on check on the job status. By default the proxy information is written to `proxy.json` (customizable via the `-x` flag):
+
+    packtivity-run -b celery --async \
+    -t from-github/phenochain delphes.yml \
+    -p inputhepmc="$PWD/pythia/output.hepmc" \
+    -p outputroot="'{workdir}/output.root'" \
+    -p outputlhco="'{workdir}/output.lhco'" \
+    -p delphes_card=delphes/cards/delphes_card_ATLAS.tcl \
+    --read pythia --write outdir
+
+And at a later point in time you can check via:
+
+    packtivity-checkproxy proxy.json
