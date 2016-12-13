@@ -19,7 +19,7 @@ This package is used by https://github.com/lukasheinrich/yadage to execute the i
 
 ## Example Packtivity spec
 
-This packtivity spec is part of a number of yadage workflow and runs the Delphes detector simulation on a HepMC file and outputs events in the LHCO and ROOT file formats.
+This packtivity spec is part of a number of yadage workflow and runs the Delphes detector simulation on a HepMC file and outputs events in the LHCO and ROOT file formats. This packtivity is (stored in a public location)[https://github.com/lukasheinrich/yadage-workflows/blob/master/phenochain/delphes.yml] from which it can be later retrieved:
 
     process:
       process_type: 'string-interpolated-cmd'
@@ -35,7 +35,7 @@ This packtivity spec is part of a number of yadage workflow and runs the Delphes
 
 ## Usage
 
-    You can run the packtivity in a synchronous way by specifying the spec (can point to GitHub),  all necessary parameters and attaching an external state (via the `--read` and `--write` flags).
+You can run the packtivity in a synchronous way by specifying the spec (can point to GitHub),  all necessary parameters and attaching an external state (via the `--read` and `--write` flags).
 
     packtivity-run -t from-github/phenochain delphes.yml \
       -p inputhepmc="$PWD/pythia/output.hepmc" \
