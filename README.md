@@ -13,7 +13,13 @@ Packtivities define
 * parametrized process descriptions (what programs to run within these environment) and
 * produces human and machine readable outputs (as JSON) of the resulting data fragments.
 
+## Packtivity in Yadage
+
+This package is used by https://github.com/lukasheinrich/yadage to execute the individual steps of yadage workflows.
+
 ## Example Packtivity spec
+
+This packtivity spec is part of a number of yadage workflow and runs the Delphes detector simulation on a HepMC file and outputs events in the LHCO and ROOT file formats.
 
     process:
       process_type: 'string-interpolated-cmd'
@@ -27,6 +33,13 @@ Packtivities define
       environment_type: 'docker-encapsulated'
       image: lukasheinrich/root-delphes
 
-## Packtivity in Yadage
+## Usage
 
-This package is used by https://github.com/lukasheinrich/yadage to execute the individual steps of yadage workflows.
+    You can run the packtivity in a synchronous way by specifying the spec (can point to GitHub),  all necessary parameters and attaching an external state (via the `--read` and `--write` flags).
+
+    packtivity-run -t from-github/phenochain delphes.yml \
+      -p inputhepmc="$PWD/pythia/output.hepmc" \
+      -p outputroot="'{workdir}/output.root'" \
+      -p outputlhco="'{workdir}/output.lhco'" \
+      -p delphes_card=delphes/cards/delphes_card_ATLAS.tcl \
+      --read pythia --write outdir
