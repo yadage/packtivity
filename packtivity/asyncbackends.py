@@ -57,7 +57,7 @@ class MultiProcBackend(PythonCallableAsyncBackend):
         super(MultiProcBackend,self).__init__(packconfig_spec)
         if poolsize == 'auto':
             poolsize = multiprocessing.cpu_count()
-        self.pool = multiprocessing.Pool(poolsize)
+        self.pool = multiprocessing.Pool(int(poolsize))
 
     def submit_callable(self,callable):
         return PacktivityProxyBase(self.pool.apply_async(callable))
