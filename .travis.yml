@@ -14,7 +14,6 @@ script:
   - pyflakes packtivity
   - pip install -e '.[celery]' --process-dependency-links
   - cd tests && pytest && cd ..
-  - cd tests && pytest
   - 'echo "a_parameter: 10" > input.yml'
   - packtivity-run testspacks/noop-test.yml input.yml
   - docker build -t lukasheinrich/packtivity .
