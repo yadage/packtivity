@@ -12,8 +12,8 @@ install:
 
 script:
   - pyflakes packtivity
-  - cd tests && pytest
   - pip install -e . --process-dependency-links
+  - cd tests && pytest
   - 'echo "a_parameter: 10" > input.yml'
   - packtivity-run testspacks/noop-test.yml input.yml
   - docker build -t lukasheinrich/packtivity .
