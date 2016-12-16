@@ -1,3 +1,4 @@
+import pytest
 from packtivity.utils import backend_from_string
 
 def test_multiproc_fixed_ncpu_auto():
@@ -11,3 +12,8 @@ def test_celery():
 
 # def test_ipcluster():
 #     backend_from_string('ipcluster')
+
+
+def test_unknown():
+    with pytest.raises(RuntimeError):
+        backend_from_string('doesnotexist')

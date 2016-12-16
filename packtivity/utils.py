@@ -64,3 +64,4 @@ def backend_from_string(backendstring):
         module = importlib.import_module(module)
         backendclass = getattr(module,backend)
         return is_async, backendclass()
+    raise RuntimeError('Unknown Backend')
