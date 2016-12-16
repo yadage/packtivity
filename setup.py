@@ -20,6 +20,11 @@ setup(
       'psutil',
       'cap-schemas'
   ],
+  extras_require={
+        'celery':  [
+       'celery'
+    ],
+  },
   entry_points = {
       'console_scripts': [
           'packtivity-run=packtivity.cli:runcli',
