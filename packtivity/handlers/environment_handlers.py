@@ -7,6 +7,7 @@ import psutil
 import logging
 import click
 import yaml
+import shlex
 
 handlers,environment = utils.handler_decorator()
 
@@ -100,7 +101,7 @@ def run_docker_with_script(context,environment,job,log):
                     subprocess.check_call('cvmfs_config probe')
             subcmd = 'docker run --rm -i {docker_mod} {image}:{imagetag} sh -c \'{indocker}\' '.format(image = image, imagetag = imagetag, docker_mod = docker_mod, indocker = indocker)
             log.debug('running docker cmd: %s',subcmd)
-            proc = subprocess.Popen(subcmd,shell = True, stdin = subprocess.PIPE, stderr = subprocess.STDOUT, stdout = logfile)
+            proc = subprocess.Popen(shlex.split(subcmd), stdin = subprocess.PIPE, stderr = subprocess.STDOUT, stdout = logfile)
             log.debug('started run subprocess with pid %s. now piping script',proc.pid)
             proc.communicate(script)
             log.debug('docker run subprocess finished. return code: %s',proc.returncode)
@@ -155,7 +156,7 @@ def docker_pull(docker_pull_cmd,log,context,nametag):
     metadir  = context['metadir']
     try:
         with open('{}/{}.pull.log'.format(metadir,nametag),'w') as logfile:
-            proc = subprocess.Popen(docker_pull_cmd,shell = True, stderr = subprocess.STDOUT, stdout = logfile)
+            proc = subprocess.Popen(shlex.split(docker_pull_cmd), stderr = subprocess.STDOUT, stdout = logfile)
             log.debug('started pull subprocess with pid %s. now wait to finish',proc.pid)
             time.sleep(0.5)
             log.debug('process children: %s',[x for x in psutil.Process(proc.pid).children(recursive = True)])
@@ -185,7 +186,7 @@ def docker_run_cmd(fullest_command,log,context,nametag):
         return
     try:
         with open('{}/{}.run.log'.format(metadir,nametag),'w') as logfile:
-            proc = subprocess.Popen(fullest_command,shell = True, stderr = subprocess.STDOUT, stdout = logfile)
+            proc = subprocess.Popen(shlex.split(fullest_command), stderr = subprocess.STDOUT, stdout = logfile)
             log.debug('started run subprocess with pid %s. now wait to finish',proc.pid)
             time.sleep(0.5)
             log.debug('process children: %s',[x for x in psutil.Process(proc.pid).children(recursive = True)])
@@ -275,7 +276,7 @@ def localproc_env(environment,context,job):
         log.info('changing to workdirectory %s',workdir)
         utils.mkdir_p(workdir)
         os.chdir(workdir)
-        subprocess.check_call(job['command'], shell = True)
+        subprocess.check_call(shlex.split(job['command']))
     except:
         log.exception('local job failed. job: %s',job)
     finally:
