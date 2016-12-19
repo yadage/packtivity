@@ -238,8 +238,6 @@ def docker_enc_handler(environment,context,job):
     fh.setFormatter(fmt)
     log.addHandler(fh)
     log.debug('starting log for step: %s',nametag)
-    log.debug('context2: \n %s',context)
-    log.debug('whaaa??')
     if 'PACKTIVITY_DOCKER_NOPULL' not in os.environ:
         log.info('prepare pull')
         docker_pull_cmd = 'docker pull {container}:{tag}'.format(
