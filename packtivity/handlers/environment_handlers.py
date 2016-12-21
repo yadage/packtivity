@@ -99,6 +99,7 @@ def run_docker_with_script(context,environment,job,log):
             if do_cvmfs:
                 if 'PACKTIVITY_WITHIN_DOCKER' not in os.environ:
                     subprocess.check_call('cvmfs_config probe')
+
             subcmd = 'docker run --rm -i {docker_mod} {image}:{imagetag} sh -c \'{indocker}\' '.format(image = image, imagetag = imagetag, docker_mod = docker_mod, indocker = indocker)
             log.debug('running docker cmd: %s',subcmd)
             proc = subprocess.Popen(shlex.split(subcmd), stdin = subprocess.PIPE, stderr = subprocess.STDOUT, stdout = logfile)
@@ -246,6 +247,8 @@ def docker_enc_handler(environment,context,job):
         )
         docker_pull(docker_pull_cmd,log,context,nametag)
 
+    log.info('running job')
+
     if 'command' in job:
         # log.info('running oneliner command')
         docker_run_cmd_str = prepare_full_docker_with_oneliner(context,environment,job['command'],log)
@@ -274,7 +277,9 @@ def localproc_env(environment,context,job):
         log.info('changing to workdirectory %s',workdir)
         utils.mkdir_p(workdir)
         os.chdir(workdir)
-        subprocess.check_call(shlex.split(job['command']))
+        #this is used for testing and we will keep this shell
+        #doesn't make sense to wrap in sh ...
+        subprocess.check_call(job['command'], shell = True)
     except:
         log.exception('local job failed. job: %s',job)
     finally:
