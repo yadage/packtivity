@@ -18,7 +18,7 @@ setup(
       'functools32',
       'click',
       'psutil',
-      'cap-schemas'
+      'yadage-schemas'
   ],
   extras_require={
         'celery':  [

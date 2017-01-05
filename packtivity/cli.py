@@ -3,7 +3,7 @@ import packtivity
 import os
 import jsonschema
 import yaml
-import capschemas
+import yadageschemas
 import logging
 import json
 import packtivity.utils as utils
@@ -46,7 +46,7 @@ def getinit_data(initfiles,parameters):
 def load_pack(spec,toplevel,schemasource,validate):
     #in case that spec is a json reference string, we will treat it as such
     #if it's just a filename, this should not affect it...
-    spec   = capschemas.load(
+    spec   = yadageschemas.load(
             {'$ref':spec},
             toplevel,
             'packtivity/packtivity-schema',
@@ -63,7 +63,7 @@ def load_pack(spec,toplevel,schemasource,validate):
 @click.option('--contextualize/--no-contextualize', default = True)
 @click.option('-c','--context', default = '')
 @click.option('-t','--toplevel', default = os.getcwd())
-@click.option('-s','--schemasource', default = capschemas.schemadir)
+@click.option('-s','--schemasource', default = yadageschemas.schemadir)
 @click.option('-v','--verbosity', default = 'ERROR')
 @click.option('--validate/--no-validate', default = True)
 @click.option('--asyncwait/--async', default = True)
@@ -115,7 +115,7 @@ def runcli(spec,parfiles,context,parameter,read,write,toplevel,schemasource,asyn
 @click.command()
 @click.argument('spec')
 @click.option('-t','--toplevel', default = os.getcwd())
-@click.option('-c','--schemasource', default = capschemas.schemadir)
+@click.option('-c','--schemasource', default = yadageschemas.schemadir)
 @click.option('-n','--schemaname', default = 'packtivity/packtivity-schema')
 def validatecli(spec,toplevel,schemasource,schemaname):
     try:

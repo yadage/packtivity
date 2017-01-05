@@ -2,7 +2,7 @@ import os
 import pytest
 from jsonschema.exceptions import ValidationError
 from packtivity.cli import load_pack
-from capschemas import schemadir
+from yadageschemas import schemadir
 
 
 def test_cliload_valid():
