@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 setup(
   name = 'packtivity',
-  version = '0.5.1',
+  version = '0.5.4',
   description = 'packtivity - general purpose schema + bindings for PROV activities',
   url = '',
   author = 'Lukas Heinrich',
@@ -18,7 +18,7 @@ setup(
       'functools32',
       'click',
       'psutil',
-      'cap-schemas'
+      'yadage-schemas'
   ],
   extras_require={
         'celery':  [

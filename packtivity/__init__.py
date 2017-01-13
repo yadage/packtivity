@@ -1,15 +1,15 @@
 import time
 import logging
-import capschemas
+import yadageschemas
 import syncbackends
 from datetime import datetime
 
 log = logging.getLogger(__name__)
 
-def load_pack(spec,toplevel,schemasource = capschemas.schemadir,validate = True):
+def load_pack(spec,toplevel,schemasource = yadageschemas.schemadir,validate = True):
     #in case that spec is a json reference string, we will treat it as such
     #if it's just a filename, this should not affect it...
-    spec   = capschemas.load(
+    spec   = yadageschemas.load(
             {'$ref':spec},
             toplevel,
             'packtivity/packtivity-schema',
