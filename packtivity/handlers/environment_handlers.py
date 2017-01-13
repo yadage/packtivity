@@ -231,13 +231,28 @@ def docker_run_cmd(fullest_command,log,context,nametag):
         log.debug('finally for run')
 
 
-@environment('umbrella')
-def umbrella_enc_handler(environment,context,job):
-    spec_url = environment['spec_url']
-    work_dir = context['readwrite']
+def remove_docker_image(image, log_filename, logger):
+    with open(log_filename, 'w') as logfile:
+        try:
+            p = subprocess.Popen(
+                ["docker", "rmi", image],
+                stdout=logfile,
+                stderr=subprocess.STDOUT
+            )
+            logger.debug("docker rmi process PID: %s" % p.pid)
+            p.communicate()
+            returncode = p.returncode
+            if returncode != 0:
+                logger.error("Docker execution failed, return code %s" % returncode)
+                raise RuntimeError("Docker execution failed, return code %s" % returncode)
+            logger.debug("docker rmi command completed successfully")
+        except (OSError, IOError) as e:
+            logger.exception("subprocess failed: %s", sys.exc_info())
+            raise RuntimeError("docker rmi execution failed, subprocess error")
 
 @environment('tarball')
-def tarball_handler(environment,context,job):
+def tarball_handler(environment, context, job):
+
     url = environment['url']
     image = environment['image']
     nametag = context['nametag']
@@ -293,13 +308,16 @@ def tarball_handler(environment,context,job):
 
     if 'command' in job:
         # log.info('running oneliner command')
-        docker_run_cmd_str = prepare_full_docker_with_oneliner(context,environment,job['command'], log)
+        docker_run_cmd_str = prepare_full_docker_with_oneliner(context, environment, job['command'], log)
         docker_run_cmd(docker_run_cmd_str, log, context, nametag)
         log.debug('reached return for docker_enc_handler')
     elif 'script' in job:
-        run_docker_with_script(context,environment,job,log)
+        run_docker_with_script(context,environment, job, log)
     else:
+        remove_docker_image(image=image, log_filename=os.path.join(metadir, '%s.docker.rmi.log' % nametag), logger=log)
         raise RuntimeError('do not know yet how to run this...')
+    remove_docker_image(image=image, log_filename=os.path.join(metadir, '%s.docker.rmi.log' % nametag), logger=log)
+
 
 @environment('docker-encapsulated')
 def docker_enc_handler(environment,context,job):
