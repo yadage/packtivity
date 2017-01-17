@@ -74,7 +74,7 @@ class MultiProcBackend(PythonCallableAsyncBackend):
 
     def fail_info(self,resultproxy):
         try:
-            self.result(resultproxy.proxy)
+            self.result(resultproxy)
         except:
             t,v,tb =    sys.exc_info()
             traceback.print_tb(tb)
@@ -159,7 +159,7 @@ try:
 
         def fail_info(self,resultproxy):
             try:
-                self.result(resultproxy.proxy)
+                self.result(resultproxy)
             except:
                 return sys.exc_info()
 except ImportError:
