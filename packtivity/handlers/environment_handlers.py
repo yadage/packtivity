@@ -19,6 +19,14 @@ def sourcepath(path):
     else:
         return path
 
+def cvmfs_from_volume_plugin(command_line,cvmfs_repo = 'atlas.cern.ch'):
+    command_line += '--security-opt label:disable --volume-driver cvmfs -v {cvmfs_repo}:/cvmfs/{cvmfs_repo}'.format(cvmfs_repo = cvmfs_repo)
+    return command_line
+
+def cvmfs_from_external_mount(command_line):
+    command_line+=' -v {}:/cvmfs'.format(os.environ.get('PACKTIVITY_CVMFS_LOCATION','/cvmfs'))
+    return command_line
+
 def prepare_docker(context,do_cvmfs,do_auth,log):
     nametag = context['nametag']
     metadir  = context['metadir']
@@ -32,10 +40,14 @@ def prepare_docker(context,do_cvmfs,do_auth,log):
         docker_mod += ' -v {}:{}:ro'.format(sourcepath(ro),ro)
 
     if do_cvmfs:
-        if 'PACKTIVITY_CVMFS_LOCATION' not in os.environ:
-            docker_mod+=' -v /cvmfs:/cvmfs'
+        cvmfs_source = os.environ.get('PACKTIVITY_CVMFS_SOURCE','external')
+        if cvmfs_source == 'external':
+            docker_mod = cvmfs_from_external_mount(docker_mod)
+        elif cvmfs_source == 'voldriver':
+            docker_mod = cvmfs_from_volume_plugin(docker_mod)
         else:
-            docker_mod+=' -v {}:/cvmfs'.format(os.environ['PACKTIVITY_CVMFS_LOCATION'])
+            raise RuntimeError('unknown CVMFS location requested')
+
     if do_auth:
         if 'PACKTIVITY_AUTH_LOCATION' not in os.environ:
             docker_mod+=' -v /home/recast/recast_auth:/recast_auth'
