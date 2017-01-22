@@ -20,7 +20,7 @@ def sourcepath(path):
         return path
 
 def cvmfs_from_volume_plugin(command_line,cvmfs_repo = 'atlas.cern.ch'):
-    command_line += '--security-opt label:disable --volume-driver cvmfs -v {cvmfs_repo}:/cvmfs/{cvmfs_repo}'.format(cvmfs_repo = cvmfs_repo)
+    command_line += ' --security-opt label:disable --volume-driver cvmfs -v {cvmfs_repo}:/cvmfs/{cvmfs_repo}'.format(cvmfs_repo = cvmfs_repo)
     return command_line
 
 def cvmfs_from_external_mount(command_line):
