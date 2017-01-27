@@ -3,23 +3,36 @@ import packtivity.utils as utils
 import glob
 import json
 import click
+import jsonpointer
+import jq
+import copy
+import logging
+
+log = logging.getLogger(__name__)
 
 handlers, publisher = utils.handler_decorator()
 
+def leaf_iterator(jsonable):
+    allleafs = jq.jq('leaf_paths').transform(jsonable, multiple_output = True)
+    leafpointers = [jsonpointer.JsonPointer.from_parts(x) for x in allleafs]
+    for x in leafpointers:
+        yield x,x.get(jsonable)
+
 @publisher('frompar-pub')
 def process_attr_pub_handler(publisher,attributes,context):
-    outputs = {}
-    for k,v in publisher['outputmap'].iteritems():
-        outputs[k] = attributes[v]
+    outputs = copy.deepcopy(publisher['outputmap'])
+    for path,value in leaf_iterator(publisher['outputmap']):
+        actualval = attributes[value]
+        path.set(outputs,actualval)
     return outputs
 
 @publisher('interpolated-pub')
 def interpolated_pub_handler(publisher,attributes,context):
     forinterp = attributes.copy()
     forinterp.update(workdir = context['readwrite'][0])
-    result = publisher['publish'].copy()
-    for k,v in  result.iteritems():
-        result[k] = v.format(**forinterp)
+    result = copy.deepcopy(publisher['publish'])
+    for path,value in leaf_iterator(publisher['publish']):
+        path.set(result,value.format(**forinterp))
     return result
 
 @publisher('fromyaml-pub')

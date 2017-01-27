@@ -17,11 +17,13 @@ setup(
       'pyyaml',
       'functools32',
       'click',
+      'jq',
+      'jsonpointer',
       'psutil',
       'yadage-schemas'
   ],
   extras_require={
-        'celery':  [
+   'celery':  [
        'celery'
     ],
   },
