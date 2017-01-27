@@ -3,6 +3,12 @@ import os
 import shutil
 import packtivity.utils as utils
 
+def merge_contexts(lhs,rhs):
+    return {
+        'readonly': lhs.get('readonly',[]) + rhs.get('readonly',[]),
+        'readwrite': lhs.get('readwrite',[]) + rhs.get('readwrite',[])
+    }
+
 def make_new_context(name,oldcontext = None, subdir = True, create = False):
     '''
     creates a new context from an existing context.
