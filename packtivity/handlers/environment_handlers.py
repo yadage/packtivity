@@ -19,11 +19,11 @@ def sourcepath(path):
     else:
         return path
 
-def cvmfs_from_volume_plugin(command_line,cvmfs_repos = ['atlas.cern.ch','sft.cern.ch','atlas-condb.cern.ch']):
-    custom_repos = os.environ.get('PACKTIVITY_CVMFS_REPOS',None)
-    if custom_repos:
-        cvmfs_repos = yaml.load(custom_repos)
-
+def cvmfs_from_volume_plugin(command_line,cvmfs_repos = None):
+    if not cvmfs_repos:
+        cvmfs_repos = yaml.load(os.environ.get('PACKTIVITY_CVMFS_REPOS','null'))
+    if not cvmfs_repos:
+        cvmfs_repos  = ['atlas.cern.ch','atlas-conddb.cern.ch','sft.cern.ch']
     command_line += ' --security-opt label:disable'
     for repo in cvmfs_repos:
         command_line += ' --volume-driver cvmfs -v {cvmfs_repo}:/cvmfs/{cvmfs_repo}'.format(cvmfs_repo = repo)
