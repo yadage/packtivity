@@ -19,8 +19,10 @@ def sourcepath(path):
     else:
         return path
 
-def cvmfs_from_volume_plugin(command_line,cvmfs_repo = 'atlas.cern.ch'):
-    command_line += ' --security-opt label:disable --volume-driver cvmfs -v {cvmfs_repo}:/cvmfs/{cvmfs_repo}'.format(cvmfs_repo = cvmfs_repo)
+def cvmfs_from_volume_plugin(command_line,cvmfs_repos = os.environ.get('PACKTIVITY_CVMFS_REPOS',['atlas.cern.ch','sft.cern.ch'])):
+    command_line += ' --security-opt label:disable'
+    for repo in cvmfs_repos:
+        command_line += ' --volume-driver cvmfs -v {cvmfs_repo}:/cvmfs/{cvmfs_repo}'.format(cvmfs_repo = repo)
     return command_line
 
 def cvmfs_from_external_mount(command_line):
