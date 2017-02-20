@@ -1,5 +1,6 @@
 # packtivity
 
+[![DOI](https://zenodo.org/badge/53696818.svg)](https://zenodo.org/badge/latestdoi/53696818)
 [![Build Status](https://travis-ci.org/diana-hep/packtivity.svg?branch=master)](https://travis-ci.org/diana-hep/packtivity)
 [![PyPI](https://img.shields.io/pypi/v/packtivity.svg)](https://pypi.python.org/pypi/packtivity)
 
