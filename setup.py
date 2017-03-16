@@ -1,5 +1,25 @@
 
+import os
 from setuptools import setup, find_packages
+
+deps = [
+      'requests[security]',
+      'jsonschema',
+      'jsonref',
+      'pyyaml',
+      'functools32',
+      'click',
+      'glob2',
+      'jsonpointer',
+      'psutil',
+      'yadage-schemas',
+      'mock'
+]
+
+if not 'READTHEDOCS' in os.environ:
+  deps += ['jq']
+
+
 
 setup(
   name = 'packtivity',
@@ -10,20 +30,7 @@ setup(
   author_email = 'lukas.heinrich@cern.ch',
   packages = find_packages(),
   include_package_data = True,
-  install_requires = [
-      'requests[security]',
-      'jsonschema',
-      'jsonref',
-      'pyyaml',
-      'functools32',
-      'click',
-      'glob2',
-      'jq',
-      'jsonpointer',
-      'psutil',
-      'yadage-schemas',
-      'mock'
-  ],
+  install_requires = deps,
   extras_require={
    'celery':  [
        'celery'

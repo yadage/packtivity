@@ -349,15 +349,3 @@ intersphinx_mapping = {'https://docs.python.org/': None}
 
 
 
-# Mocking Code
-
-import sys
-from mock import Mock as MagicMock
-
-class Mock(MagicMock):
-    @classmethod
-    def __getattr__(cls, name):
-            return MagicMock()
-
-MOCK_MODULES = ['jq']
-sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
