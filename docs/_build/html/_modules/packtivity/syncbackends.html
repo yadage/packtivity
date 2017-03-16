@@ -1,0 +1,159 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>packtivity.syncbackends &#8212; packtivity 0.5 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.5',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for packtivity.syncbackends</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">logging</span>
+
+<span class="k">class</span> <span class="nc">packconfig</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">handler_selection</span> <span class="o">=</span> <span class="n">kwargs</span>
+
+    <span class="k">def</span> <span class="nf">get_impl</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">category</span><span class="p">,</span><span class="n">handler</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">handler_selection</span><span class="p">[</span><span class="n">category</span><span class="p">][</span><span class="n">handler</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s1">&#39;default&#39;</span>
+
+<div class="viewcode-block" id="build_job"><a class="viewcode-back" href="../../index.html#packtivity.syncbackends.build_job">[docs]</a><span class="k">def</span> <span class="nf">build_job</span><span class="p">(</span><span class="n">process</span><span class="p">,</span><span class="n">attributes</span><span class="p">,</span><span class="n">pack_config</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    takes a process description and builds a job out of it using a handler.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">proc_type</span> <span class="o">=</span>  <span class="n">process</span><span class="p">[</span><span class="s1">&#39;process_type&#39;</span><span class="p">]</span>
+    <span class="n">impl</span> <span class="o">=</span> <span class="n">pack_config</span><span class="o">.</span><span class="n">get_impl</span><span class="p">(</span><span class="s1">&#39;process&#39;</span><span class="p">,</span><span class="n">proc_type</span><span class="p">)</span>
+    <span class="kn">from</span> <span class="nn">handlers.process_handlers</span> <span class="k">import</span> <span class="n">handlers</span> <span class="k">as</span> <span class="n">proc_handlers</span>
+    <span class="n">handler</span> <span class="o">=</span> <span class="n">proc_handlers</span><span class="p">[</span><span class="n">proc_type</span><span class="p">][</span><span class="n">impl</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">handler</span><span class="p">(</span><span class="n">process</span><span class="p">,</span><span class="n">attributes</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="run_in_env"><a class="viewcode-back" href="../../index.html#packtivity.syncbackends.run_in_env">[docs]</a><span class="k">def</span> <span class="nf">run_in_env</span><span class="p">(</span><span class="n">environment</span><span class="p">,</span><span class="n">job</span><span class="p">,</span><span class="n">context</span><span class="p">,</span><span class="n">pack_config</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    takes a built job and runs it blockingly in the environment with</span>
+<span class="sd">    the state context attached</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">env_type</span> <span class="o">=</span> <span class="n">environment</span><span class="p">[</span><span class="s1">&#39;environment_type&#39;</span><span class="p">]</span>
+    <span class="n">impl</span> <span class="o">=</span> <span class="n">pack_config</span><span class="o">.</span><span class="n">get_impl</span><span class="p">(</span><span class="s1">&#39;environment&#39;</span><span class="p">,</span><span class="n">env_type</span><span class="p">)</span>
+    <span class="kn">from</span> <span class="nn">handlers.environment_handlers</span> <span class="k">import</span> <span class="n">handlers</span> <span class="k">as</span> <span class="n">env_handlers</span>
+    <span class="n">handler</span> <span class="o">=</span> <span class="n">env_handlers</span><span class="p">[</span><span class="n">env_type</span><span class="p">][</span><span class="n">impl</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">handler</span><span class="p">(</span><span class="n">environment</span><span class="p">,</span><span class="n">context</span><span class="p">,</span><span class="n">job</span><span class="p">)</span></div>
+
+<span class="k">def</span> <span class="nf">publish</span><span class="p">(</span><span class="n">publisher</span><span class="p">,</span><span class="n">attributes</span><span class="p">,</span><span class="n">context</span><span class="p">,</span> <span class="n">pack_config</span><span class="p">):</span>
+    <span class="n">pub_type</span>   <span class="o">=</span> <span class="n">publisher</span><span class="p">[</span><span class="s1">&#39;publisher_type&#39;</span><span class="p">]</span>
+    <span class="n">impl</span> <span class="o">=</span> <span class="n">pack_config</span><span class="o">.</span><span class="n">get_impl</span><span class="p">(</span><span class="s1">&#39;publisher&#39;</span><span class="p">,</span><span class="n">pub_type</span><span class="p">)</span>
+    <span class="kn">from</span> <span class="nn">handlers.publisher_handlers</span> <span class="k">import</span> <span class="n">handlers</span> <span class="k">as</span> <span class="n">pub_handlers</span>
+    <span class="n">handler</span> <span class="o">=</span> <span class="n">pub_handlers</span><span class="p">[</span><span class="n">pub_type</span><span class="p">][</span><span class="n">impl</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">handler</span><span class="p">(</span><span class="n">publisher</span><span class="p">,</span><span class="n">attributes</span><span class="p">,</span><span class="n">context</span><span class="p">)</span>
+
+<div class="viewcode-block" id="prepublish"><a class="viewcode-back" href="../../index.html#packtivity.syncbackends.prepublish">[docs]</a><span class="k">def</span> <span class="nf">prepublish</span><span class="p">(</span><span class="n">spec</span><span class="p">,</span> <span class="n">attributes</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="n">pack_config</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    attempts to prepublish output data, returns None if not possible</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">pub</span> <span class="o">=</span> <span class="n">spec</span><span class="p">[</span><span class="s1">&#39;publisher&#39;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">pub</span><span class="p">[</span><span class="s1">&#39;publisher_type&#39;</span><span class="p">]</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;frompar-pub&#39;</span><span class="p">,</span><span class="s1">&#39;constant-pub&#39;</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="n">publish</span><span class="p">(</span><span class="n">pub</span><span class="p">,</span><span class="n">attributes</span><span class="p">,</span><span class="n">context</span><span class="p">,</span><span class="n">pack_config</span><span class="p">)</span>
+    <span class="k">return</span> <span class="kc">None</span></div>
+
+<span class="k">def</span> <span class="nf">run_packtivity</span><span class="p">(</span><span class="n">spec</span><span class="p">,</span> <span class="n">parameters</span><span class="p">,</span><span class="n">context</span><span class="p">,</span><span class="n">nametag</span><span class="p">,</span><span class="n">config</span><span class="p">):</span>
+    <span class="c1">#curry nametag into context</span>
+    <span class="n">context</span><span class="p">[</span><span class="s1">&#39;nametag&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">nametag</span>
+    <span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;step_logger_</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">nametag</span><span class="p">))</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">job</span> <span class="o">=</span> <span class="n">build_job</span><span class="p">(</span><span class="n">spec</span><span class="p">[</span><span class="s1">&#39;process&#39;</span><span class="p">],</span><span class="n">parameters</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
+        <span class="n">run_in_env</span><span class="p">(</span><span class="n">spec</span><span class="p">[</span><span class="s1">&#39;environment&#39;</span><span class="p">],</span><span class="n">job</span><span class="p">,</span><span class="n">context</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
+        <span class="n">pubdata</span> <span class="o">=</span> <span class="n">publish</span><span class="p">(</span><span class="n">spec</span><span class="p">[</span><span class="s1">&#39;publisher&#39;</span><span class="p">],</span><span class="n">parameters</span><span class="p">,</span><span class="n">context</span><span class="p">,</span><span class="n">config</span><span class="p">)</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;publishing data: </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span><span class="n">pubdata</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">pubdata</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1"> raised exception&#39;</span><span class="p">,</span><span class="n">nametag</span><span class="p">)</span>
+        <span class="k">raise</span>
+
+<span class="k">class</span> <span class="nc">defaultsyncbackend</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">packconfig_spec</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">packconfig</span><span class="p">(</span><span class="o">**</span><span class="n">packconfig_spec</span><span class="p">)</span> <span class="k">if</span> <span class="n">packconfig_spec</span> <span class="k">else</span> <span class="n">packconfig</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">prepublish</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">spec</span><span class="p">,</span> <span class="n">parameters</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">prepublish</span><span class="p">(</span><span class="n">spec</span><span class="p">,</span> <span class="n">parameters</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">spec</span><span class="p">,</span><span class="n">parameters</span><span class="p">,</span><span class="n">context</span><span class="p">,</span> <span class="n">nametag</span> <span class="o">=</span> <span class="s1">&#39;packtivity_syncbackend&#39;</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">run_packtivity</span><span class="p">(</span><span class="n">spec</span><span class="p">,</span><span class="n">parameters</span><span class="p">,</span><span class="n">context</span><span class="p">,</span><span class="n">nametag</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, Lukas Heinrich.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

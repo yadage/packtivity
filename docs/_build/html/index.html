@@ -1,0 +1,157 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Welcome to packtivity’s documentation! &#8212; packtivity 0.5 documentation</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.5',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="welcome-to-packtivity-s-documentation">
+<h1>Welcome to packtivity&#8217;s documentation!<a class="headerlink" href="#welcome-to-packtivity-s-documentation" title="Permalink to this headline">¶</a></h1>
+<p>Contents:</p>
+<div class="toctree-wrapper compound">
+</div>
+<span class="target" id="module-packtivity.statecontexts.posixfs_context"></span><dl class="function">
+<dt id="packtivity.statecontexts.posixfs_context.contextualize_data">
+<code class="descclassname">packtivity.statecontexts.posixfs_context.</code><code class="descname">contextualize_data</code><span class="sig-paren">(</span><em>data</em>, <em>context</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/packtivity/statecontexts/posixfs_context.html#contextualize_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#packtivity.statecontexts.posixfs_context.contextualize_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>interpolate data string with context-specific information.
+here, replace {workdir} with first read-write location</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="packtivity.statecontexts.posixfs_context.make_new_context">
+<code class="descclassname">packtivity.statecontexts.posixfs_context.</code><code class="descname">make_new_context</code><span class="sig-paren">(</span><em>name</em>, <em>oldcontext=None</em>, <em>subdir=True</em>, <em>create=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/packtivity/statecontexts/posixfs_context.html#make_new_context"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#packtivity.statecontexts.posixfs_context.make_new_context" title="Permalink to this definition">¶</a></dt>
+<dd><p>creates a new context from an existing context.</p>
+<p>if subdir is True it declares a new read-write nested under the old
+context&#8217;s read-write and adds all read-write and read-only locations
+of the old context as read-only. This is recommended as it makes rolling
+back changes to the global state made in this context easy.</p>
+<p>else the same readwrite/readonly configuration as the parent context is used</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="packtivity.statecontexts.posixfs_context.reset_state">
+<code class="descclassname">packtivity.statecontexts.posixfs_context.</code><code class="descname">reset_state</code><span class="sig-paren">(</span><em>context</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/packtivity/statecontexts/posixfs_context.html#reset_state"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#packtivity.statecontexts.posixfs_context.reset_state" title="Permalink to this definition">¶</a></dt>
+<dd><p>delete readwriteable locations of this context</p>
+</dd></dl>
+
+<span class="target" id="module-packtivity.syncbackends"></span><dl class="function">
+<dt id="packtivity.syncbackends.build_job">
+<code class="descclassname">packtivity.syncbackends.</code><code class="descname">build_job</code><span class="sig-paren">(</span><em>process</em>, <em>attributes</em>, <em>pack_config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/packtivity/syncbackends.html#build_job"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#packtivity.syncbackends.build_job" title="Permalink to this definition">¶</a></dt>
+<dd><p>takes a process description and builds a job out of it using a handler.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="packtivity.syncbackends.prepublish">
+<code class="descclassname">packtivity.syncbackends.</code><code class="descname">prepublish</code><span class="sig-paren">(</span><em>spec</em>, <em>attributes</em>, <em>context</em>, <em>pack_config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/packtivity/syncbackends.html#prepublish"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#packtivity.syncbackends.prepublish" title="Permalink to this definition">¶</a></dt>
+<dd><p>attempts to prepublish output data, returns None if not possible</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="packtivity.syncbackends.run_in_env">
+<code class="descclassname">packtivity.syncbackends.</code><code class="descname">run_in_env</code><span class="sig-paren">(</span><em>environment</em>, <em>job</em>, <em>context</em>, <em>pack_config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/packtivity/syncbackends.html#run_in_env"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#packtivity.syncbackends.run_in_env" title="Permalink to this definition">¶</a></dt>
+<dd><p>takes a built job and runs it blockingly in the environment with
+the state context attached</p>
+</dd></dl>
+
+</div>
+<div class="section" id="indices-and-tables">
+<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></li>
+<li><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></li>
+<li><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></li>
+</ul>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="#">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Welcome to packtivity&#8217;s documentation!</a></li>
+<li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="#">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/index.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, Lukas Heinrich.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="_sources/index.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
