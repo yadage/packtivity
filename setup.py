@@ -21,7 +21,8 @@ setup(
       'jq',
       'jsonpointer',
       'psutil',
-      'yadage-schemas'
+      'yadage-schemas',
+      'mock'
   ],
   extras_require={
    'celery':  [
