@@ -2,6 +2,7 @@
 
 [![DOI](https://zenodo.org/badge/53696818.svg)](https://zenodo.org/badge/latestdoi/53696818)
 [![Build Status](https://travis-ci.org/diana-hep/packtivity.svg?branch=master)](https://travis-ci.org/diana-hep/packtivity)
+[![Documentation Status](https://readthedocs.org/projects/packtivity/badge/?version=latest)](http://packtivity.readthedocs.io/en/latest/?badge=latest)
 [![PyPI](https://img.shields.io/pypi/v/packtivity.svg)](https://pypi.python.org/pypi/packtivity)
 
 This package aims to collect implementations of both synchronous and asynchronous execution of preserved, but parametrized scientific computational tasks that come with batteries included, i.e. with a full specification of their software dependencies. In that sense they are *packaged activities* -- packtivities.
