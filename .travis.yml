@@ -16,5 +16,5 @@ script:
   - cd tests && pytest && cd ..
   - 'echo "a_parameter: 10" > input.yml'
   - packtivity-run testspacks/noop-test.yml input.yml
-  - docker build -t lukasheinrich/packtivity .
+#  - docker build -t lukasheinrich/packtivity .
 
