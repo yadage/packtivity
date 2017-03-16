@@ -54,7 +54,9 @@ def run_packtivity(spec, parameters,context,nametag,config):
     try:
         job = build_job(spec['process'],parameters, config)
         run_in_env(spec['environment'],job,context, config)
-        return publish(spec['publisher'],parameters,context,config)
+        pubdata = publish(spec['publisher'],parameters,context,config)
+        log.info('publishing data: %s',pubdata)
+        return pubdata
     except:
         log.exception('%s raised exception',nametag)
         raise

@@ -17,6 +17,7 @@ setup(
       'pyyaml',
       'functools32',
       'click',
+      'glob2',
       'jq',
       'jsonpointer',
       'psutil',

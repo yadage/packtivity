@@ -1,5 +1,7 @@
 import os
 import errno
+import jq
+import jsonpointer
 
 def handler_decorator():
     handlers = {}
@@ -65,3 +67,9 @@ def backend_from_string(backendstring):
         backendclass = getattr(module,backend)
         return is_async, backendclass()
     raise RuntimeError('Unknown Backend')
+
+def leaf_iterator(jsonable):
+    allleafs = jq.jq('leaf_paths').transform(jsonable, multiple_output = True)
+    leafpointers = [jsonpointer.JsonPointer.from_parts(x) for x in allleafs]
+    for x in leafpointers:
+        yield x,x.get(jsonable)

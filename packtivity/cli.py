@@ -7,26 +7,15 @@ import yadageschemas
 import logging
 import json
 import packtivity.utils as utils
+import packtivity.statecontexts.posixfs_context as statecontext
 
 log = logging.getLogger(__name__)
 
-#stolen from yadage
-def finalize_value(value,context):
-    if type(value)==list:
-        return [finalize_value(x,context) for x in value]
-    if type(value) in [str,unicode]:
-        return value.format(**context)
-    return value
-
-def finalize_input(json,context):
-    context['workdir'] = context['readwrite'][0]
-    result = {}
-    for k,v in json.iteritems():
-        if type(v) is not list:
-            result[k] = finalize_value(v,context)
-        else:
-            result[k] = [finalize_value(element,context) for element in v]
-    return result
+def finalize_input(jsondata,context):
+    for path,value in utils.leaf_iterator(jsondata):
+        actualval = statecontext.contextualize_data(value,context)
+        path.set(jsondata,actualval)
+    return jsondata
 
 def getinit_data(initfiles,parameters):
     '''
