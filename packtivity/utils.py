@@ -2,6 +2,7 @@ import os
 import errno
 import jq
 import jsonpointer
+import logging
 
 def handler_decorator():
     handlers = {}
@@ -73,3 +74,29 @@ def leaf_iterator(jsonable):
     leafpointers = [jsonpointer.JsonPointer.from_parts(x) for x in allleafs]
     for x in leafpointers:
         yield x,x.get(jsonable)
+
+def setup_logging(nametag, context):
+    ## prepare logging for the execution of the job. We're ready to handle up to DEBUG
+    log  = logging.getLogger('step_logger_{}'.format(nametag))
+    log.propagate = False
+    log.setLevel(logging.DEBUG)
+
+
+    #reset loggers .. 
+    log.handlers = []
+    ## this is all internal loggin, we don't want to escalate to handlers of parent loggers
+    ## we will have two handlers, a stream handler logging to stdout at INFO
+    fmt = logging.Formatter('%(levelname)s:%(name)s:%(message)s')
+    fh  = logging.StreamHandler()
+    fh.setLevel(logging.INFO)
+    fh.setFormatter(fmt)
+    log.addHandler(fh)
+
+    # Now that we have  place to store meta information we put a file based logger in place
+    # to log at DEBUG
+    logname = '{}/{}.step.log'.format(context['metadir'],nametag)
+    fh  = logging.FileHandler(logname)
+    fh.setLevel(logging.DEBUG)
+    fh.setFormatter(fmt)
+    log.addHandler(fh)
+
