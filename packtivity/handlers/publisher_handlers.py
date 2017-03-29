@@ -7,9 +7,7 @@ import copy
 import logging
 
 log = logging.getLogger(__name__)
-
 handlers, publisher = utils.handler_decorator()
-
 
 @publisher('frompar-pub')
 def process_attr_pub_handler(publisher,attributes,context):
@@ -25,7 +23,9 @@ def interpolated_pub_handler(publisher,attributes,context):
     forinterp.update(workdir = context['readwrite'][0])
     result = copy.deepcopy(publisher['publish'])
     for path,value in utils.leaf_iterator(publisher['publish']):
-        path.set(result,value.format(**forinterp))
+        resultval = value.format(**forinterp)
+        resultval = glob2.glob(resultval)
+        path.set(result,resultval)
     return result
 
 @publisher('fromyaml-pub')
@@ -56,7 +56,7 @@ def manual_pub(publisher,attributes,context):
         except:
             click.secho('uhm something went wrong, enter valid JSON please', fg = 'red')
             continue
-        shall = raw_input("got: \n {} \npublish? (y/N) ".format(yaml.safe_dump(data,default_flow_style = False))).lower() == 'y'
+        shall = raw_input("got: \n {} \npublish? (y/N) ".format(yaml.safe_dump(data, default_flow_style = False))).lower() == 'y'
         if shall:
             break
     click.secho('publishing', fg = 'green')

@@ -2,6 +2,9 @@ import itertools
 import os
 import shutil
 import packtivity.utils as utils
+import logging
+
+log = logging.getLogger(__name__)
 
 def contextualize_data(data,context):
     '''
@@ -20,7 +23,7 @@ def merge_contexts(lhs,rhs):
         'readwrite': lhs.get('readwrite',[]) + rhs.get('readwrite',[])
     }
 
-def make_new_context(name,oldcontext = None, subdir = True, create = False):
+def make_new_context(name, oldcontext = None, subdir = True, create = False):
     '''
     creates a new context from an existing context.
 
@@ -32,21 +35,32 @@ def make_new_context(name,oldcontext = None, subdir = True, create = False):
     else the same readwrite/readonly configuration as the parent context is used
 
     '''
-    if oldcontext is None:
-        new_readwrite = os.path.abspath(name)
-    else:
-        new_readwrite = '{}/{}'.format(oldcontext['readwrite'][0],name) if subdir else oldcontext['readwrite'][0]
-    if create:
-        utils.mkdir_p(new_readwrite)
+
+    # the new context will get a name in any case (if subdir is false someone needs to make sure these are unique)
     newcontext = {
-        'nametag':name.replace('/','_'), #replace in case name is nested path
+        'nametag':name.replace('/','_'), # replace in case name is nested path
     }
-    if subdir:
-        readonly =  [ro for ro in itertools.chain(oldcontext['readonly'],oldcontext['readwrite'])] if oldcontext else []
-        newcontext.update(readwrite = [new_readwrite], readonly = readonly)
+
+    if 'PACKTIVITY_FORCESHAREDSTATE' in os.environ:
+        subdir = False
+
+    if oldcontext is None:
+        new_readwrites = [os.path.abspath(name)]
     else:
-        readonly = oldcontext['readwrite'] if oldcontext else []
-        newcontext.update(readwrite = oldcontext['readwrite'], readonly = oldcontext['readonly'])
+        new_readwrites = ['{}/{}'.format(oldcontext['readwrite'][0],name)] if subdir else oldcontext['readwrite'] 
+
+    if subdir:
+        # for nested directories, we want to have at lease read access to all data in parent context
+        new_readonlies = [ro for ro in itertools.chain(oldcontext['readonly'],oldcontext['readwrite'])] if oldcontext else []
+    else:
+        new_readonlies = oldcontext['readonly'] if oldcontext else []
+
+    if create:
+        map(utils.mkdir_p,new_readwrites)
+
+
+    newcontext.update(readwrite = new_readwrites, readonly = new_readonlies)
+    log.debug('new context is: %s', newcontext)
     return newcontext
 
 def reset_state(context):

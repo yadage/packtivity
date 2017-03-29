@@ -42,12 +42,12 @@ class PythonCallableAsyncBackend(object):
     def prepublish(self,spec, parameters, context):
         return prepublish(spec, parameters, context, self.config)
 
-    def submit(self, spec, parameters, context, nametag = 'packtivity_syncbackend'):
+    def submit(self, spec, parameters, context):
         nullary = functools.partial(run_packtivity,
             spec = spec,
             parameters = parameters,
             context = context,
-            nametag = nametag,
+            nametag = context.get('nametag','packtivity_async'),
             config = self.config
         )
         return self.submit_callable(nullary)
