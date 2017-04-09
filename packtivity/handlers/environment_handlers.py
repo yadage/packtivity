@@ -172,6 +172,12 @@ def docker_pull(docker_pull_cmd,log,context,nametag):
     if 'PACKTIVITY_DRYRUN' in os.environ:
         return
 
+
+    # if 
+    #     subprocess.check_call(shlex.split('docker login -u {username} -p {password} {registry}').format(
+    #     ))
+
+
     metadir  = context['metadir']
     try:
         with open('{}/{}.pull.log'.format(metadir,nametag),'w') as logfile:

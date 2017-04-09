@@ -5,6 +5,7 @@ import multiprocessing
 import functools
 import sys
 import traceback
+import os
 
 class PacktivityProxyBase(object):
     '''
@@ -109,12 +110,12 @@ try:
     from celery.result import AsyncResult as CeleryAsyncResult
     from celery import Celery
     from celery import shared_task
-    celeryapp = Celery('defaultapp')
-    celeryapp.conf.update(
+    default_celeryapp = Celery('defaultapp')
+    default_celeryapp.conf.update(
         task_serializer = 'pickle',
         accept_content = ['pickle','json'],
         result_backend = 'redis',
-        broker_url = 'redis://localhost:6379'
+        broker_url = os.environ.get('PACKTIVITY_CELERY_REDIS_BROKER','redis://localhost:6379')
     )
     @shared_task
     def run_nullary(nullary):
@@ -140,9 +141,9 @@ try:
             return cls(proxy)
 
     class CeleryBackend(PythonCallableAsyncBackend):
-        def __init__(self,app = celeryapp, packconfig_spec = None):
+        def __init__(self,app = None, packconfig_spec = None):
             super(CeleryBackend,self).__init__(packconfig_spec)
-            self.app = app
+            self.app = app or default_celeryapp
 
         def submit_callable(self,callable):
             self.app.set_current()
