@@ -1,3 +1,5 @@
+import tempfile
+
 import os
 import subprocess
 import sys
@@ -318,6 +320,81 @@ def tarball_handler(environment, context, job):
         raise RuntimeError('do not know yet how to run this...')
     remove_docker_image(image=image, log_filename=os.path.join(metadir, '%s.docker.rmi.log' % nametag), logger=log)
 
+
+@environment('umbrella')
+def umbrella(environment, context, job):
+    metadir = '{}/_packtivity'.format(context['readwrite'][0])
+    context['metadir'] = metadir
+
+    if not os.path.exists(metadir):
+        utils.mkdir_p(metadir)
+    fp = open(os.path.join(metadir, "umbrella_output.txt"), "w")
+    specification_file = environment['spec_url']
+    command = job.get('command', None)
+    tempdir = tempfile.mkdtemp()
+    logfile = job.get('logfile', 'umbrella.log')
+    # docker_mod = prepare_docker(context=context, do_cvmfs=False, do_auth=False, log=logfile)
+
+    readwrites  = context['readwrite']
+    readonlies = context['readonly']
+    options = [
+                    "umbrella",
+                     "--spec", specification_file,
+                     "--sandbox_mode", "docker",
+                     '--localdir', tempdir,
+                     '--log', logfile,
+     ]
+    volumes = ""
+    for item in readwrites:
+        # Umbrella cuts off last character in path
+        if item[-1] != "/":
+            item = item + "/"
+        item = item + "=" + item
+        volumes += item + ","
+
+    for item in readonlies:
+        # Umbrella cuts off last character in path
+        if item[-1] != "/":
+            item = item + "/"
+        item = item + "=" + item
+        volumes += item + ","
+
+    if volumes:
+        # Remove the trailing comma
+        volumes = volumes[:-1]
+        options.append("-i")
+        options.append(volumes)
+    options.append('run')
+    options.append(command)
+    print options
+    try:
+        if not command:
+            command = job.get('script', None)
+        if not command:
+            raise RuntimeError('command or script option must be provided')
+        try:
+            p = subprocess.Popen(
+                options,
+                stdout=fp,
+                stderr=fp,
+                # stdout=subprocess.STDOUT,
+                # stderr=subprocess.STDOUT
+            )
+            # log.debug("Umbrella process PID: %s" % p.pid)
+            p.communicate()
+            returncode = p.returncode
+            if returncode != 0:
+                # log.error("Docker execution failed, return code %s" % returncode)
+                raise RuntimeError("Umbrella execution failed, return code %s" % returncode)
+            # log.debug("docker import command completed successfully")
+        except (OSError, IOError) as e:
+            # log.exception("subprocess failed: %s", sys.exc_info())
+            raise RuntimeError("Umbrella execution failed, subprocess error (%s)" % e)
+
+    except Exception as e:
+        # Clean up
+        os.rmdir(tempdir)
+        raise e
 
 @environment('docker-encapsulated')
 def docker_enc_handler(environment,context,job):
