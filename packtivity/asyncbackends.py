@@ -115,7 +115,7 @@ try:
         task_serializer = 'pickle',
         accept_content = ['pickle','json'],
         result_backend = 'redis',
-        broker_url = os.environ.get('PACKTIVITY_CELERY_REDIS_BROKER','redis://localhost:6379')
+        broker = os.environ.get('PACKTIVITY_CELERY_REDIS_BROKER','redis://localhost:6379')
     )
     @shared_task
     def run_nullary(nullary):
