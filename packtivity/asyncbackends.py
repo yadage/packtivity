@@ -115,7 +115,10 @@ try:
         task_serializer = 'pickle',
         accept_content = ['pickle','json'],
         broker_url = os.environ.get('PACKTIVITY_CELERY_REDIS_BROKER','redis://localhost:6379'),
-        result_backend = os.environ.get('PACKTIVITY_CELERY_REDIS_BROKER','redis://localhost:6379')
+        result_backend = os.environ.get('PACKTIVITY_CELERY_REDIS_BROKER','redis://localhost:6379'),
+        result_expires = False,
+        broker_transport_options = {'visibility_timeout':os.environ.get('PACKTIVITY_CELERY_VISIBILITY_TIMEOUT',86400)},
+        worker_prefetch_multiplier = 1
     )
     @shared_task
     def run_nullary(nullary):
