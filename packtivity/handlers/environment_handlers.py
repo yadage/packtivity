@@ -2,6 +2,7 @@ import os
 import subprocess
 import sys
 import packtivity.utils as utils
+import packtivity.logutils as logutils
 import time
 import psutil
 import logging
@@ -171,25 +172,18 @@ def docker_pull(docker_pull_cmd,log,context,nametag):
     log.debug('docker pull command: \n  %s',docker_pull_cmd)
     if 'PACKTIVITY_DRYRUN' in os.environ:
         return
-
-
-    # if 
-    #     subprocess.check_call(shlex.split('docker login -u {username} -p {password} {registry}').format(
-    #     ))
-
-
-    metadir  = context['metadir']
     try:
-        with open('{}/{}.pull.log'.format(metadir,nametag),'w') as logfile:
-            proc = subprocess.Popen(shlex.split(docker_pull_cmd), stderr = subprocess.STDOUT, stdout = logfile)
-            log.debug('started pull subprocess with pid %s. now wait to finish',proc.pid)
-            time.sleep(0.5)
-            log.debug('process children: %s',[x for x in psutil.Process(proc.pid).children(recursive = True)])
-            proc.communicate()
-            log.debug('pull subprocess finished. return code: %s',proc.returncode)
-            if proc.returncode:
-                log.error('non-zero return code raising exception')
-                raise subprocess.CalledProcessError(returncode =  proc.returncode, cmd = docker_pull_cmd)
+        pulllog = logutils.setup_logging_topic(nametag,context,'pull', return_logger = True)
+        proc = subprocess.Popen(shlex.split(docker_pull_cmd), stderr = subprocess.STDOUT, stdout = subprocess.PIPE, bufsize=1)
+        log.debug('started pull subprocess with pid %s. now wait to finish',proc.pid)
+        time.sleep(0.5)
+        log.debug('process children: %s',[x for x in psutil.Process(proc.pid).children(recursive = True)])
+        for line in iter(proc.stdout.readline, ''):
+            pulllog.info(line.strip())
+        log.debug('pull subprocess finished. return code: %s',proc.returncode)
+        if proc.returncode:
+            log.error('non-zero return code raising exception')
+            raise subprocess.CalledProcessError(returncode =  proc.returncode, cmd = docker_pull_cmd)
         log.debug('moving on from pull')
     except RuntimeError as e:
         log.exception('caught RuntimeError')
@@ -205,22 +199,21 @@ def docker_pull(docker_pull_cmd,log,context,nametag):
 
 def docker_run_cmd(fullest_command,log,context,nametag):
     log.debug('docker run  command: \n%s',fullest_command)
-    metadir = context['metadir']
-
     if 'PACKTIVITY_DRYRUN' in os.environ:
         return
     try:
-        with open('{}/{}.run.log'.format(metadir,nametag),'w') as logfile:
-            proc = subprocess.Popen(shlex.split(fullest_command), stderr = subprocess.STDOUT, stdout = logfile)
-            log.debug('started run subprocess with pid %s. now wait to finish',proc.pid)
-            time.sleep(0.5)
-            log.debug('process children: %s',[x for x in psutil.Process(proc.pid).children(recursive = True)])
-            proc.communicate()
-            log.debug('docker run subprocess finished. return code: %s',proc.returncode)
-            if proc.returncode:
-                log.error('non-zero return code raising exception')
-                raise subprocess.CalledProcessError(returncode =  proc.returncode, cmd = fullest_command)
-            log.debug('moving on from run')
+        runlog = logutils.setup_logging_topic(nametag,context,'run', return_logger = True)
+        proc = subprocess.Popen(shlex.split(fullest_command), stderr = subprocess.STDOUT, stdout = subprocess.PIPE, bufsize=1)
+        log.debug('started run subprocess with pid %s. now wait to finish',proc.pid)
+        time.sleep(0.5)
+        for line in iter(proc.stdout.readline, ''):
+            runlog.info(line.strip())
+        log.debug('process children: %s',[x for x in psutil.Process(proc.pid).children(recursive = True)])
+        log.debug('docker run subprocess finished. return code: %s',proc.returncode)
+        if proc.returncode:
+            log.error('non-zero return code raising exception')
+            raise subprocess.CalledProcessError(returncode =  proc.returncode, cmd = fullest_command)
+        log.debug('moving on from run')
     except subprocess.CalledProcessError as exc:
         log.exception('subprocess failed. code: %s,  command %s',exc.returncode,exc.cmd)
         raise RuntimeError('failed docker run subprocess in docker_enc_handler.')
@@ -234,7 +227,7 @@ def docker_run_cmd(fullest_command,log,context,nametag):
 @environment('docker-encapsulated')
 def docker_enc_handler(environment,context,job):
     nametag = context['nametag']
-    log  = logging.getLogger('step_logger_{}'.format(nametag))
+    log  =  logging.getLogger(logutils.get_topic_loggername(nametag,'step'))
 
     # short interruption to create metainfo storage location
     metadir  = '{}/_packtivity'.format(context['readwrite'][0])
@@ -243,7 +236,7 @@ def docker_enc_handler(environment,context,job):
     utils.mkdir_p(metadir)
 
     #setup more detailed logging
-    utils.setup_logging(nametag, context)
+    logutils.setup_logging(nametag, context)
 
     log.debug('starting log for step: %s',nametag)
     if 'PACKTIVITY_DOCKER_NOPULL' not in os.environ:
@@ -269,14 +262,14 @@ def docker_enc_handler(environment,context,job):
 @environment('noop-env')
 def noop_env(environment,context,job):
     nametag = context['nametag']
-    log  = logging.getLogger('step_logger_{}'.format(nametag))
+    log  =  logging.getLogger(logutils.get_topic_loggername(nametag,'step'))
     log.info('context is: %s',context)
     log.info('would be running this job: %s',job)
 
 @environment('localproc-env')
 def localproc_env(environment,context,job):
     nametag = context['nametag']
-    log  = logging.getLogger('step_logger_{}'.format(nametag))
+    log  =  logging.getLogger(logutils.get_topic_loggername(nametag,'step'))
     olddir = os.path.realpath(os.curdir)
     workdir = context['readwrite'][0]
     log.info('running local command %s',job['command'])

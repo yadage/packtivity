@@ -7,6 +7,7 @@ import yadageschemas
 import logging
 import json
 import packtivity.utils as utils
+import packtivity.backendutils as bkutils
 import packtivity.statecontexts.posixfs_context as statecontext
 
 log = logging.getLogger(__name__)
@@ -75,7 +76,7 @@ def runcli(spec,parfiles,context,parameter,read,write,toplevel,schemasource,asyn
     if contextualize:
         parameters = finalize_input(parameters,context)
 
-    is_sync, backend = utils.backend_from_string(backend)
+    is_sync, backend = bkutils.backend_from_string(backend)
     backend_kwargs = {
         'syncbackend': backend
     } if is_sync else {
@@ -118,7 +119,7 @@ def validatecli(spec,toplevel,schemasource,schemaname):
 @click.argument('jsonfile')
 def checkproxy(jsonfile):
     proxydata = json.load(open(jsonfile))
-    proxy, backend = utils.proxy_from_json(proxydata, best_effort_backend = True)
+    proxy, backend = bkutils.proxy_from_json(proxydata, best_effort_backend = True)
 
     ready = backend.ready(proxy)
 

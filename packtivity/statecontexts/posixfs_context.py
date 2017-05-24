@@ -54,11 +54,11 @@ def make_new_context(name, oldcontext = None, subdir = True, create = False):
         new_readonlies = [ro for ro in itertools.chain(oldcontext['readonly'],oldcontext['readwrite'])] if oldcontext else []
     else:
         new_readonlies = oldcontext['readonly'] if oldcontext else []
-
+        
     if create:
         map(utils.mkdir_p,new_readwrites)
-
-
+        
+        
     newcontext.update(readwrite = new_readwrites, readonly = new_readonlies)
     log.debug('new context is: %s', newcontext)
     return newcontext
