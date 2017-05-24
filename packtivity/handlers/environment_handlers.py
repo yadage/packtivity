@@ -11,6 +11,10 @@ import click
 import yaml
 import shlex
 
+from urllib import urlretrieve
+from urllib2 import urlopen
+from tempfile import mkstemp
+
 handlers,environment = utils.handler_decorator()
 
 def sourcepath(path):
@@ -329,7 +333,23 @@ def umbrella(environment, context, job):
     if not os.path.exists(metadir):
         utils.mkdir_p(metadir)
     fp = open(os.path.join(metadir, "umbrella_output.txt"), "w")
-    specification_file = environment['spec_url']
+
+    # Check if the spec_url is actually a url or just a file path
+    spec_file = None
+    spec_path = None
+    try:
+        f = urlopen(environment['spec_url'])  # tries to open the url
+        spec_fd, temp_spec_path = mkstemp()
+        spec_file = spec_fd
+        spec_path = temp_spec_path
+        (filename, headers) = urlretrieve(environment['spec_url'], temp_spec_path)
+        specification_file = filename
+    except ValueError:  # invalid URL
+        specification_file = environment['spec_url']
+
+    # what spec is the umbrella command using?
+    print("Using specification file: ", specification_file)
+
     command = job.get('command', None)
     tempdir = tempfile.mkdtemp()
     logfile = job.get('logfile', 'umbrella.log')
@@ -383,6 +403,11 @@ def umbrella(environment, context, job):
             # log.debug("Umbrella process PID: %s" % p.pid)
             p.communicate()
             returncode = p.returncode
+
+            if spec_file and spec_path:
+                os.close(spec_file)
+                os.remove(spec_path)
+
             if returncode != 0:
                 # log.error("Docker execution failed, return code %s" % returncode)
                 raise RuntimeError("Umbrella execution failed, return code %s" % returncode)
