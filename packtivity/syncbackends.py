@@ -1,4 +1,3 @@
-import logging
 import packtivity.logutils as logutils
 
 class packconfig(object):
@@ -51,7 +50,7 @@ def prepublish(spec, attributes, context, pack_config):
 def run_packtivity(spec, parameters,context,nametag,config):
     #curry nametag into context
     context['nametag'] = nametag
-    log = logging.getLogger(logutils.get_topic_loggername(nametag,'step'))
+    log = logutils.setup_logging_topic(nametag,context,'step',return_logger = True)
     try:
         job = build_job(spec['process'],parameters, config)
         run_in_env(spec['environment'],job,context, config)

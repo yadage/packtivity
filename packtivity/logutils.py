@@ -52,6 +52,9 @@ def setup_logging_topic(nametag,context,topic,return_logger = False):
     log = logging.getLogger(get_topic_loggername(nametag,topic))
     log.propagate = False
 
+    if log.handlers:
+        return log if return_logger else None
+
     customhandlers = os.environ.get('PACKTIVITY_LOGGING_HANDLER')
     if customhandlers:
         module,func = customhandlers.split(':')

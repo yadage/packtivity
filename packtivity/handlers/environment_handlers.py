@@ -5,7 +5,6 @@ import packtivity.utils as utils
 import packtivity.logutils as logutils
 import time
 import psutil
-import logging
 import click
 import yaml
 import shlex
@@ -227,7 +226,7 @@ def docker_run_cmd(fullest_command,log,context,nametag):
 @environment('docker-encapsulated')
 def docker_enc_handler(environment,context,job):
     nametag = context['nametag']
-    log  =  logging.getLogger(logutils.get_topic_loggername(nametag,'step'))
+    log  = logutils.setup_logging_topic(nametag,context,'step',return_logger = True)
 
     # short interruption to create metainfo storage location
     metadir  = '{}/_packtivity'.format(context['readwrite'][0])
@@ -262,14 +261,14 @@ def docker_enc_handler(environment,context,job):
 @environment('noop-env')
 def noop_env(environment,context,job):
     nametag = context['nametag']
-    log  =  logging.getLogger(logutils.get_topic_loggername(nametag,'step'))
+    log  = logutils.setup_logging_topic(nametag,context,'step',return_logger = True)
     log.info('context is: %s',context)
     log.info('would be running this job: %s',job)
 
 @environment('localproc-env')
 def localproc_env(environment,context,job):
     nametag = context['nametag']
-    log  =  logging.getLogger(logutils.get_topic_loggername(nametag,'step'))
+    log  =  logutils.setup_logging_topic(nametag,context,'step',return_logger = True)
     olddir = os.path.realpath(os.curdir)
     workdir = context['readwrite'][0]
     log.info('running local command %s',job['command'])
