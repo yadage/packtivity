@@ -82,13 +82,13 @@ resources: {resources}
                resources = environment['resources']
               )
     log.debug(report)
-
+    
     do_cvmfs = 'CVMFS' in environment['resources']
     do_auth  = ('GRIDProxy'  in environment['resources']) or ('KRB5Auth' in environment['resources'])
     log.debug('do_auth: %s do_cvmfs: %s',do_auth,do_cvmfs)
-
-
-
+    
+    
+    
     docker_mod = prepare_docker(context,do_cvmfs,do_auth,log)
     return docker_mod
 
@@ -97,27 +97,27 @@ def run_docker_with_script(context,environment,job,log):
     image = environment['image']
     imagetag = environment['imagetag']
     nametag = context['nametag']
-
+    
     script = job['script']
     interpreter = job['interpreter']
-
+    
     do_cvmfs = 'CVMFS' in environment['resources']
     log.debug('script is:')
     log.debug('\n--------------\n'+script+'\n--------------')
     docker_mod = prepare_docker_context(context,environment,log)
     if 'PACKTIVITY_DRYRUN' in os.environ:
         return
-
+        
     indocker = interpreter
     envmod = 'source {} && '.format(environment['envscript']) if environment['envscript'] else ''
     indocker = envmod+indocker
-
+    
     try:
         with open('{}/{}.run.log'.format(metadir,nametag),'w') as logfile:
             if do_cvmfs:
                 if 'PACKTIVITY_WITHIN_DOCKER' not in os.environ:
                     subprocess.check_call('cvmfs_config probe')
-
+                    
             subcmd = 'docker run --rm -i {docker_mod} {image}:{imagetag} sh -c \'{indocker}\' '.format(image = image, imagetag = imagetag, docker_mod = docker_mod, indocker = indocker)
             log.debug('running docker cmd: %s',subcmd)
             proc = subprocess.Popen(shlex.split(subcmd), stdin = subprocess.PIPE, stderr = subprocess.STDOUT, stdout = logfile)
@@ -141,7 +141,7 @@ def prepare_full_docker_with_oneliner(context,environment,command,log):
     image = environment['image']
     imagetag = environment['imagetag']
     do_cvmfs = 'CVMFS' in environment['resources']
-
+    
     report = '''\n\
 --------------
 running one liner in container.
@@ -149,19 +149,19 @@ command: {command}
 --------------
     '''.format(command = command)
     log.debug(report)
-
+    
     docker_mod = prepare_docker_context(context,environment,log)
-
+    
     envmod = 'source {} &&'.format(environment['envscript']) if environment['envscript'] else ''
     in_docker_cmd = '{envmodifier} {command}'.format(envmodifier = envmod, command = command)
-
+    
     fullest_command = 'docker run --rm {docker_mod} {image}:{imagetag} sh -c \'{in_dock}\''.format(
                         docker_mod = docker_mod,
                         image = image,
                         imagetag = imagetag,
                         in_dock = in_docker_cmd
                         )
-
+    
     if do_cvmfs:
         if 'PACKTIVITY_WITHIN_DOCKER' not in os.environ:
             fullest_command = 'cvmfs_config probe && {}'.format(fullest_command)
@@ -227,16 +227,16 @@ def docker_run_cmd(fullest_command,log,context,nametag):
 def docker_enc_handler(environment,context,job):
     nametag = context['nametag']
     log  = logutils.setup_logging_topic(nametag,context,'step',return_logger = True)
-
+    
     # short interruption to create metainfo storage location
     metadir  = '{}/_packtivity'.format(context['readwrite'][0])
     context['metadir'] = metadir
     log.info('creating metadirectory %s if necessary. exists? : %s',metadir,os.path.exists(metadir))
     utils.mkdir_p(metadir)
-
+    
     #setup more detailed logging
     logutils.setup_logging(nametag, context)
-
+    
     log.debug('starting log for step: %s',nametag)
     if 'PACKTIVITY_DOCKER_NOPULL' not in os.environ:
         log.info('prepare pull')
@@ -245,9 +245,9 @@ def docker_enc_handler(environment,context,job):
             tag = environment['imagetag']
         )
         docker_pull(docker_pull_cmd,log,context,nametag)
-
+        
     log.info('running job')
-
+    
     if 'command' in job:
         # log.info('running oneliner command')
         docker_run_cmd_str = prepare_full_docker_with_oneliner(context,environment,job['command'],log)
