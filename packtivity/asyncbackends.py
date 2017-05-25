@@ -122,6 +122,8 @@ try:
     )
     @shared_task
     def run_nullary(nullary):
+        if os.environ.get('PACKTIVITY_CELERY_GLOBAL_NAMETAG')=='true':
+            nullary.keywords['nametag'] = run_nullary.request.id
         return nullary()
 
     class CeleryProxy(PacktivityProxyBase):
