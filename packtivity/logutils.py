@@ -1,29 +1,10 @@
+import os
 import logging
+import importlib
 from packtivity.utils import mkdir_p
 
 
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-# class TopicLogger(object):
-#     def __init__(self,basepath):
-#         self.basepath = basepath
-#         self.parentname = 'packtivity_logger'
-#         self.logger = logging.getLogger(self.parentname)
-#         self.logger.setLevel(logging.DEBUG)
-
-#         fh  = logging.StreamHandler()
-#         fh.setLevel(logging.INFO)
-#         fh.setFormatter(formatter)
-#         self.logger.addHandler(fh)
-
-#     def topic(self,topic):
-#         l = logging.getLogger('.'.join([self.parentname,topic]))
-#         l.setLevel(logging.DEBUG)
-#         if not l.handlers:
-#             fh = logging.FileHandler(os.path.join(self.basepath,'pack.{}.log'.format(topic)))
-#             fh.setFormatter(formatter)
-#             fh.setLevel(logging.DEBUG)
-#             l.addHandler(fh)
-#         return l
 
 def get_base_loggername(nametag):
     return 'packtivity_logger_{}'.format(nametag)
@@ -46,10 +27,7 @@ def setup_logging(nametag,context):
     log.propagate = False
     setup_logging_topic(nametag,context,'step')
 
-def setup_logging_topic(nametag,context,topic, return_logger = False):
-    log = logging.getLogger(get_topic_loggername(nametag,topic))
-    log.propagate = False
-
+def default_logging_handlers(log,nametag,context,topic):
     if topic == 'step':
         fh  = logging.StreamHandler()
         fh.setLevel(logging.INFO)
@@ -69,5 +47,18 @@ def setup_logging_topic(nametag,context,topic, return_logger = False):
     fh.setLevel(logging.DEBUG)
     fh.setFormatter(formatter)
     log.addHandler(fh)
+
+def setup_logging_topic(nametag,context,topic,return_logger = False):
+    log = logging.getLogger(get_topic_loggername(nametag,topic))
+    log.propagate = False
+
+    customhandlers = os.environ.get('PACKTIVITY_LOGGING_HANDLER')
+    if customhandlers:
+        module,func = customhandlers.split(':')
+        m = importlib.import_module(module)
+        f = getattr(m,func)
+        f(log,nametag,context,topic)
+    else:
+        default_logging_handlers(log,nametag,context,topic)    
     if return_logger:
         return log
