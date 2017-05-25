@@ -7,7 +7,7 @@
 
 This package aims to collect implementations of both synchronous and asynchronous execution of preserved, but parametrized scientific computational tasks that come with batteries included, i.e. with a full specification of their software dependencies. In that sense they are *packaged activities* -- packtivities.
 
-This package provides tools to validate and execute data processing tasks that are written according to the "packtivity" JSON schemas defined in https://github.com/diana-hep/cap-schemas.
+This package provides tools to validate and execute data processing tasks that are written according to the "packtivity" JSON schemas defined in https://github.com/diana-hep/yadage-schemas.
 
 Packtivities define
 
