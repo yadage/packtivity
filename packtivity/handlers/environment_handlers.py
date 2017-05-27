@@ -93,7 +93,6 @@ resources: {resources}
     return docker_mod
 
 def run_docker_with_script(context,environment,job,log):
-    metadir  = context['metadir']
     image = environment['image']
     imagetag = environment['imagetag']
     nametag = context['nametag']
