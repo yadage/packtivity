@@ -113,21 +113,28 @@ def run_docker_with_script(context,environment,job,log):
     indocker = envmod+indocker
     
     try:
-        with open('{}/{}.run.log'.format(metadir,nametag),'w') as logfile:
-            if do_cvmfs:
-                if 'PACKTIVITY_WITHIN_DOCKER' not in os.environ:
-                    subprocess.check_call('cvmfs_config probe')
-                    
-            subcmd = 'docker run --rm -i {docker_mod} {image}:{imagetag} sh -c \'{indocker}\' '.format(image = image, imagetag = imagetag, docker_mod = docker_mod, indocker = indocker)
-            log.debug('running docker cmd: %s',subcmd)
-            proc = subprocess.Popen(shlex.split(subcmd), stdin = subprocess.PIPE, stderr = subprocess.STDOUT, stdout = logfile)
-            log.debug('started run subprocess with pid %s. now piping script',proc.pid)
-            proc.communicate(script)
-            log.debug('docker run subprocess finished. return code: %s',proc.returncode)
-            if proc.returncode:
-                log.error('non-zero return code raising exception')
-                raise subprocess.CalledProcessError(returncode =  proc.returncode, cmd = subcmd)
-            log.debug('moving on from run')
+        runlog = logutils.setup_logging_topic(nametag,context,'run', return_logger = True)
+
+        if do_cvmfs:
+            if 'PACKTIVITY_WITHIN_DOCKER' not in os.environ:
+                subprocess.check_call('cvmfs_config probe')
+                
+        subcmd = 'docker run --rm -i {docker_mod} {image}:{imagetag} sh -c \'{indocker}\' '.format(image = image, imagetag = imagetag, docker_mod = docker_mod, indocker = indocker)
+        log.debug('running docker cmd: %s',subcmd)
+        proc = subprocess.Popen(shlex.split(subcmd), stdin = subprocess.PIPE, stderr = subprocess.STDOUT, stdout = subprocess.PIPE, bufsize=1)
+
+        log.debug('started run subprocess with pid %s. now piping script',proc.pid)
+        proc.stdin.write(script)
+        proc.stdin.close()
+        time.sleep(0.5)
+        for line in iter(proc.stdout.readline, ''):
+            runlog.info(line.strip())
+
+        log.debug('docker run subprocess finished. return code: %s',proc.returncode)
+        if proc.returncode:
+            log.error('non-zero return code raising exception')
+            raise subprocess.CalledProcessError(returncode =  proc.returncode, cmd = subcmd)
+        log.debug('moving on from run')
     except subprocess.CalledProcessError as exc:
         log.exception('subprocess failed. code: %s,  command %s',exc.returncode,exc.cmd)
         raise RuntimeError('failed docker run subprocess in docker_enc_handler.')
