@@ -11,7 +11,7 @@ import click
 import yaml
 import shlex
 
-from urllib import urlretrieve
+from urllib import urlretrieve, ContentTooShortError
 from urllib2 import urlopen
 from tempfile import mkstemp
 
@@ -337,13 +337,17 @@ def umbrella(environment, context, job):
     # Check if the spec_url is actually a url or just a file path
     spec_file = None
     spec_path = None
+    specification_file = ""
     try:
         f = urlopen(environment['spec_url'])  # tries to open the url
         spec_fd, temp_spec_path = mkstemp()
         spec_file = spec_fd
         spec_path = temp_spec_path
+        # urlretrieve will throw UrlError, HTTPError, or ContentTooShortError
         (filename, headers) = urlretrieve(environment['spec_url'], temp_spec_path)
         specification_file = filename
+    except ContentTooShortError:
+        print("URL Content is Too Short! ")
     except ValueError:  # invalid URL
         specification_file = environment['spec_url']
 
