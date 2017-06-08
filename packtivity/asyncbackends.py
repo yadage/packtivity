@@ -81,6 +81,43 @@ class MultiProcBackend(PythonCallableAsyncBackend):
             traceback.print_tb(tb)
             return (t,v)
 
+
+class ForegroundProxy(PacktivityProxyBase):
+    def __init__(self,result,success):
+        self.result = result
+        self.success = True
+
+    def proxyname(self):
+        return 'ForegroundProxy'
+
+    def details(self):
+        return {
+            'result': self.result,
+            'success': self.success
+        }
+
+class ForegroundBackend(PythonCallableAsyncBackend):
+    def __init__(self, packconfig_spec = None):
+        super(ForegroundBackend,self).__init__(packconfig_spec)
+
+    def submit_callable(self,callable):
+        return ForegroundProxy(callable(),True)
+
+    def result(self,resultproxy):
+        return resultproxy.result
+
+    def ready(self,resultproxy):
+        return True
+
+    def successful(self,resultproxy):
+        if not self.ready(resultproxy): return False
+        return resultproxy.result
+
+    def fail_info(self,resultproxy):
+        pass
+
+
+
 class IPythonParallelBackend(PythonCallableAsyncBackend):
     def __init__(self,client = None, resolve_like_partial = True, packconfig_spec = None):
         from ipyparallel import Client

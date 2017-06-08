@@ -33,6 +33,11 @@ def backend_from_string(backendstring):
         _,poolsize = backendstring.split(':')
         backend = asyncbackends.MultiProcBackend(poolsize = poolsize)
         return is_async, backend
+
+    if  backendstring == 'fourgroundasync':
+        backend = asyncbackends.ForegroundBackend()
+        return is_async, backend
+
     if  backendstring == 'ipcluster':
         backend = asyncbackends.IPythonParallelBackend()
         return is_async, backend
