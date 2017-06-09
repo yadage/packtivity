@@ -1,3 +1,4 @@
+import json
 import tempfile
 
 import os
@@ -336,6 +337,7 @@ def tarball_handler(environment, context, job):
 
 @environment('umbrella')
 def umbrella(environment, context, job):
+
     metadir = '{}/_packtivity'.format(context['readwrite'][0])
     context['metadir'] = metadir
 
@@ -347,18 +349,31 @@ def umbrella(environment, context, job):
     spec_file = None
     spec_path = None
     specification_file = ""
-    try:
-        f = urlopen(environment['spec_url'])  # tries to open the url
-        spec_fd, temp_spec_path = mkstemp()
-        spec_file = spec_fd
-        spec_path = temp_spec_path
-        # urlretrieve will throw UrlError, HTTPError, or ContentTooShortError
-        (filename, headers) = urlretrieve(environment['spec_url'], temp_spec_path)
-        specification_file = filename
-    except ContentTooShortError:
-        print("URL Content is Too Short! ")
-    except ValueError:  # invalid URL
-        specification_file = environment['spec_url']
+    json_spec = open('spec.json', 'w+')
+
+    # If a JSON specification file is included in the packtivity spec
+    # JSON specification can be either path to local file or URL
+    # MUST BE JSON!!
+    if 'spec_url' in environment:
+        try:
+            f = urlopen(environment['spec_url'])  # tries to open the url
+            spec_fd, temp_spec_path = mkstemp()
+            spec_file = spec_fd
+            spec_path = temp_spec_path
+            # urlretrieve will throw UrlError, HTTPError, or ContentTooShortError
+            (filename, headers) = urlretrieve(environment['spec_url'], temp_spec_path)
+            specification_file = filename
+        except ContentTooShortError:
+            print("URL Content is Too Short! ")
+        except ValueError:  # invalid URL
+            specification_file = environment['spec_url']
+
+    # This block within the if 'spec' is to handle a JSON reference to a YAML file in the packtivity spec
+    # MUST BE YAML!!
+    if 'spec' in environment:
+        json.dump(environment['spec'], json_spec, indent=2)
+        specification_file = os.path.abspath(json_spec.name)
+        json_spec.close()
 
     # what spec is the umbrella command using?
     print("Using specification file: ", specification_file)
@@ -406,6 +421,7 @@ def umbrella(environment, context, job):
         if not command:
             raise RuntimeError('command or script option must be provided')
         try:
+
             p = subprocess.Popen(
                 options,
                 stdout=fp,
