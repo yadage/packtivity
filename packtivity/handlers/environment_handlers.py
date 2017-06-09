@@ -17,6 +17,7 @@ from tempfile import mkstemp
 
 handlers,environment = utils.handler_decorator()
 
+
 def sourcepath(path):
     if 'PACKTIVITY_WORKDIR_LOCATION' in os.environ:
         old,new = os.environ['PACKTIVITY_WORKDIR_LOCATION'].split(':')
@@ -24,6 +25,7 @@ def sourcepath(path):
         return dockerpath
     else:
         return path
+
 
 def cvmfs_from_volume_plugin(command_line,cvmfs_repos = None):
     if not cvmfs_repos:
@@ -35,9 +37,11 @@ def cvmfs_from_volume_plugin(command_line,cvmfs_repos = None):
         command_line += ' --volume-driver cvmfs -v {cvmfs_repo}:/cvmfs/{cvmfs_repo}'.format(cvmfs_repo = repo)
     return command_line
 
+
 def cvmfs_from_external_mount(command_line):
     command_line+=' -v {}:/cvmfs'.format(os.environ.get('PACKTIVITY_CVMFS_LOCATION','/cvmfs'))
     return command_line
+
 
 def prepare_docker(context,do_cvmfs,do_auth,log):
     nametag = context['nametag']
@@ -98,6 +102,7 @@ resources: {resources}
     docker_mod = prepare_docker(context,do_cvmfs,do_auth,log)
     return docker_mod
 
+
 def run_docker_with_script(context,environment,job,log):
     metadir  = context['metadir']
     image = environment['image']
@@ -143,6 +148,7 @@ def run_docker_with_script(context,environment,job,log):
     finally:
         log.debug('finally for run')
 
+
 def prepare_full_docker_with_oneliner(context,environment,command,log):
     image = environment['image']
     imagetag = environment['imagetag']
@@ -172,6 +178,7 @@ command: {command}
         if 'PACKTIVITY_WITHIN_DOCKER' not in os.environ:
             fullest_command = 'cvmfs_config probe && {}'.format(fullest_command)
     return fullest_command
+
 
 def docker_pull(docker_pull_cmd,log,context,nametag):
     log.debug('docker pull command: \n  %s',docker_pull_cmd)
@@ -208,6 +215,7 @@ def docker_pull(docker_pull_cmd,log,context,nametag):
         raise
     finally:
         log.debug('finally for pull')
+
 
 def docker_run_cmd(fullest_command,log,context,nametag):
     log.debug('docker run  command: \n%s',fullest_command)
@@ -255,6 +263,7 @@ def remove_docker_image(image, log_filename, logger):
         except (OSError, IOError) as e:
             logger.exception("subprocess failed: %s", sys.exc_info())
             raise RuntimeError("docker rmi execution failed, subprocess error")
+
 
 @environment('tarball')
 def tarball_handler(environment, context, job):
@@ -425,6 +434,7 @@ def umbrella(environment, context, job):
         os.rmdir(tempdir)
         raise e
 
+
 @environment('docker-encapsulated')
 def docker_enc_handler(environment,context,job):
     nametag = context['nametag']
@@ -460,12 +470,14 @@ def docker_enc_handler(environment,context,job):
     else:
         raise RuntimeError('do not know yet how to run this...')
 
+
 @environment('noop-env')
 def noop_env(environment,context,job):
     nametag = context['nametag']
     log  = logging.getLogger('step_logger_{}'.format(nametag))
     log.info('context is: %s',context)
     log.info('would be running this job: %s',job)
+
 
 @environment('localproc-env')
 def localproc_env(environment,context,job):
@@ -487,12 +499,14 @@ def localproc_env(environment,context,job):
         log.info('changing back to original directory %s',olddir)
         os.chdir(olddir)
 
+
 @environment('manual-env')
 def manual_env(environment,context,job):
     instructions = environment['instructions']
     ctx = yaml.safe_dump(context,default_flow_style = False)
     click.secho(instructions, fg = 'blue')
     click.secho(ctx, fg = 'cyan')
+
 
 @environment('pathena-submit-env')
 def pathena_submit_env(environment,context,job):
