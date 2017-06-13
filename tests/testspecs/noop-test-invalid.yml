@@ -1,0 +1,7 @@
+process:
+  process_type: 'string-interpolated-cmd'
+  cmd: 'echo in a noop env {a_parameter}'
+publisher:
+  publisher_type: 'frompar-pub'
+  outputmap:
+    output: a_parameter
