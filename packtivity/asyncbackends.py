@@ -81,7 +81,6 @@ class MultiProcBackend(PythonCallableAsyncBackend):
             traceback.print_tb(tb)
             return (t,v)
 
-
 class ForegroundProxy(PacktivityProxyBase):
     def __init__(self,result,success):
         self.result = result

@@ -8,13 +8,16 @@ python:
   - '2.7'
 
 install:
-  - pip install pyflakes
+  - pip install pyflakes pytest pytest-cov python-coveralls
 
 script:
   - pyflakes packtivity
+  - pytest --cov=packtivity --cov-report html -vv
   - pip install -e '.[celery]' --process-dependency-links
   - cd tests && pytest && cd ..
   - 'echo "a_parameter: 10" > input.yml'
   - packtivity-run testspacks/noop-test.yml input.yml
-#  - docker build -t lukasheinrich/packtivity .
+
+after_success:
+  - coveralls 
 

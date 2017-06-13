@@ -95,7 +95,6 @@ def runcli(spec,parfiles,context,parameter,read,write,toplevel,schemasource,asyn
     result = pack(parameters,context,**backend_kwargs)
 
     if not is_sync and not asyncwait:
-        print 'this is a proxy'
         click.secho('proxy-json {}'.format(json.dumps(result.json())))
         with open(proxyfile,'w') as p:
             json.dump(result.json(),p)
