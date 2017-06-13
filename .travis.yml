@@ -9,7 +9,7 @@ python:
 
 install:
   - pip install pyflakes pytest pytest-cov python-coveralls
-  - pip install --process-dependency-links -e .
+  - pip install --process-dependency-links -e '.[celery]'
 
 script:
   - pyflakes packtivity
