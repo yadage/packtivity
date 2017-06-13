@@ -15,7 +15,7 @@ script:
   - pyflakes packtivity
   - pytest --cov=packtivity -vv
   - 'echo "a_parameter: 10" > input.yml'
-  - packtivity-run testspacks/noop-test.yml input.yml
+  - packtivity-run tests/testspacks/noop-test.yml input.yml
 
 after_success:
   - coveralls 
