@@ -47,7 +47,7 @@ def test_interp_pub_glob(tmpdir):
 	pubbed = handlers['interpolated-pub']['default'](pub,pars,ctx)
 
 	filelist = map(str,[tmpdir.join('hello_myvalue_1.txt'),tmpdir.join('hello_myvalue_2.txt')])
-	assert pubbed == {'hello': filelist}
+	assert set(pubbed['hello']) == set(filelist)
 
 
 def test_glob_pub(tmpdir):
@@ -65,7 +65,7 @@ def test_glob_pub(tmpdir):
 	pubbed = handlers['fromglob-pub']['default'](pub,pars,ctx)
 
 	filelist = map(str,[tmpdir.join('hello_1.txt'),tmpdir.join('hello_2.txt')])
-	assert pubbed == {'hello': filelist}
+	assert set(pubbed['hello']) == set(filelist)
 
 def test_yml_pub(tmpdir):
 	tmpdir.join('hello.yml').write('hello: world\n')
