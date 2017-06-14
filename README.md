@@ -2,6 +2,7 @@
 
 [![DOI](https://zenodo.org/badge/53696818.svg)](https://zenodo.org/badge/latestdoi/53696818)
 [![Build Status](https://travis-ci.org/diana-hep/packtivity.svg?branch=master)](https://travis-ci.org/diana-hep/packtivity)
+[![Coverage Status](https://coveralls.io/repos/github/diana-hep/packtivity/badge.svg)](https://coveralls.io/github/diana-hep/packtivity)
 [![Documentation Status](https://readthedocs.org/projects/packtivity/badge/?version=latest)](http://packtivity.readthedocs.io/en/latest/?badge=latest)
 [![PyPI](https://img.shields.io/pypi/v/packtivity.svg)](https://pypi.python.org/pypi/packtivity)
 
