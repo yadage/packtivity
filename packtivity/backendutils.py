@@ -2,14 +2,24 @@
 import asyncbackends
 import syncbackends
 import os
+import importlib
 
 def proxy_from_json(jsondata, best_effort_backend = True):
     if jsondata['proxyname'] == 'CeleryProxy':
         from asyncbackends import CeleryProxy
         proxy = CeleryProxy.fromJSON(jsondata)
         _, backend = backend_from_string('celery')
+    if jsondata['proxyname'] == 'CeleryProxy':
+        from asyncbackends import CeleryProxy
+        proxy = CeleryProxy.fromJSON(jsondata)
+        _, backend = backend_from_string('celery')
+
+    if jsondata['proxyname'] == 'ForegroundProxy':
+        from asyncbackends import ForegroundProxy
+        proxy = ForegroundProxy.fromJSON(jsondata)
+        _, backend = backend_from_string('foregroundasync')
+
     if 'PACKTIVITY_ASYNCBACKEND' in os.environ:
-        import importlib
         module, _, proxyclass = os.environ['PACKTIVITY_ASYNCBACKEND'].split(':')
         module = importlib.import_module(module)
         proxyclass = getattr(module,proxyclass)
@@ -34,7 +44,7 @@ def backend_from_string(backendstring):
         backend = asyncbackends.MultiProcBackend(poolsize = poolsize)
         return is_async, backend
 
-    if  backendstring == 'fourgroundasync':
+    if  backendstring == 'foregroundasync':
         backend = asyncbackends.ForegroundBackend()
         return is_async, backend
 

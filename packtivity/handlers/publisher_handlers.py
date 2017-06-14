@@ -24,7 +24,8 @@ def interpolated_pub_handler(publisher,attributes,context):
     result = copy.deepcopy(publisher['publish'])
     for path,value in utils.leaf_iterator(publisher['publish']):
         resultval = value.format(**forinterp)
-        resultval = glob2.glob(resultval)
+        if publisher['glob']:
+            resultval = glob2.glob(resultval)
         path.set(result,resultval)
     return result
 

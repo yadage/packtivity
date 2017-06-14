@@ -95,6 +95,13 @@ class ForegroundProxy(PacktivityProxyBase):
             'success': self.success
         }
 
+    @classmethod
+    def fromJSON(cls, data):
+        return cls(
+            data['proxydetails']['result'],
+            data['proxydetails']['success']
+        )
+
 class ForegroundBackend(PythonCallableAsyncBackend):
     def __init__(self, packconfig_spec = None):
         super(ForegroundBackend,self).__init__(packconfig_spec)
@@ -114,8 +121,6 @@ class ForegroundBackend(PythonCallableAsyncBackend):
 
     def fail_info(self,resultproxy):
         pass
-
-
 
 class IPythonParallelBackend(PythonCallableAsyncBackend):
     def __init__(self,client = None, resolve_like_partial = True, packconfig_spec = None):

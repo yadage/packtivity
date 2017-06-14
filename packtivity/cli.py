@@ -104,13 +104,17 @@ def runcli(spec,parfiles,context,parameter,read,write,toplevel,schemasource,asyn
 @click.option('-t','--toplevel', default = os.getcwd())
 @click.option('-c','--schemasource', default = yadageschemas.schemadir)
 @click.option('-n','--schemaname', default = 'packtivity/packtivity-schema')
-def validatecli(spec,toplevel,schemasource,schemaname):
+@click.option('--show/--no-show', default = False)
+def validatecli(spec,toplevel,schemasource,schemaname,show):
     try:
         spec = load_pack(spec,toplevel,schemasource,validate = True)
+        if show:
+            click.echo(json.dumps(dict(spec)))
+        else:
+            click.secho('packtivity definition is valid',fg = 'green')
     except jsonschema.exceptions.ValidationError as e:
         click.echo(e)
         raise click.ClickException(click.style('packtivity definition not valid',fg = 'red'))
-    click.secho('packtivity definition is valid',fg = 'green')
 
 @click.command()
 @click.argument('jsonfile')
