@@ -126,8 +126,11 @@ def run_docker_with_script(context,environment,job,log):
         proc.stdin.write(script)
         proc.stdin.close()
         time.sleep(0.5)
+
         for line in iter(proc.stdout.readline, ''):
             runlog.info(line.strip())
+        while proc.poll() is None:
+            pass
 
         log.debug('docker run subprocess finished. return code: %s',proc.returncode)
         if proc.returncode:
@@ -183,8 +186,12 @@ def docker_pull(docker_pull_cmd,log,context,nametag):
         log.debug('started pull subprocess with pid %s. now wait to finish',proc.pid)
         time.sleep(0.5)
         log.debug('process children: %s',[x for x in psutil.Process(proc.pid).children(recursive = True)])
+
         for line in iter(proc.stdout.readline, ''):
             pulllog.info(line.strip())
+        while proc.poll() is None:
+            pass
+
         log.debug('pull subprocess finished. return code: %s',proc.returncode)
         if proc.returncode:
             log.error('non-zero return code raising exception')
@@ -211,9 +218,13 @@ def docker_run_cmd(fullest_command,log,context,nametag):
         proc = subprocess.Popen(shlex.split(fullest_command), stderr = subprocess.STDOUT, stdout = subprocess.PIPE, bufsize=1)
         log.debug('started run subprocess with pid %s. now wait to finish',proc.pid)
         time.sleep(0.5)
+        log.debug('process children: %s',[x for x in psutil.Process(proc.pid).children(recursive = True)])
+
         for line in iter(proc.stdout.readline, ''):
             runlog.info(line.strip())
-        log.debug('process children: %s',[x for x in psutil.Process(proc.pid).children(recursive = True)])
+        while proc.poll() is None:
+            pass
+
         log.debug('docker run subprocess finished. return code: %s',proc.returncode)
         if proc.returncode:
             log.error('non-zero return code raising exception')
@@ -287,6 +298,7 @@ def localproc_env(environment,context,job):
         subprocess.check_call(job['command'], shell = True)
     except:
         log.exception('local job failed. job: %s',job)
+        raise
     finally:
         log.info('changing back to original directory %s',olddir)
         os.chdir(olddir)
@@ -297,8 +309,3 @@ def manual_env(environment,context,job):
     ctx = yaml.safe_dump(context,default_flow_style = False)
     click.secho(instructions, fg = 'blue')
     click.secho(ctx, fg = 'cyan')
-
-@environment('pathena-submit-env')
-def pathena_submit_env(environment,context,job):
-    import grid_handlers
-    return grid_handlers.execute_grid_job(environment,context,job)

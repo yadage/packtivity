@@ -12,6 +12,14 @@ def localproc_pack_fail(tmpdir):
 	return packtivity.pack_object.fromspec('tests/testspecs/localtouchfail.yml')
 
 @pytest.fixture()
+def docker_pack_fail(tmpdir):
+	return packtivity.pack_object.fromspec('tests/testspecs/dockerfail.yml')
+
+@pytest.fixture()
+def docker_script_pack_fail(tmpdir):
+	return packtivity.pack_object.fromspec('tests/testspecs/dockerfail_script.yml')
+
+@pytest.fixture()
 def localproc_packspec(tmpdir):
 	return packtivity.load_pack('tests/testspecs/localtouchfile.yml')
 

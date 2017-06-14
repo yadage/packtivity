@@ -90,8 +90,6 @@ def runcli(spec,parfiles,context,parameter,read,write,toplevel,schemasource,asyn
 
     pack = packtivity.pack_object(spec)
 
-
-    print 'calling pack with backend kwargs', backend_kwargs
     result = pack(parameters,context,**backend_kwargs)
 
     if not is_sync and not asyncwait:
