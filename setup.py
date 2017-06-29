@@ -13,7 +13,8 @@ deps = [
       'jsonpointer',
       'psutil',
       'yadage-schemas',
-      'mock'
+      'mock',
+      'checksumdir',
 ]
 
 if not 'READTHEDOCS' in os.environ:
