@@ -1,13 +1,15 @@
 import os
 import subprocess
 import sys
-import packtivity.utils as utils
-import packtivity.logutils as logutils
 import time
 import psutil
+import shlex
+
 import click
 import yaml
-import shlex
+
+import packtivity.utils as utils
+import packtivity.logutils as logutils
 
 handlers,environment = utils.handler_decorator()
 

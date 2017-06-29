@@ -1,11 +1,12 @@
-from syncbackends import run_packtivity
-from syncbackends import prepublish
-from syncbackends import packconfig
 import multiprocessing
 import functools
 import sys
 import traceback
 import os
+
+from syncbackends import run_packtivity
+from syncbackends import prepublish
+from syncbackends import packconfig
 
 class PacktivityProxyBase(object):
     '''

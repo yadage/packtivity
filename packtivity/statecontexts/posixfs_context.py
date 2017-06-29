@@ -1,9 +1,11 @@
+import hashlib
 import itertools
 import os
 import shutil
+import json
 import packtivity.utils as utils
 import logging
-
+import checksumdir
 log = logging.getLogger(__name__)
 
 class LocalFSState(object):
@@ -22,8 +24,18 @@ class LocalFSState(object):
 
     def reset(self):
         for rw in self.readwrite:
-            shutil.rmtree(rw)
+            if os.path.exists(rw):
+                shutil.rmtree(rw)
             os.makedirs(rw)
+
+    def state_hash(self):
+        #hash the upstream / input state
+        depwrites = [deprw for dep in self.dependencies for deprw in dep.readwrite]
+        dep_checksums = [checksumdir.dirhash(d) for d in depwrites if os.path.isdir(d)]
+
+        #hash out writing state
+        state_checksums = [checksumdir.dirhash(d) for d in self.readwrite if os.path.isdir(d)]
+        return hashlib.sha1(json.dumps([dep_checksums,state_checksums])).hexdigest()
 
     def contextualize_data(self,data):
         try: 

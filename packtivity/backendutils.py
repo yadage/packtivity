@@ -1,8 +1,8 @@
+import os
+import importlib
 
 import asyncbackends
 import syncbackends
-import os
-import importlib
 
 def proxy_from_json(jsondata, best_effort_backend = True):
     if jsondata['proxyname'] == 'CeleryProxy':
@@ -55,7 +55,6 @@ def backend_from_string(backendstring):
         backend = asyncbackends.CeleryBackend()
         return is_async, backend
     if backendstring == 'fromenv':
-        import importlib
         module, backend, _ = os.environ['PACKTIVITY_ASYNCBACKEND'].split(':')
         module = importlib.import_module(module)
         backendclass = getattr(module,backend)
