@@ -98,7 +98,6 @@ def run_docker_with_script(context,environment,job,log):
     script = job['script']
     interpreter = job['interpreter']
     
-    do_cvmfs = 'CVMFS' in environment['resources']
     log.debug('script is:')
     log.debug('\n--------------\n'+script+'\n--------------')
     docker_mod = prepare_docker_context(context,environment,log)

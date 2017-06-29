@@ -1,8 +1,6 @@
 import time
 import logging
-import yadageschemas
 import syncbackends
-import os
 from datetime import datetime
 import utils
 
