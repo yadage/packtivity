@@ -34,10 +34,10 @@ def cvmfs_from_external_mount(command_line):
     return command_line
 
 def prepare_docker(context,do_cvmfs,do_auth,log):
-    nametag = context['nametag']
-    metadir  = context['metadir']
-    readwrites  = context['readwrite']
-    readonlies = context['readonly']
+    nametag = context.identifier()
+    metadir  = context.metadir
+    readwrites  = context.readwrite
+    readonlies = context.readonly
 
     docker_mod = ''
     for rw in readwrites:
@@ -87,15 +87,13 @@ resources: {resources}
     do_auth  = ('GRIDProxy'  in environment['resources']) or ('KRB5Auth' in environment['resources'])
     log.debug('do_auth: %s do_cvmfs: %s',do_auth,do_cvmfs)
     
-    
-    
     docker_mod = prepare_docker(context,do_cvmfs,do_auth,log)
     return docker_mod
 
 def run_docker_with_script(context,environment,job,log):
     image = environment['image']
     imagetag = environment['imagetag']
-    nametag = context['nametag']
+    nametag = context.identifier()
     
     script = job['script']
     interpreter = job['interpreter']
@@ -113,11 +111,6 @@ def run_docker_with_script(context,environment,job,log):
     
     try:
         runlog = logutils.setup_logging_topic(nametag,context,'run', return_logger = True)
-
-        if do_cvmfs:
-            if 'PACKTIVITY_WITHIN_DOCKER' not in os.environ:
-                subprocess.check_call('cvmfs_config probe')
-                
         subcmd = 'docker run --rm -i {docker_mod} {image}:{imagetag} sh -c \'{indocker}\' '.format(image = image, imagetag = imagetag, docker_mod = docker_mod, indocker = indocker)
         log.debug('running docker cmd: %s',subcmd)
         proc = subprocess.Popen(shlex.split(subcmd), stdin = subprocess.PIPE, stderr = subprocess.STDOUT, stdout = subprocess.PIPE, bufsize=1)
@@ -149,7 +142,6 @@ def run_docker_with_script(context,environment,job,log):
 def prepare_full_docker_with_oneliner(context,environment,command,log):
     image = environment['image']
     imagetag = environment['imagetag']
-    do_cvmfs = 'CVMFS' in environment['resources']
     
     report = '''\n\
 --------------
@@ -170,10 +162,6 @@ command: {command}
                         imagetag = imagetag,
                         in_dock = in_docker_cmd
                         )
-    
-    if do_cvmfs:
-        if 'PACKTIVITY_WITHIN_DOCKER' not in os.environ:
-            fullest_command = 'cvmfs_config probe && {}'.format(fullest_command)
     return fullest_command
 
 def docker_pull(docker_pull_cmd,log,context,nametag):
@@ -242,12 +230,12 @@ def docker_run_cmd(fullest_command,log,context,nametag):
 
 @environment('docker-encapsulated')
 def docker_enc_handler(environment,context,job):
-    nametag = context['nametag']
+    nametag = context.identifier()
     log  = logutils.setup_logging_topic(nametag,context,'step',return_logger = True)
     
     # short interruption to create metainfo storage location
-    metadir  = '{}/_packtivity'.format(context['readwrite'][0])
-    context['metadir'] = metadir
+    metadir  = '{}/_packtivity'.format(context.readwrite[0])
+    context.metadir = metadir
     log.info('creating metadirectory %s if necessary. exists? : %s',metadir,os.path.exists(metadir))
     utils.mkdir_p(metadir)
     
@@ -277,17 +265,17 @@ def docker_enc_handler(environment,context,job):
 
 @environment('noop-env')
 def noop_env(environment,context,job):
-    nametag = context['nametag']
+    nametag = context.identifier()
     log  = logutils.setup_logging_topic(nametag,context,'step',return_logger = True)
     log.info('context is: %s',context)
     log.info('would be running this job: %s',job)
 
 @environment('localproc-env')
 def localproc_env(environment,context,job):
-    nametag = context['nametag']
+    nametag = context.identifier()
     log  =  logutils.setup_logging_topic(nametag,context,'step',return_logger = True)
     olddir = os.path.realpath(os.curdir)
-    workdir = context['readwrite'][0]
+    workdir = context.readwrite[0]
     log.info('running local command %s',job['command'])
     try:
         log.info('changing to workdirectory %s',workdir)

@@ -20,7 +20,7 @@ def process_attr_pub_handler(publisher,attributes,context):
 @publisher('interpolated-pub')
 def interpolated_pub_handler(publisher,attributes,context):
     forinterp = attributes.copy()
-    forinterp.update(workdir = context['readwrite'][0])
+    forinterp.update(workdir = context.readwrite[0])
     result = copy.deepcopy(publisher['publish'])
     for path,value in utils.leaf_iterator(publisher['publish']):
         resultval = value.format(**forinterp)
@@ -31,14 +31,14 @@ def interpolated_pub_handler(publisher,attributes,context):
 
 @publisher('fromyaml-pub')
 def fromyaml_pub_handler(publisher,attributes,context):
-    workdir  = context['readwrite'][0]
+    workdir  = context.readwrite[0]
     yamlfile =  publisher['yamlfile']
     pubdata = yaml.load(open('{}/{}'.format(workdir,yamlfile)))
     return pubdata
 
 @publisher('fromglob-pub')
 def glob_pub_handler(publisher,attributes,context):
-    workdir = context['readwrite'][0]
+    workdir = context.readwrite[0]
     globexpr =  publisher['globexpression']
     return {publisher['outputkey']:glob2.glob('{}/{}'.format(workdir,globexpr))}
 

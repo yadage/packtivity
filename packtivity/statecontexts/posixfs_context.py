@@ -6,24 +6,93 @@ import logging
 
 log = logging.getLogger(__name__)
 
-def contextualize_data(data,context):
-    '''
-    interpolate data string with context-specific information.
-    here, replace {workdir} with first read-write location
-    '''
-    try: 
-        workdir = context['readwrite'][0]
-        return data.format(workdir = workdir)
-    except AttributeError:
-        return data
+class LocalFSState(object):
+    def __init__(self,readwrite = None,readonly = None, dependencies = None, identifier = 'unidentified_state'):
+        self._identifier = identifier
+        self.readwrite = map(os.path.realpath,readwrite) if readwrite else  []
+        self.readonly  = map(os.path.realpath,readonly) if readonly else  []
+        self.dependencies = dependencies or []
+        self.metadir = None
 
-def merge_contexts(lhs,rhs):
-    return {
-        'readonly': lhs.get('readonly',[]) + rhs.get('readonly',[]),
-        'readwrite': lhs.get('readwrite',[]) + rhs.get('readwrite',[])
-    }
+    def identifier(self):
+        return self._identifier
 
-def make_new_context(name, oldcontext = None, subdir = True, create = False):
+    def add_dependency(self,depstate):
+        self.dependencies.append(depstate)
+
+    def reset(self):
+        for rw in self.readwrite:
+            shutil.rmtree(rw)
+            os.makedirs(rw)
+
+    def contextualize_data(self,data):
+        try: 
+            workdir = self.readwrite[0]
+            return data.format(workdir = workdir)
+        except AttributeError:
+            return data
+
+
+    def json(self):
+        return {
+            'state_type': 'localfs',
+            'identifier': self.identifier(),
+            'readwrite':  self.readwrite,
+            'readonly':   self.readonly,
+            'dependencies': [x.json() for x in self.dependencies]
+        }
+
+    @classmethod
+    def fromJSON(cls,jsondata):
+        return cls(
+            readwrite    = jsondata['readwrite'],
+            readonly     = jsondata['readonly'],
+            identifier   = jsondata['identifier'],
+            dependencies = [LocalFSState.fromJSON(x) for x in jsondata['dependencies']]
+        )
+
+class LocalFSProvider(object):
+    def __init__(self, *base_states, **kwargs):
+        base_states = list(base_states)
+        self.nest = kwargs.get('nest', True)
+        self.ensure = kwargs.get('ensure', None)
+
+        first = base_states.pop()
+        assert first
+
+        self.base = first
+
+        while base_states:
+            next_state = base_states.pop()
+            if not next_state:
+                continue
+            self.base = _merge_states(self.base,next_state)
+
+    def new_provider(self,name):
+
+        new_base_ro = self.base.readwrite + self.base.readonly
+        new_base_rw = [os.path.join(self.base.readwrite[0],name)]
+        return LocalFSProvider(LocalFSState(new_base_rw,new_base_ro))
+
+    def new_state(self,name):
+        return _make_new_state(name,self.base, self.nest, self.ensure)
+
+    def json(self):
+        return {
+            'state_provider_type': 'localfs_provider',
+            'base_state': self.base.json(),
+            'nest': self.nest,
+            'ensure': self.ensure
+        }
+
+    @classmethod
+    def fromJSON(cls,jsondata):
+        return cls(LocalFSState.fromJSON(jsondata['base_state']), nest = jsondata['nest'], ensure = jsondata['ensure'])
+
+def _merge_states(lhs,rhs):
+    return LocalFSState(lhs.readwrite + rhs.readwrite,lhs.readonly + rhs.readonly)
+
+def _make_new_state(name, oldcontext = None, subdir = True, create = False):
     '''
     creates a new context from an existing context.
 
@@ -37,34 +106,24 @@ def make_new_context(name, oldcontext = None, subdir = True, create = False):
     '''
 
     # the new context will get a name in any case (if subdir is false someone needs to make sure these are unique)
-    newcontext = {
-        'nametag':name.replace('/','_'), # replace in case name is nested path
-    }
-
     if 'PACKTIVITY_FORCESHAREDSTATE' in os.environ:
         subdir = False
 
     if oldcontext is None:
         new_readwrites = [os.path.abspath(name)]
     else:
-        new_readwrites = ['{}/{}'.format(oldcontext['readwrite'][0],name)] if subdir else oldcontext['readwrite'] 
+        new_readwrites = ['{}/{}'.format(oldcontext.readwrite[0],name)] if subdir else oldcontext.readwrite
 
     if subdir:
         # for nested directories, we want to have at lease read access to all data in parent context
-        new_readonlies = [ro for ro in itertools.chain(oldcontext['readonly'],oldcontext['readwrite'])] if oldcontext else []
+        new_readonlies = [ro for ro in itertools.chain(oldcontext.readonly,oldcontext.readwrite)] if oldcontext else []
     else:
-        new_readonlies = oldcontext['readonly'] if oldcontext else []
+        new_readonlies = oldcontext.readonly if oldcontext else []
         
     if create:
         map(utils.mkdir_p,new_readwrites)
         
-        
-    newcontext.update(readwrite = new_readwrites, readonly = new_readonlies)
-    log.debug('new context is: %s', newcontext)
-    return newcontext
+    log.debug('new context is: rw: %s, ro: ', new_readwrites, new_readonlies)
+    new_identifier = name.replace('/','_') # replace in case name is nested path
+    return LocalFSState(readwrite = new_readwrites, readonly = new_readonlies, identifier = new_identifier)
 
-def reset_state(context):
-    '''delete readwriteable locations of this context'''
-    for rw in context['readwrite']:
-        shutil.rmtree(rw)
-        os.makedirs(rw)

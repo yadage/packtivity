@@ -35,8 +35,8 @@ def default_logging_handlers(log,nametag,context,topic):
         log.addHandler(fh)
 
     # short interruption to create metainfo storage location
-    metadir  = '{}/_packtivity'.format(context['readwrite'][0])
-    context['metadir'] = metadir
+    metadir  = '{}/_packtivity'.format(context.readwrite[0])
+    context.metadir = metadir
     # log.info('creating metadirectory %s if necessary. exists? : %s',metadir,os.path.exists(metadir))
     mkdir_p(metadir)
 

@@ -48,7 +48,7 @@ class PythonCallableAsyncBackend(object):
             spec = spec,
             parameters = parameters,
             context = context,
-            nametag = context.get('nametag','packtivity_async'),
+            nametag = context.identifier(),
             config = self.config
         )
         return self.submit_callable(nullary)

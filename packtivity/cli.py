@@ -8,13 +8,13 @@ import logging
 import json
 import packtivity.utils as utils
 import packtivity.backendutils as bkutils
-import packtivity.statecontexts.posixfs_context as statecontext
+from packtivity.statecontexts.posixfs_context import LocalFSState
 
 log = logging.getLogger(__name__)
 
 def finalize_input(jsondata,context):
     for path,value in utils.leaf_iterator(jsondata):
-        actualval = statecontext.contextualize_data(value,context)
+        actualval = context.contextualize_data(value)
         path.set(jsondata,actualval)
     return jsondata
 
@@ -32,19 +32,6 @@ def getinit_data(initfiles,parameters):
         key,value = x.split('=')
         initdata[key]=yaml.load(value)
     return initdata
-
-def load_pack(spec,toplevel,schemasource,validate):
-    #in case that spec is a json reference string, we will treat it as such
-    #if it's just a filename, this should not affect it...
-    spec   = yadageschemas.load(
-            {'$ref':spec},
-            toplevel,
-            'packtivity/packtivity-schema',
-            schemadir = schemasource,
-            validate = validate,
-            initialload = False
-    )
-    return spec
 
 @click.command()
 @click.option('--parameter', '-p', multiple=True)
@@ -64,14 +51,15 @@ def load_pack(spec,toplevel,schemasource,validate):
 def runcli(spec,parfiles,context,parameter,read,write,toplevel,schemasource,asyncwait,contextualize,validate,verbosity,backend,proxyfile):
     logging.basicConfig(level = getattr(logging,verbosity))
 
-    spec = load_pack(spec,toplevel,schemasource,validate)
+    spec = utils.load_packtivity(spec,toplevel,schemasource,validate)
 
     parameters = getinit_data(parfiles,parameter)
 
     context    = yaml.load(open(context)) if context else {}
-
     context.setdefault('readwrite',[]).extend(map(os.path.realpath,write))
     context.setdefault('readonly',[]).extend(map(os.path.realpath,read))
+    context = LocalFSState(context['readwrite'],context['readonly'])
+
 
     if contextualize:
         parameters = finalize_input(parameters,context)
@@ -107,7 +95,7 @@ def runcli(spec,parfiles,context,parameter,read,write,toplevel,schemasource,asyn
 @click.option('--show/--no-show', default = False)
 def validatecli(spec,toplevel,schemasource,schemaname,show):
     try:
-        spec = load_pack(spec,toplevel,schemasource,validate = True)
+        spec = utils.load_packtivity(spec,toplevel,schemasource,validate = True)
         if show:
             click.echo(json.dumps(dict(spec)))
         else:

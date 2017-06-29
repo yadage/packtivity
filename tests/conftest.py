@@ -1,11 +1,17 @@
 import pytest
 import packtivity
+import packtivity.utils
 import packtivity.syncbackends
 import packtivity.asyncbackends
+from packtivity.statecontexts.posixfs_context import LocalFSState
 
 @pytest.fixture()
 def localproc_pack(tmpdir):
 	return packtivity.pack_object.fromspec('tests/testspecs/localtouchfile.yml')
+
+@pytest.fixture()
+def basic_localfs_state(tmpdir):
+	return LocalFSState([str(tmpdir)])
 
 @pytest.fixture()
 def localproc_pack_fail(tmpdir):
@@ -21,17 +27,15 @@ def docker_script_pack_fail(tmpdir):
 
 @pytest.fixture()
 def localproc_packspec(tmpdir):
-	return packtivity.load_pack('tests/testspecs/localtouchfile.yml')
+	return packtivity.utils.load_packtivity('tests/testspecs/localtouchfile.yml')
 
 @pytest.fixture()
 def dockeproc_pack(tmpdir):
-	pack = packtivity.pack_object.fromspec('tests/testspecs/dockertouchfile.yml')
-	return pack
+	return packtivity.pack_object.fromspec('tests/testspecs/dockertouchfile.yml')
 
 @pytest.fixture()
 def dockeproc_script_pack(tmpdir):
-	pack = packtivity.pack_object.fromspec('tests/testspecs/dockertouchfile_script.yml')
-	return pack
+	return packtivity.pack_object.fromspec('tests/testspecs/dockertouchfile_script.yml')
 
 @pytest.fixture()
 def default_sync():
