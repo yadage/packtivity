@@ -19,6 +19,16 @@ def sourcepath(path):
     else:
         return path
 
+def state_context_to_mounts(context):
+    readwrites  = context.readwrite
+    readonlies = context.readonly
+    mounts = ''
+    for rw in readwrites:
+        mounts += '-v {}:{}:rw'.format(sourcepath(os.path.abspath(rw)),rw)
+    for ro in readonlies:
+        mounts += ' -v {}:{}:ro'.format(sourcepath(ro),ro)
+    return mounts
+
 def cvmfs_from_volume_plugin(command_line,cvmfs_repos = None):
     if not cvmfs_repos:
         cvmfs_repos = yaml.load(os.environ.get('PACKTIVITY_CVMFS_REPOS','null'))
@@ -36,14 +46,10 @@ def cvmfs_from_external_mount(command_line):
 def prepare_docker(context,do_cvmfs,do_auth,log):
     nametag = context.identifier()
     metadir  = context.metadir
-    readwrites  = context.readwrite
-    readonlies = context.readonly
 
     docker_mod = ''
-    for rw in readwrites:
-        docker_mod += '-v {}:{}:rw'.format(sourcepath(os.path.abspath(rw)),rw)
-    for ro in readonlies:
-        docker_mod += ' -v {}:{}:ro'.format(sourcepath(ro),ro)
+
+    docker_mod = state_context_to_mounts(context)
 
     if do_cvmfs:
         cvmfs_source = os.environ.get('PACKTIVITY_CVMFS_SOURCE','external')
@@ -67,7 +73,6 @@ def prepare_docker(context,do_cvmfs,do_auth,log):
     docker_mod += ' --cidfile {}'.format(cidfile)
 
     return docker_mod
-
 
 def prepare_docker_context(context,environment,log):
     container = environment['image']
