@@ -1,0 +1,10 @@
+process:
+  process_type: 'string-interpolated-cmd'
+  cmd: 'echo Hello World > {outputfile}'
+publisher:
+  publisher_type: 'frompar-pub'
+  outputmap:
+    output: outputfile
+environment:
+  environment_type: 'docker-encapsulated'
+  image: busybox

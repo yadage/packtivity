@@ -4,13 +4,15 @@ import tempfile
 import os
 import subprocess
 import sys
-import packtivity.utils as utils
 import time
 import psutil
-import logging
+import shlex
+
 import click
 import yaml
-import shlex
+
+import packtivity.utils as utils
+import packtivity.logutils as logutils
 
 from urllib import urlretrieve, ContentTooShortError
 from urllib2 import urlopen
@@ -26,6 +28,17 @@ def sourcepath(path):
         return dockerpath
     else:
         return path
+
+
+def state_context_to_mounts(context):
+    readwrites  = context.readwrite
+    readonlies = context.readonly
+    mounts = ''
+    for rw in readwrites:
+        mounts += '-v {}:{}:rw'.format(sourcepath(os.path.abspath(rw)),rw)
+    for ro in readonlies:
+        mounts += ' -v {}:{}:ro'.format(sourcepath(ro),ro)
+    return mounts
 
 
 def cvmfs_from_volume_plugin(command_line,cvmfs_repos = None):
@@ -45,16 +58,12 @@ def cvmfs_from_external_mount(command_line):
 
 
 def prepare_docker(context,do_cvmfs,do_auth,log):
-    nametag = context['nametag']
-    metadir  = context['metadir']
-    readwrites  = context['readwrite']
-    readonlies = context['readonly']
+    nametag = context.identifier()
+    metadir  = context.metadir
 
     docker_mod = ''
-    for rw in readwrites:
-        docker_mod += '-v {}:{}:rw'.format(sourcepath(os.path.abspath(rw)),rw)
-    for ro in readonlies:
-        docker_mod += ' -v {}:{}:ro'.format(sourcepath(ro),ro)
+
+    docker_mod = state_context_to_mounts(context)
 
     if do_cvmfs:
         cvmfs_source = os.environ.get('PACKTIVITY_CVMFS_SOURCE','external')
@@ -93,53 +102,54 @@ resources: {resources}
                resources = environment['resources']
               )
     log.debug(report)
-
+    
     do_cvmfs = 'CVMFS' in environment['resources']
     do_auth  = ('GRIDProxy'  in environment['resources']) or ('KRB5Auth' in environment['resources'])
     log.debug('do_auth: %s do_cvmfs: %s',do_auth,do_cvmfs)
-
-
-
+    
     docker_mod = prepare_docker(context,do_cvmfs,do_auth,log)
     return docker_mod
 
 
 def run_docker_with_script(context,environment,job,log):
-    metadir  = context['metadir']
     image = environment['image']
     imagetag = environment['imagetag']
-    nametag = context['nametag']
-
+    nametag = context.identifier()
+    
     script = job['script']
     interpreter = job['interpreter']
-
-    do_cvmfs = 'CVMFS' in environment['resources']
+    
     log.debug('script is:')
     log.debug('\n--------------\n'+script+'\n--------------')
     docker_mod = prepare_docker_context(context,environment,log)
     if 'PACKTIVITY_DRYRUN' in os.environ:
         return
-
+        
     indocker = interpreter
     envmod = 'source {} && '.format(environment['envscript']) if environment['envscript'] else ''
     indocker = envmod+indocker
-
+    
     try:
-        with open('{}/{}.run.log'.format(metadir,nametag),'w') as logfile:
-            if do_cvmfs:
-                if 'PACKTIVITY_WITHIN_DOCKER' not in os.environ:
-                    subprocess.check_call('cvmfs_config probe')
+        runlog = logutils.setup_logging_topic(nametag,context,'run', return_logger = True)
+        subcmd = 'docker run --rm -i {docker_mod} {image}:{imagetag} sh -c \'{indocker}\' '.format(image = image, imagetag = imagetag, docker_mod = docker_mod, indocker = indocker)
+        log.debug('running docker cmd: %s',subcmd)
+        proc = subprocess.Popen(shlex.split(subcmd), stdin = subprocess.PIPE, stderr = subprocess.STDOUT, stdout = subprocess.PIPE, bufsize=1)
 
-            subcmd = 'docker run --rm -i {docker_mod} {image}:{imagetag} sh -c \'{indocker}\' '.format(image = image, imagetag = imagetag, docker_mod = docker_mod, indocker = indocker)
-            log.debug('running docker cmd: %s',subcmd)
-            proc = subprocess.Popen(shlex.split(subcmd), stdin = subprocess.PIPE, stderr = subprocess.STDOUT, stdout = logfile)
-            log.debug('started run subprocess with pid %s. now piping script',proc.pid)
-            proc.communicate(script)
-            log.debug('docker run subprocess finished. return code: %s',proc.returncode)
-            if proc.returncode:
-                log.error('non-zero return code raising exception')
-                raise subprocess.CalledProcessError(returncode =  proc.returncode, cmd = subcmd)
-            log.debug('moving on from run')
+        log.debug('started run subprocess with pid %s. now piping script',proc.pid)
+        proc.stdin.write(script)
+        proc.stdin.close()
+        time.sleep(0.5)
+
+        for line in iter(proc.stdout.readline, ''):
+            runlog.info(line.strip())
+        while proc.poll() is None:
+            pass
+
+        log.debug('docker run subprocess finished. return code: %s',proc.returncode)
+        if proc.returncode:
+            log.error('non-zero return code raising exception')
+            raise subprocess.CalledProcessError(returncode =  proc.returncode, cmd = subcmd)
+        log.debug('moving on from run')
     except subprocess.CalledProcessError as exc:
         log.exception('subprocess failed. code: %s,  command %s',exc.returncode,exc.cmd)
         raise RuntimeError('failed docker run subprocess in docker_enc_handler.')
@@ -153,8 +163,7 @@ def run_docker_with_script(context,environment,job,log):
 def prepare_full_docker_with_oneliner(context,environment,command,log):
     image = environment['image']
     imagetag = environment['imagetag']
-    do_cvmfs = 'CVMFS' in environment['resources']
-
+    
     report = '''\n\
 --------------
 running one liner in container.
@@ -162,22 +171,18 @@ command: {command}
 --------------
     '''.format(command = command)
     log.debug(report)
-
+    
     docker_mod = prepare_docker_context(context,environment,log)
-
+    
     envmod = 'source {} &&'.format(environment['envscript']) if environment['envscript'] else ''
     in_docker_cmd = '{envmodifier} {command}'.format(envmodifier = envmod, command = command)
-
+    
     fullest_command = 'docker run --rm {docker_mod} {image}:{imagetag} sh -c \'{in_dock}\''.format(
                         docker_mod = docker_mod,
                         image = image,
                         imagetag = imagetag,
                         in_dock = in_docker_cmd
                         )
-
-    if do_cvmfs:
-        if 'PACKTIVITY_WITHIN_DOCKER' not in os.environ:
-            fullest_command = 'cvmfs_config probe && {}'.format(fullest_command)
     return fullest_command
 
 
@@ -185,25 +190,22 @@ def docker_pull(docker_pull_cmd,log,context,nametag):
     log.debug('docker pull command: \n  %s',docker_pull_cmd)
     if 'PACKTIVITY_DRYRUN' in os.environ:
         return
-
-
-    # if 
-    #     subprocess.check_call(shlex.split('docker login -u {username} -p {password} {registry}').format(
-    #     ))
-
-
-    metadir  = context['metadir']
     try:
-        with open('{}/{}.pull.log'.format(metadir,nametag),'w') as logfile:
-            proc = subprocess.Popen(shlex.split(docker_pull_cmd), stderr = subprocess.STDOUT, stdout = logfile)
-            log.debug('started pull subprocess with pid %s. now wait to finish',proc.pid)
-            time.sleep(0.5)
-            log.debug('process children: %s',[x for x in psutil.Process(proc.pid).children(recursive = True)])
-            proc.communicate()
-            log.debug('pull subprocess finished. return code: %s',proc.returncode)
-            if proc.returncode:
-                log.error('non-zero return code raising exception')
-                raise subprocess.CalledProcessError(returncode =  proc.returncode, cmd = docker_pull_cmd)
+        pulllog = logutils.setup_logging_topic(nametag,context,'pull', return_logger = True)
+        proc = subprocess.Popen(shlex.split(docker_pull_cmd), stderr = subprocess.STDOUT, stdout = subprocess.PIPE, bufsize=1)
+        log.debug('started pull subprocess with pid %s. now wait to finish',proc.pid)
+        time.sleep(0.5)
+        log.debug('process children: %s',[x for x in psutil.Process(proc.pid).children(recursive = True)])
+
+        for line in iter(proc.stdout.readline, ''):
+            pulllog.info(line.strip())
+        while proc.poll() is None:
+            pass
+
+        log.debug('pull subprocess finished. return code: %s',proc.returncode)
+        if proc.returncode:
+            log.error('non-zero return code raising exception')
+            raise subprocess.CalledProcessError(returncode =  proc.returncode, cmd = docker_pull_cmd)
         log.debug('moving on from pull')
     except RuntimeError as e:
         log.exception('caught RuntimeError')
@@ -220,22 +222,25 @@ def docker_pull(docker_pull_cmd,log,context,nametag):
 
 def docker_run_cmd(fullest_command,log,context,nametag):
     log.debug('docker run  command: \n%s',fullest_command)
-    metadir = context['metadir']
-
     if 'PACKTIVITY_DRYRUN' in os.environ:
         return
     try:
-        with open('{}/{}.run.log'.format(metadir,nametag),'w') as logfile:
-            proc = subprocess.Popen(shlex.split(fullest_command), stderr = subprocess.STDOUT, stdout = logfile)
-            log.debug('started run subprocess with pid %s. now wait to finish',proc.pid)
-            time.sleep(0.5)
-            log.debug('process children: %s',[x for x in psutil.Process(proc.pid).children(recursive = True)])
-            proc.communicate()
-            log.debug('docker run subprocess finished. return code: %s',proc.returncode)
-            if proc.returncode:
-                log.error('non-zero return code raising exception')
-                raise subprocess.CalledProcessError(returncode =  proc.returncode, cmd = fullest_command)
-            log.debug('moving on from run')
+        runlog = logutils.setup_logging_topic(nametag,context,'run', return_logger = True)
+        proc = subprocess.Popen(shlex.split(fullest_command), stderr = subprocess.STDOUT, stdout = subprocess.PIPE, bufsize=1)
+        log.debug('started run subprocess with pid %s. now wait to finish',proc.pid)
+        time.sleep(0.5)
+        log.debug('process children: %s',[x for x in psutil.Process(proc.pid).children(recursive = True)])
+
+        for line in iter(proc.stdout.readline, ''):
+            runlog.info(line.strip())
+        while proc.poll() is None:
+            pass
+
+        log.debug('docker run subprocess finished. return code: %s',proc.returncode)
+        if proc.returncode:
+            log.error('non-zero return code raising exception')
+            raise subprocess.CalledProcessError(returncode =  proc.returncode, cmd = fullest_command)
+        log.debug('moving on from run')
     except subprocess.CalledProcessError as exc:
         log.exception('subprocess failed. code: %s,  command %s',exc.returncode,exc.cmd)
         raise RuntimeError('failed docker run subprocess in docker_enc_handler.')
@@ -453,18 +458,18 @@ def umbrella(environment, context, job):
 
 @environment('docker-encapsulated')
 def docker_enc_handler(environment,context,job):
-    nametag = context['nametag']
-    log  = logging.getLogger('step_logger_{}'.format(nametag))
-
+    nametag = context.identifier()
+    log  = logutils.setup_logging_topic(nametag,context,'step',return_logger = True)
+    
     # short interruption to create metainfo storage location
-    metadir  = '{}/_packtivity'.format(context['readwrite'][0])
-    context['metadir'] = metadir
+    metadir  = '{}/_packtivity'.format(context.readwrite[0])
+    context.metadir = metadir
     log.info('creating metadirectory %s if necessary. exists? : %s',metadir,os.path.exists(metadir))
     utils.mkdir_p(metadir)
-
+    
     #setup more detailed logging
-    utils.setup_logging(nametag, context)
-
+    logutils.setup_logging(nametag, context)
+    
     log.debug('starting log for step: %s',nametag)
     if 'PACKTIVITY_DOCKER_NOPULL' not in os.environ:
         log.info('prepare pull')
@@ -473,9 +478,9 @@ def docker_enc_handler(environment,context,job):
             tag = environment['imagetag']
         )
         docker_pull(docker_pull_cmd,log,context,nametag)
-
+        
     log.info('running job')
-
+    
     if 'command' in job:
         # log.info('running oneliner command')
         docker_run_cmd_str = prepare_full_docker_with_oneliner(context,environment,job['command'],log)
@@ -489,18 +494,18 @@ def docker_enc_handler(environment,context,job):
 
 @environment('noop-env')
 def noop_env(environment,context,job):
-    nametag = context['nametag']
-    log  = logging.getLogger('step_logger_{}'.format(nametag))
+    nametag = context.identifier()
+    log  = logutils.setup_logging_topic(nametag,context,'step',return_logger = True)
     log.info('context is: %s',context)
     log.info('would be running this job: %s',job)
 
 
 @environment('localproc-env')
 def localproc_env(environment,context,job):
-    nametag = context['nametag']
-    log  = logging.getLogger('step_logger_{}'.format(nametag))
+    nametag = context.identifier()
+    log  =  logutils.setup_logging_topic(nametag,context,'step',return_logger = True)
     olddir = os.path.realpath(os.curdir)
-    workdir = context['readwrite'][0]
+    workdir = context.readwrite[0]
     log.info('running local command %s',job['command'])
     try:
         log.info('changing to workdirectory %s',workdir)
@@ -511,6 +516,7 @@ def localproc_env(environment,context,job):
         subprocess.check_call(job['command'], shell = True)
     except:
         log.exception('local job failed. job: %s',job)
+        raise
     finally:
         log.info('changing back to original directory %s',olddir)
         os.chdir(olddir)
@@ -528,3 +534,4 @@ def manual_env(environment,context,job):
 def pathena_submit_env(environment,context,job):
     import grid_handlers
     return grid_handlers.execute_grid_job(environment,context,job)
+

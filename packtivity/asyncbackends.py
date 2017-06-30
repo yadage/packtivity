@@ -1,11 +1,12 @@
-from syncbackends import run_packtivity
-from syncbackends import prepublish
-from syncbackends import packconfig
 import multiprocessing
 import functools
 import sys
 import traceback
 import os
+
+from syncbackends import run_packtivity
+from syncbackends import prepublish
+from syncbackends import packconfig
 
 class PacktivityProxyBase(object):
     '''
@@ -48,7 +49,7 @@ class PythonCallableAsyncBackend(object):
             spec = spec,
             parameters = parameters,
             context = context,
-            nametag = context.get('nametag','packtivity_async'),
+            nametag = context.identifier(),
             config = self.config
         )
         return self.submit_callable(nullary)
@@ -80,6 +81,47 @@ class MultiProcBackend(PythonCallableAsyncBackend):
             t,v,tb =    sys.exc_info()
             traceback.print_tb(tb)
             return (t,v)
+
+class ForegroundProxy(PacktivityProxyBase):
+    def __init__(self,result,success):
+        self.result = result
+        self.success = True
+
+    def proxyname(self):
+        return 'ForegroundProxy'
+
+    def details(self):
+        return {
+            'result': self.result,
+            'success': self.success
+        }
+
+    @classmethod
+    def fromJSON(cls, data):
+        return cls(
+            data['proxydetails']['result'],
+            data['proxydetails']['success']
+        )
+
+class ForegroundBackend(PythonCallableAsyncBackend):
+    def __init__(self, packconfig_spec = None):
+        super(ForegroundBackend,self).__init__(packconfig_spec)
+
+    def submit_callable(self,callable):
+        return ForegroundProxy(callable(),True)
+
+    def result(self,resultproxy):
+        return resultproxy.result
+
+    def ready(self,resultproxy):
+        return True
+
+    def successful(self,resultproxy):
+        if not self.ready(resultproxy): return False
+        return resultproxy.result
+
+    def fail_info(self,resultproxy):
+        pass
 
 class IPythonParallelBackend(PythonCallableAsyncBackend):
     def __init__(self,client = None, resolve_like_partial = True, packconfig_spec = None):
@@ -115,10 +157,15 @@ try:
         task_serializer = 'pickle',
         accept_content = ['pickle','json'],
         broker_url = os.environ.get('PACKTIVITY_CELERY_REDIS_BROKER','redis://localhost:6379'),
-        result_backend = os.environ.get('PACKTIVITY_CELERY_REDIS_BROKER','redis://localhost:6379')
+        result_backend = os.environ.get('PACKTIVITY_CELERY_REDIS_BROKER','redis://localhost:6379'),
+        result_expires = False,
+        broker_transport_options = {'visibility_timeout':os.environ.get('PACKTIVITY_CELERY_VISIBILITY_TIMEOUT',86400)},
+        worker_prefetch_multiplier = 1
     )
     @shared_task
     def run_nullary(nullary):
+        if os.environ.get('PACKTIVITY_CELERY_GLOBAL_NAMETAG')=='true':
+            nullary.keywords['nametag'] = run_nullary.request.id
         return nullary()
 
     class CeleryProxy(PacktivityProxyBase):

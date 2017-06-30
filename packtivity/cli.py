@@ -7,13 +7,14 @@ import yadageschemas
 import logging
 import json
 import packtivity.utils as utils
-import packtivity.statecontexts.posixfs_context as statecontext
+import packtivity.backendutils as bkutils
+from packtivity.statecontexts.posixfs_context import LocalFSState
 
 log = logging.getLogger(__name__)
 
 def finalize_input(jsondata,context):
     for path,value in utils.leaf_iterator(jsondata):
-        actualval = statecontext.contextualize_data(value,context)
+        actualval = context.contextualize_data(value)
         path.set(jsondata,actualval)
     return jsondata
 
@@ -31,19 +32,6 @@ def getinit_data(initfiles,parameters):
         key,value = x.split('=')
         initdata[key]=yaml.load(value)
     return initdata
-
-def load_pack(spec,toplevel,schemasource,validate):
-    #in case that spec is a json reference string, we will treat it as such
-    #if it's just a filename, this should not affect it...
-    spec   = yadageschemas.load(
-            {'$ref':spec},
-            toplevel,
-            'packtivity/packtivity-schema',
-            schemadir = schemasource,
-            validate = validate,
-            initialload = False
-    )
-    return spec
 
 @click.command()
 @click.option('--parameter', '-p', multiple=True)
@@ -63,19 +51,20 @@ def load_pack(spec,toplevel,schemasource,validate):
 def runcli(spec,parfiles,context,parameter,read,write,toplevel,schemasource,asyncwait,contextualize,validate,verbosity,backend,proxyfile):
     logging.basicConfig(level = getattr(logging,verbosity))
 
-    spec = load_pack(spec,toplevel,schemasource,validate)
+    spec = utils.load_packtivity(spec,toplevel,schemasource,validate)
 
     parameters = getinit_data(parfiles,parameter)
 
     context    = yaml.load(open(context)) if context else {}
-
     context.setdefault('readwrite',[]).extend(map(os.path.realpath,write))
     context.setdefault('readonly',[]).extend(map(os.path.realpath,read))
+    context = LocalFSState(context['readwrite'],context['readonly'])
+
 
     if contextualize:
         parameters = finalize_input(parameters,context)
 
-    is_sync, backend = utils.backend_from_string(backend)
+    is_sync, backend = bkutils.backend_from_string(backend)
     backend_kwargs = {
         'syncbackend': backend
     } if is_sync else {
@@ -89,12 +78,9 @@ def runcli(spec,parfiles,context,parameter,read,write,toplevel,schemasource,asyn
 
     pack = packtivity.pack_object(spec)
 
-
-    print 'calling pack with backend kwargs', backend_kwargs
     result = pack(parameters,context,**backend_kwargs)
 
     if not is_sync and not asyncwait:
-        print 'this is a proxy'
         click.secho('proxy-json {}'.format(json.dumps(result.json())))
         with open(proxyfile,'w') as p:
             json.dump(result.json(),p)
@@ -106,19 +92,23 @@ def runcli(spec,parfiles,context,parameter,read,write,toplevel,schemasource,asyn
 @click.option('-t','--toplevel', default = os.getcwd())
 @click.option('-c','--schemasource', default = yadageschemas.schemadir)
 @click.option('-n','--schemaname', default = 'packtivity/packtivity-schema')
-def validatecli(spec,toplevel,schemasource,schemaname):
+@click.option('--show/--no-show', default = False)
+def validatecli(spec,toplevel,schemasource,schemaname,show):
     try:
-        spec = load_pack(spec,toplevel,schemasource,validate = True)
+        spec = utils.load_packtivity(spec,toplevel,schemasource,validate = True)
+        if show:
+            click.echo(json.dumps(dict(spec)))
+        else:
+            click.secho('packtivity definition is valid',fg = 'green')
     except jsonschema.exceptions.ValidationError as e:
         click.echo(e)
         raise click.ClickException(click.style('packtivity definition not valid',fg = 'red'))
-    click.secho('packtivity definition is valid',fg = 'green')
 
 @click.command()
 @click.argument('jsonfile')
 def checkproxy(jsonfile):
     proxydata = json.load(open(jsonfile))
-    proxy, backend = utils.proxy_from_json(proxydata, best_effort_backend = True)
+    proxy, backend = bkutils.proxy_from_json(proxydata, best_effort_backend = True)
 
     ready = backend.ready(proxy)
 

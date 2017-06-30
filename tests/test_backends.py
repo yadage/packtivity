@@ -1,5 +1,5 @@
 import pytest
-from packtivity.utils import backend_from_string
+from packtivity.backendutils import backend_from_string
 
 def test_multiproc_fixed_ncpu_auto():
     backend_from_string('multiproc:auto')

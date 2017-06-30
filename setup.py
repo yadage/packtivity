@@ -13,7 +13,8 @@ deps = [
       'jsonpointer',
       'psutil',
       'yadage-schemas',
-      'mock'
+      'mock',
+      'checksumdir',
 ]
 
 if not 'READTHEDOCS' in os.environ:
@@ -23,7 +24,7 @@ if not 'READTHEDOCS' in os.environ:
 
 setup(
   name = 'packtivity',
-  version = '0.5.14',
+  version = '0.6.1',
   description = 'packtivity - general purpose schema + bindings for PROV activities',
   url = '',
   author = 'Lukas Heinrich',

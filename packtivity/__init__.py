@@ -1,23 +1,10 @@
 import time
 import logging
-import yadageschemas
 import syncbackends
 from datetime import datetime
+import utils
 
 log = logging.getLogger(__name__)
-
-def load_pack(spec,toplevel,schemasource = yadageschemas.schemadir,validate = True):
-    #in case that spec is a json reference string, we will treat it as such
-    #if it's just a filename, this should not affect it...
-    spec   = yadageschemas.load(
-            {'$ref':spec},
-            toplevel,
-            'packtivity/packtivity-schema',
-            schemadir = schemasource,
-            validate = validate,
-            initialload = False
-    )
-    return spec
 
 def prepublish_default(spec,parameters,context):
     backend = syncbackends.defaultsyncbackend()
@@ -27,10 +14,14 @@ class pack_object(object):
     def __init__(self,spec):
         self.spec = spec
 
+    @classmethod
+    def fromspec(cls,*args,**kwargs):
+        return cls(utils.load_packtivity(*args,**kwargs))
+
     def __call__(self, parameters, context,
-                syncbackend = syncbackends.defaultsyncbackend(),
-                asyncbackend = None, asyncwait = False,
-                waitperiod = 0.01, timeout = 43200 ):   #default timeout is 12h
+                 syncbackend = syncbackends.defaultsyncbackend(),
+                 asyncbackend = None, asyncwait = False,
+                 waitperiod = 0.01, timeout = 43200 ):   #default timeout is 12h
 
         if syncbackend and not asyncbackend:
             return syncbackend.run(self.spec,parameters,context)
