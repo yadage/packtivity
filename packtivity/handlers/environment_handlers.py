@@ -10,6 +10,7 @@ import shlex
 
 import click
 import yaml
+import logging
 
 import packtivity.utils as utils
 import packtivity.logutils as logutils
@@ -276,7 +277,7 @@ def tarball_handler(environment, context, job):
 
     url = environment['url']
     image = environment['image']
-    nametag = context['nametag']
+    nametag = context.nametag
 
     # prepare logging for the execution of the job. We're ready to handle up to DEBUG
     log = logging.getLogger('step_logger_{}'.format(url))
@@ -292,7 +293,7 @@ def tarball_handler(environment, context, job):
     log.addHandler(fh)
 
     # short interruption to create metainfo storage location
-    metadir = '{}/_packtivity'.format(context['readwrite'][0])
+    metadir = '{}/_packtivity'.format(context.readwrite[0])
     context['metadir'] = metadir
 
     if not os.path.exists(metadir):
@@ -333,7 +334,7 @@ def tarball_handler(environment, context, job):
         docker_run_cmd(docker_run_cmd_str, log, context, nametag)
         log.debug('reached return for docker_enc_handler')
     elif 'script' in job:
-        run_docker_with_script(context,environment, job, log)
+        run_docker_with_script(context, environment, job, log)
     else:
         remove_docker_image(image=image, log_filename=os.path.join(metadir, '%s.docker.rmi.log' % nametag), logger=log)
         raise RuntimeError('do not know yet how to run this...')
@@ -343,8 +344,8 @@ def tarball_handler(environment, context, job):
 @environment('umbrella')
 def umbrella(environment, context, job):
 
-    metadir = '{}/_packtivity'.format(context['readwrite'][0])
-    context['metadir'] = metadir
+    metadir = '{}/_packtivity'.format(context.readwrite[0])
+    context.metadir = metadir
 
     if not os.path.exists(metadir):
         utils.mkdir_p(metadir)
@@ -388,8 +389,8 @@ def umbrella(environment, context, job):
     logfile = job.get('logfile', 'umbrella.log')
     # docker_mod = prepare_docker(context=context, do_cvmfs=False, do_auth=False, log=logfile)
 
-    readwrites  = context['readwrite']
-    readonlies = context['readonly']
+    readwrites  = context.readwrite
+    readonlies = context.readonly
     options = [
                     "umbrella",
                      "--spec", specification_file,
