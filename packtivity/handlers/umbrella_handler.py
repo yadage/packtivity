@@ -33,7 +33,8 @@ def umbrella(environment, context, job):
     spec_file = None
     spec_path = None
     specification_file = ""
-    json_spec = open('spec.json', 'w+')
+    temp_json_spec_fd, temp_json_spec_file_path = tempfile.mkstemp()
+    json_spec = open(temp_json_spec_file_path, 'w+')
 
     # If a JSON specification file is included in the packtivity spec
     # JSON specification can be either path to local file or URL
