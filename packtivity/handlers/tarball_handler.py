@@ -7,10 +7,10 @@ import packtivity.utils as utils
 from packtivity.handlers.environment_handlers import docker_run_cmd, prepare_full_docker_with_oneliner, run_docker_with_script, remove_docker_image
 
 
-def tarball_handler(environment, context, job):
+def tarball(environment, context, job):
     url = environment['url']
     image = environment['image']
-    nametag = context.nametag
+    nametag = context.identifier()
 
     # prepare logging for the execution of the job. We're ready to handle up to DEBUG
     log = logging.getLogger('step_logger_{}'.format(url))
@@ -27,7 +27,7 @@ def tarball_handler(environment, context, job):
 
     # short interruption to create metainfo storage location
     metadir = '{}/_packtivity'.format(context.readwrite[0])
-    context['metadir'] = metadir
+    context.metadir = metadir
 
     if not os.path.exists(metadir):
         log.info('Creating metadirectory %s', metadir)

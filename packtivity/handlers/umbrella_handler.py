@@ -20,7 +20,6 @@ def umbrella(environment, context, job):
     :param job: dictionary containing the command that is supposed to be run
     :return: 
     """
-    print job
 
     metadir = '{}/_packtivity'.format(context.readwrite[0])
     context.metadir = metadir

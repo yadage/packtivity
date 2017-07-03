@@ -272,8 +272,8 @@ import packtivity.handlers.tarball_handler as tarball_handler
 
 
 @environment('tarball')
-def tarball_handler(environment, context, job):
-    tarball_handler.tarball_handler(environment, context, job)
+def tarball_env_handler(environment, context, job):
+    tarball_handler.tarball(environment, context, job)
 
 
 @environment('umbrella')
