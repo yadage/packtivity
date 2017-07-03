@@ -1,6 +1,3 @@
-import json
-import tempfile
-
 import os
 import subprocess
 import sys
@@ -10,16 +7,14 @@ import shlex
 
 import click
 import yaml
-import logging
 
 import packtivity.utils as utils
 import packtivity.logutils as logutils
 
-from urllib import urlretrieve, ContentTooShortError
-from urllib2 import urlopen
-from tempfile import mkstemp
 
-handlers,environment = utils.handler_decorator()
+import packtivity.handlers.umbrella_handler as umbrella_handler
+
+handlers, environment = utils.handler_decorator()
 
 
 def sourcepath(path):
@@ -272,189 +267,18 @@ def remove_docker_image(image, log_filename, logger):
             raise RuntimeError("docker rmi execution failed, subprocess error")
 
 
+# Tarball handler needs to be imported after the docker methods above
+import packtivity.handlers.tarball_handler as tarball_handler
+
+
 @environment('tarball')
 def tarball_handler(environment, context, job):
-
-    url = environment['url']
-    image = environment['image']
-    nametag = context.nametag
-
-    # prepare logging for the execution of the job. We're ready to handle up to DEBUG
-    log = logging.getLogger('step_logger_{}'.format(url))
-    log.setLevel(logging.DEBUG)
-
-    # This is all internal loggin, we don't want to escalate to handlers of parent loggers
-    # we will have two handlers, a stream handler logging to stdout at INFO
-    log.propagate = False
-    fmt = logging.Formatter('%(levelname)s:%(name)s:%(message)s')
-    fh = logging.StreamHandler()
-    fh.setLevel(logging.INFO)
-    fh.setFormatter(fmt)
-    log.addHandler(fh)
-
-    # short interruption to create metainfo storage location
-    metadir = '{}/_packtivity'.format(context.readwrite[0])
-    context['metadir'] = metadir
-
-    if not os.path.exists(metadir):
-        log.info('Creating metadirectory %s', metadir)
-        utils.mkdir_p(metadir)
-
-    # Now that we have  place to store meta information we put a file based logger in place
-    # to log at DEBUG
-    logname = '{}/{}.step.log'.format(metadir, nametag)
-    fh = logging.FileHandler(logname)
-    fh.setLevel(logging.DEBUG)
-    fh.setFormatter(fmt)
-    log.addHandler(fh)
-    log.debug('starting log for step: %s', nametag)
-    log.debug('context: %s', context)
-    log.info('Executing docker import')
-    with open(os.path.join(metadir, '%s.docker.import.log' % nametag), 'w') as logfile:
-        try:
-            p = subprocess.Popen(
-                ["docker", "import", url, image],
-                stdout=logfile,
-                stderr=subprocess.STDOUT
-            )
-            log.debug("Docker process PID: %s" % p.pid)
-            p.communicate()
-            returncode = p.returncode
-            if returncode != 0:
-                log.error("Docker execution failed, return code %s" % returncode)
-                raise RuntimeError("Docker execution failed, return code %s" % returncode)
-            log.debug("docker import command completed successfully")
-        except (OSError, IOError) as e:
-            log.exception("subprocess failed: %s", sys.exc_info())
-            raise RuntimeError("Docker execution failed, subprocess error")
-
-    if 'command' in job:
-        # log.info('running oneliner command')
-        docker_run_cmd_str = prepare_full_docker_with_oneliner(context, environment, job['command'], log)
-        docker_run_cmd(docker_run_cmd_str, log, context, nametag)
-        log.debug('reached return for docker_enc_handler')
-    elif 'script' in job:
-        run_docker_with_script(context, environment, job, log)
-    else:
-        remove_docker_image(image=image, log_filename=os.path.join(metadir, '%s.docker.rmi.log' % nametag), logger=log)
-        raise RuntimeError('do not know yet how to run this...')
-    remove_docker_image(image=image, log_filename=os.path.join(metadir, '%s.docker.rmi.log' % nametag), logger=log)
+    tarball_handler.tarball_handler(environment, context, job)
 
 
 @environment('umbrella')
-def umbrella(environment, context, job):
-
-    metadir = '{}/_packtivity'.format(context.readwrite[0])
-    context.metadir = metadir
-
-    if not os.path.exists(metadir):
-        utils.mkdir_p(metadir)
-    fp = open(os.path.join(metadir, "umbrella_output.txt"), "w")
-
-    # Check if the spec_url is actually a url or just a file path
-    spec_file = None
-    spec_path = None
-    specification_file = ""
-    json_spec = open('spec.json', 'w+')
-
-    # If a JSON specification file is included in the packtivity spec
-    # JSON specification can be either path to local file or URL
-    # MUST BE JSON!!
-    if 'spec_url' in environment:
-        try:
-            f = urlopen(environment['spec_url'])  # tries to open the url
-            spec_fd, temp_spec_path = mkstemp()
-            spec_file = spec_fd
-            spec_path = temp_spec_path
-            # urlretrieve will throw UrlError, HTTPError, or ContentTooShortError
-            (filename, headers) = urlretrieve(environment['spec_url'], temp_spec_path)
-            specification_file = filename
-        except ContentTooShortError:
-            print("URL Content is Too Short! ")
-        except ValueError:  # invalid URL
-            specification_file = environment['spec_url']
-
-    # This block within the if 'spec' is to handle a JSON reference to a YAML file in the packtivity spec
-    # MUST BE YAML!!
-    if 'spec' in environment:
-        json.dump(environment['spec'], json_spec, indent=2)
-        specification_file = os.path.abspath(json_spec.name)
-        json_spec.close()
-
-    # what spec is the umbrella command using?
-    print("Using specification file: ", specification_file)
-
-    command = job.get('command', None)
-    tempdir = tempfile.mkdtemp()
-    logfile = job.get('logfile', 'umbrella.log')
-    # docker_mod = prepare_docker(context=context, do_cvmfs=False, do_auth=False, log=logfile)
-
-    readwrites  = context.readwrite
-    readonlies = context.readonly
-    options = [
-                    "umbrella",
-                     "--spec", specification_file,
-                     "--sandbox_mode", "docker",
-                     '--localdir', tempdir,
-                     '--log', logfile,
-     ]
-    volumes = ""
-    for item in readwrites:
-        # Umbrella cuts off last character in path
-        if item[-1] != "/":
-            item = item + "/"
-        item = item + "=" + item
-        volumes += item + ","
-
-    for item in readonlies:
-        # Umbrella cuts off last character in path
-        if item[-1] != "/":
-            item = item + "/"
-        item = item + "=" + item
-        volumes += item + ","
-
-    if volumes:
-        # Remove the trailing comma
-        volumes = volumes[:-1]
-        options.append("-i")
-        options.append(volumes)
-    options.append('run')
-    options.append(command)
-    print options
-    try:
-        if not command:
-            command = job.get('script', None)
-        if not command:
-            raise RuntimeError('command or script option must be provided')
-        try:
-
-            p = subprocess.Popen(
-                options,
-                stdout=fp,
-                stderr=fp,
-                # stdout=subprocess.STDOUT,
-                # stderr=subprocess.STDOUT
-            )
-            # log.debug("Umbrella process PID: %s" % p.pid)
-            p.communicate()
-            returncode = p.returncode
-
-            if spec_file and spec_path:
-                os.close(spec_file)
-                os.remove(spec_path)
-
-            if returncode != 0:
-                # log.error("Docker execution failed, return code %s" % returncode)
-                raise RuntimeError("Umbrella execution failed, return code %s" % returncode)
-            # log.debug("docker import command completed successfully")
-        except (OSError, IOError) as e:
-            # log.exception("subprocess failed: %s", sys.exc_info())
-            raise RuntimeError("Umbrella execution failed, subprocess error (%s)" % e)
-
-    except Exception as e:
-        # Clean up
-        os.rmdir(tempdir)
-        raise e
+def umbrella_env_handler(environment, context, job):
+    umbrella_handler.umbrella(environment, context, job)
 
 
 @environment('docker-encapsulated')
