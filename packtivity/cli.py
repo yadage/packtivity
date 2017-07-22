@@ -12,9 +12,9 @@ from packtivity.statecontexts.posixfs_context import LocalFSState
 
 log = logging.getLogger(__name__)
 
-def finalize_input(jsondata,context):
+def finalize_input(jsondata,state):
     for path,value in utils.leaf_iterator(jsondata):
-        actualval = context.contextualize_data(value)
+        actualval = state.contextualize_data(value)
         path.set(jsondata,actualval)
     return jsondata
 
@@ -38,9 +38,9 @@ def getinit_data(initfiles,parameters):
 @click.option('-r', '--read', multiple=True, default = [])
 @click.option('-w', '--write', multiple=True, default = [os.curdir])
 @click.option('--contextualize/--no-contextualize', default = True)
-@click.option('-c','--context', default = '')
+@click.option('-s','--state', default = '')
 @click.option('-t','--toplevel', default = os.getcwd())
-@click.option('-s','--schemasource', default = yadageschemas.schemadir)
+@click.option('-c','--schemasource', default = yadageschemas.schemadir)
 @click.option('-v','--verbosity', default = 'ERROR')
 @click.option('--validate/--no-validate', default = True)
 @click.option('--asyncwait/--async', default = True)
@@ -48,21 +48,21 @@ def getinit_data(initfiles,parameters):
 @click.option('-x','--proxyfile',default = 'proxy.json')
 @click.argument('spec')
 @click.argument('parfiles', nargs = -1)
-def runcli(spec,parfiles,context,parameter,read,write,toplevel,schemasource,asyncwait,contextualize,validate,verbosity,backend,proxyfile):
+def runcli(spec,parfiles,state,parameter,read,write,toplevel,schemasource,asyncwait,contextualize,validate,verbosity,backend,proxyfile):
     logging.basicConfig(level = getattr(logging,verbosity))
 
     spec = utils.load_packtivity(spec,toplevel,schemasource,validate)
 
     parameters = getinit_data(parfiles,parameter)
 
-    context    = yaml.load(open(context)) if context else {}
-    context.setdefault('readwrite',[]).extend(map(os.path.realpath,write))
-    context.setdefault('readonly',[]).extend(map(os.path.realpath,read))
-    context = LocalFSState(context['readwrite'],context['readonly'])
+    state    = yaml.load(open(state)) if state else {}
+    state.setdefault('readwrite',[]).extend(map(os.path.realpath,write))
+    state.setdefault('readonly',[]).extend(map(os.path.realpath,read))
+    state = LocalFSState(state['readwrite'],state['readonly'])
 
 
     if contextualize:
-        parameters = finalize_input(parameters,context)
+        parameters = finalize_input(parameters,state)
 
     is_sync, backend = bkutils.backend_from_string(backend)
     backend_kwargs = {
@@ -72,13 +72,13 @@ def runcli(spec,parfiles,context,parameter,read,write,toplevel,schemasource,asyn
         'asyncwait': asyncwait
     }
 
-    prepub = backend.prepublish(spec,parameters,context)
+    prepub = backend.prepublish(spec,parameters,state)
     if prepub:
         click.echo(str(prepub)+(' (prepublished)'))
 
     pack = packtivity.pack_object(spec)
 
-    result = pack(parameters,context,**backend_kwargs)
+    result = pack(parameters,state,**backend_kwargs)
 
     if not is_sync and not asyncwait:
         click.secho('proxy-json {}'.format(json.dumps(result.json())))

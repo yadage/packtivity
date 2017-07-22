@@ -31,7 +31,7 @@ class PacktivityProxyBase(object):
 
 class PythonCallableAsyncBackend(object):
     '''
-    Basic Base Backends that turn (spec,parameters, context)
+    Basic Base Backends that turn (spec,parameters, state)
     into nullary python callables which then can be submitted
     into python
     '''
@@ -41,15 +41,15 @@ class PythonCallableAsyncBackend(object):
     def submit_callable(self,callable):
         raise NotImplementedError('needs implementation')
 
-    def prepublish(self,spec, parameters, context):
-        return prepublish(spec, parameters, context, self.config)
+    def prepublish(self,spec, parameters, state):
+        return prepublish(spec, parameters, state, self.config)
 
-    def submit(self, spec, parameters, context):
+    def submit(self, spec, parameters, state):
         nullary = functools.partial(run_packtivity,
             spec = spec,
             parameters = parameters,
-            context = context,
-            nametag = context.identifier(),
+            state = state,
+            nametag = state.identifier(),
             config = self.config
         )
         return self.submit_callable(nullary)

@@ -104,7 +104,7 @@ class LocalFSProvider(object):
 def _merge_states(lhs,rhs):
     return LocalFSState(lhs.readwrite + rhs.readwrite,lhs.readonly + rhs.readonly)
 
-def _make_new_state(name, oldcontext = None, subdir = True, create = False):
+def _make_new_state(name, oldstate = None, subdir = True, create = False):
     '''
     creates a new context from an existing context.
 
@@ -121,16 +121,16 @@ def _make_new_state(name, oldcontext = None, subdir = True, create = False):
     if 'PACKTIVITY_FORCESHAREDSTATE' in os.environ:
         subdir = False
 
-    if oldcontext is None:
+    if oldstate is None:
         new_readwrites = [os.path.abspath(name)]
     else:
-        new_readwrites = ['{}/{}'.format(oldcontext.readwrite[0],name)] if subdir else oldcontext.readwrite
+        new_readwrites = ['{}/{}'.format(oldstate.readwrite[0],name)] if subdir else oldstate.readwrite
 
     if subdir:
         # for nested directories, we want to have at lease read access to all data in parent context
-        new_readonlies = [ro for ro in itertools.chain(oldcontext.readonly,oldcontext.readwrite)] if oldcontext else []
+        new_readonlies = [ro for ro in itertools.chain(oldstate.readonly,oldstate.readwrite)] if oldstate else []
     else:
-        new_readonlies = oldcontext.readonly if oldcontext else []
+        new_readonlies = oldstate.readonly if oldstate else []
         
     if create:
         map(utils.mkdir_p,new_readwrites)

@@ -6,9 +6,9 @@ import utils
 
 log = logging.getLogger(__name__)
 
-def prepublish_default(spec,parameters,context):
+def prepublish_default(spec,parameters,state):
     backend = syncbackends.defaultsyncbackend()
-    return backend.prepublish(spec,parameters,context)
+    return backend.prepublish(spec,parameters,state)
 
 class pack_object(object):
     def __init__(self,spec):
@@ -18,16 +18,16 @@ class pack_object(object):
     def fromspec(cls,*args,**kwargs):
         return cls(utils.load_packtivity(*args,**kwargs))
 
-    def __call__(self, parameters, context,
+    def __call__(self, parameters, state,
                  syncbackend = syncbackends.defaultsyncbackend(),
                  asyncbackend = None, asyncwait = False,
                  waitperiod = 0.01, timeout = 43200 ):   #default timeout is 12h
 
         if syncbackend and not asyncbackend:
-            return syncbackend.run(self.spec,parameters,context)
+            return syncbackend.run(self.spec,parameters,state)
         elif asyncbackend:
             submit_time = datetime.fromtimestamp(time.time())
-            proxy = asyncbackend.submit(self.spec, parameters, context)
+            proxy = asyncbackend.submit(self.spec, parameters, state)
             if not asyncwait:
                 return proxy
             while True:
