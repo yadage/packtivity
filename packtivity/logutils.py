@@ -34,15 +34,9 @@ def default_logging_handlers(log,nametag,state,topic):
         fh.setFormatter(formatter)
         log.addHandler(fh)
 
-    # short interruption to create metainfo storage location
-    metadir  = '{}/_packtivity'.format(state.readwrite[0])
-    state.metadir = metadir
-    # log.info('creating metadirectory %s if necessary. exists? : %s',metadir,os.path.exists(metadir))
-    mkdir_p(metadir)
-
     # Now that we have  place to store meta information we put a file based logger in place
     # to log at DEBUG
-    logname = '{}/{}.{}.log'.format(metadir,nametag,topic)
+    logname = '{}/{}.{}.log'.format(state.metadir,nametag,topic)
     fh  = logging.FileHandler(logname)
     fh.setLevel(logging.DEBUG)
     fh.setFormatter(formatter)

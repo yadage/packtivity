@@ -236,12 +236,6 @@ def docker_enc_handler(environment,state,job):
     nametag = state.identifier()
     log  = logutils.setup_logging_topic(nametag,state,'step',return_logger = True)
     
-    # short interruption to create metainfo storage location
-    metadir  = '{}/_packtivity'.format(state.readwrite[0])
-    state.metadir = metadir
-    log.info('creating metadirectory %s if necessary. exists? : %s',metadir,os.path.exists(metadir))
-    utils.mkdir_p(metadir)
-    
     #setup more detailed logging
     logutils.setup_logging(nametag, state)
     
