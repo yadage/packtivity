@@ -4,6 +4,7 @@ def test_create_multiproc():
 	MultiProcBackend(4)
 
 def test_multiproc(tmpdir,basic_localfs_state,localproc_packspec):
+	basic_localfs_state.ensure()
 	pars =  {'outputfile': basic_localfs_state.contextualize_data('{workdir}/helloworld.txt')}
 	backend = MultiProcBackend(2)
 	proxy = backend.submit(localproc_packspec,pars,basic_localfs_state)
@@ -15,6 +16,7 @@ def test_multiproc(tmpdir,basic_localfs_state,localproc_packspec):
 
 
 def test_multiproc_fail(tmpdir,basic_localfs_state,localproc_pack_fail):
+	basic_localfs_state.ensure()
 	pars =  {'outputfile': basic_localfs_state.contextualize_data('{workdir}/helloworld.txt')}
 
 	backend = MultiProcBackend(2)

@@ -59,7 +59,7 @@ def runcli(spec,parfiles,state,parameter,read,write,toplevel,schemasource,asyncw
     state.setdefault('readwrite',[]).extend(map(os.path.realpath,write))
     state.setdefault('readonly',[]).extend(map(os.path.realpath,read))
     state = LocalFSState(state['readwrite'],state['readonly'])
-
+    state.ensure()
 
     if contextualize:
         parameters = finalize_input(parameters,state)
