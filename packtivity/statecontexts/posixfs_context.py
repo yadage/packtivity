@@ -12,7 +12,6 @@ class LocalFSState(object):
     '''
     Local Filesyste State consisting of a number of readwrite and readonly directories
     '''
-
     def __init__(self,readwrite = None,readonly = None, dependencies = None, identifier = 'unidentified_state'):
         self._identifier = identifier
         self.readwrite = map(os.path.realpath,readwrite) if readwrite else  []

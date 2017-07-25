@@ -10,7 +10,7 @@ class packconfig(object):
         except KeyError:
             return 'default'
 
-def build_job(process,attributes,pack_config):
+def build_job(process,parameters,pack_config):
     '''
     takes a process description and builds a job out of it using a handler.
     '''
@@ -18,7 +18,7 @@ def build_job(process,attributes,pack_config):
     impl = pack_config.get_impl('process',proc_type)
     from handlers.process_handlers import handlers as proc_handlers
     handler = proc_handlers[proc_type][impl]
-    return handler(process,attributes)
+    return handler(process,parameters)
 
 def run_in_env(environment,job,state,pack_config):
     '''
@@ -31,20 +31,20 @@ def run_in_env(environment,job,state,pack_config):
     handler = env_handlers[env_type][impl]
     return handler(environment,state,job)
 
-def publish(publisher,attributes,state, pack_config):
+def publish(publisher,parameters,state, pack_config):
     pub_type   = publisher['publisher_type']
     impl = pack_config.get_impl('publisher',pub_type)
     from handlers.publisher_handlers import handlers as pub_handlers
     handler = pub_handlers[pub_type][impl]
-    return handler(publisher,attributes,state)
+    return handler(publisher,parameters,state)
 
-def prepublish(spec, attributes, state, pack_config):
+def prepublish(spec, parameters, state, pack_config):
     '''
     attempts to prepublish output data, returns None if not possible
     '''
     pub = spec['publisher']
     if pub['publisher_type'] in ['frompar-pub','constant-pub']:
-        return publish(pub,attributes,state,pack_config)
+        return publish(pub,parameters,state,pack_config)
     return None
 
 def run_packtivity(spec, parameters,state,nametag,config):

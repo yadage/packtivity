@@ -294,3 +294,11 @@ def manual_env(environment,state,job):
     ctx = yaml.safe_dump(state,default_flow_style = False)
     click.secho(instructions, fg = 'blue')
     click.secho(ctx, fg = 'cyan')
+
+@environment('test-env')
+def test_process(environment,state,job):
+    log  = logutils.setup_logging_topic(state.identifier(),state,'step',return_logger = True)
+    log.info('a complicated test environment')
+    log.info('job:  {}'.format(job))
+    log.info('env:  {}'.format(environment))
+    log.info('state {}'.format(state))

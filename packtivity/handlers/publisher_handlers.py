@@ -10,16 +10,16 @@ log = logging.getLogger(__name__)
 handlers, publisher = utils.handler_decorator()
 
 @publisher('frompar-pub')
-def process_attr_pub_handler(publisher,attributes,state):
+def process_attr_pub_handler(publisher,parameters,state):
     outputs = copy.deepcopy(publisher['outputmap'])
     for path,value in utils.leaf_iterator(publisher['outputmap']):
-        actualval = attributes[value]
+        actualval = parameters[value]
         path.set(outputs,actualval)
     return outputs
 
 @publisher('interpolated-pub')
-def interpolated_pub_handler(publisher,attributes,state):
-    forinterp = attributes.copy()
+def interpolated_pub_handler(publisher,parameters,state):
+    forinterp = parameters.copy()
     forinterp.update(workdir = state.readwrite[0])
     result = copy.deepcopy(publisher['publish'])
     for path,value in utils.leaf_iterator(publisher['publish']):
@@ -30,24 +30,24 @@ def interpolated_pub_handler(publisher,attributes,state):
     return result
 
 @publisher('fromyaml-pub')
-def fromyaml_pub_handler(publisher,attributes,state):
+def fromyaml_pub_handler(publisher,parameters,state):
     workdir  = state.readwrite[0]
     yamlfile =  publisher['yamlfile']
     pubdata = yaml.load(open('{}/{}'.format(workdir,yamlfile)))
     return pubdata
 
 @publisher('fromglob-pub')
-def glob_pub_handler(publisher,attributes,state):
+def glob_pub_handler(publisher,parameters,state):
     workdir = state.readwrite[0]
     globexpr =  publisher['globexpression']
     return {publisher['outputkey']:glob2.glob('{}/{}'.format(workdir,globexpr))}
 
 @publisher('constant-pub')
-def dummy_pub_handler(publisher,attributes,state):
+def dummy_pub_handler(publisher,parameters,state):
     return  publisher['publish']
 
 @publisher('manual-publishing')
-def manual_pub(publisher,attributes,state):
+def manual_pub(publisher,parameters,state):
     instructions = publisher['instructions']
     click.secho(instructions, fg = 'magenta')
     while True:
