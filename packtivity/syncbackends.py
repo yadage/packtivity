@@ -30,7 +30,7 @@ def build_job(process,parameters,pack_config):
     handler = proc_handlers[proc_type][impl]
     return handler(process,parameters)
 
-def run_in_env(environment,job,state,pack_config):
+def run_in_env(environment,job,state,metadata,pack_config):
     '''
     takes a built job and runs it blockingly in the environment with
     the state context attached
@@ -39,7 +39,7 @@ def run_in_env(environment,job,state,pack_config):
     impl = pack_config.get_impl('environment',env_type)
     from handlers.environment_handlers import handlers as env_handlers
     handler = env_handlers[env_type][impl]
-    return handler(environment,state,job)
+    return handler(environment,state,job,metadata)
 
 def publish(publisher,parameters,state, pack_config):
     pub_type   = publisher['publisher_type']
@@ -57,16 +57,16 @@ def prepublish(spec, parameters, state, pack_config):
         return publish(pub,parameters,state,pack_config)
     return None
 
-def run_packtivity(spec, parameters,state,nametag,config):
-    log = logutils.setup_logging_topic(nametag,state,'step',return_logger = True)
+def run_packtivity(spec, parameters,state,metadata,config):
+    log = logutils.setup_logging_topic(metadata,state,'step',return_logger = True)
     try:
         job = build_job(spec['process'],parameters, config)
-        run_in_env(spec['environment'],job,state, config)
+        run_in_env(spec['environment'],job,state,metadata,config)
         pubdata = publish(spec['publisher'],parameters,state,config)
         log.info('publishing data: %s',pubdata)
         return pubdata
     except:
-        log.exception('%s raised exception',nametag)
+        log.exception('%s raised exception',metadata)
         raise
 
 class defaultsyncbackend(object):
@@ -76,5 +76,5 @@ class defaultsyncbackend(object):
     def prepublish(self,spec, parameters, state):
         return prepublish(spec, parameters, state, self.config)
 
-    def run(self,spec,parameters,state, nametag = 'packtivity_syncbackend'):
-        return run_packtivity(spec,parameters,state,nametag,self.config)
+    def run(self,spec,parameters,state, metadata = {'name': 'packtivity_syncbackend'}):
+        return run_packtivity(spec,parameters,state,metadata,self.config)

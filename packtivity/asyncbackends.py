@@ -44,12 +44,12 @@ class PythonCallableAsyncBackend(object):
     def prepublish(self,spec, parameters, state):
         return prepublish(spec, parameters, state, self.config)
 
-    def submit(self, spec, parameters, state):
+    def submit(self, spec, parameters, state, metadata = None):
         nullary = functools.partial(run_packtivity,
             spec = spec,
             parameters = parameters,
             state = state,
-            nametag = state.identifier(),
+            metadata = metadata or {'name': state.identifier()},
             config = self.config
         )
         return self.submit_callable(nullary)
@@ -165,7 +165,7 @@ try:
     @shared_task
     def run_nullary(nullary):
         if os.environ.get('PACKTIVITY_CELERY_GLOBAL_NAMETAG')=='true':
-            nullary.keywords['nametag'] = run_nullary.request.id
+            nullary.keywords['metadata']['name'] = run_nullary.request.id
         return nullary()
 
     class CeleryProxy(PacktivityProxyBase):

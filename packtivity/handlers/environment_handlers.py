@@ -45,9 +45,7 @@ def cvmfs_from_external_mount(command_line):
     command_line+=' -v {}:/cvmfs'.format(os.environ.get('PACKTIVITY_CVMFS_LOCATION','/cvmfs'))
     return command_line
 
-def prepare_docker(state,do_cvmfs,do_auth,log):
-    nametag = state.identifier()
-    metadir  = state.metadir
+def prepare_docker(state,do_cvmfs,do_auth,log,metadata):
     docker_mod = state_context_to_mounts(state)
 
     if do_cvmfs:
@@ -65,7 +63,7 @@ def prepare_docker(state,do_cvmfs,do_auth,log):
         else:
             docker_mod+=' -v {}:/recast_auth'.format(os.environ['PACKTIVITY_AUTH_LOCATION'])
 
-    cidfile = '{}/{}.cid'.format(metadir,nametag)
+    cidfile = '{}/{}.cid'.format(state.metadir,metadata['name'])
 
     if os.path.exists(cidfile):
         log.warning('cid file %s seems to exist, docker run will crash',cidfile)
@@ -73,7 +71,7 @@ def prepare_docker(state,do_cvmfs,do_auth,log):
 
     return docker_mod
 
-def prepare_docker_context(state,environment,log):
+def prepare_docker_context(state,environment,log,metadata):
     container = environment['image']
     report = '''\n\
 --------------
@@ -91,20 +89,19 @@ resources: {resources}
     do_auth  = ('GRIDProxy'  in environment['resources']) or ('KRB5Auth' in environment['resources'])
     log.debug('do_auth: %s do_cvmfs: %s',do_auth,do_cvmfs)
     
-    docker_mod = prepare_docker(state,do_cvmfs,do_auth,log)
+    docker_mod = prepare_docker(state,do_cvmfs,do_auth,log,metadata)
     return docker_mod
 
-def run_docker_with_script(state,environment,job,log):
+def run_docker_with_script(state,environment,job,log,metadata):
     image = environment['image']
     imagetag = environment['imagetag']
-    nametag = state.identifier()
     
     script = job['script']
     interpreter = job['interpreter']
     
     log.debug('script is:')
     log.debug('\n--------------\n'+script+'\n--------------')
-    docker_mod = prepare_docker_context(state,environment,log)
+    docker_mod = prepare_docker_context(state,environment,log,metadata)
     if 'PACKTIVITY_DRYRUN' in os.environ:
         return
         
@@ -113,7 +110,7 @@ def run_docker_with_script(state,environment,job,log):
     indocker = envmod+indocker
     
     try:
-        runlog = logutils.setup_logging_topic(nametag,state,'run', return_logger = True)
+        runlog = logutils.setup_logging_topic(metadata,state,'run', return_logger = True)
         subcmd = 'docker run --rm -i {docker_mod} {image}:{imagetag} sh -c \'{indocker}\' '.format(image = image, imagetag = imagetag, docker_mod = docker_mod, indocker = indocker)
         log.debug('running docker cmd: %s',subcmd)
         proc = subprocess.Popen(shlex.split(subcmd), stdin = subprocess.PIPE, stderr = subprocess.STDOUT, stdout = subprocess.PIPE, bufsize=1)
@@ -142,7 +139,7 @@ def run_docker_with_script(state,environment,job,log):
     finally:
         log.debug('finally for run')
 
-def prepare_full_docker_with_oneliner(state,environment,command,log):
+def prepare_full_docker_with_oneliner(state,environment,command,log,metadata):
     image = environment['image']
     imagetag = environment['imagetag']
     
@@ -154,7 +151,7 @@ command: {command}
     '''.format(command = command)
     log.debug(report)
     
-    docker_mod = prepare_docker_context(state,environment,log)
+    docker_mod = prepare_docker_context(state,environment,log,metadata)
     
     envmod = 'source {} &&'.format(environment['envscript']) if environment['envscript'] else ''
     in_docker_cmd = '{envmodifier} {command}'.format(envmodifier = envmod, command = command)
@@ -167,12 +164,12 @@ command: {command}
                         )
     return fullest_command
 
-def docker_pull(docker_pull_cmd,log,state,nametag):
+def docker_pull(docker_pull_cmd,log,state,metadata):
     log.debug('docker pull command: \n  %s',docker_pull_cmd)
     if 'PACKTIVITY_DRYRUN' in os.environ:
         return
     try:
-        pulllog = logutils.setup_logging_topic(nametag,state,'pull', return_logger = True)
+        pulllog = logutils.setup_logging_topic(metadata,state,'pull', return_logger = True)
         proc = subprocess.Popen(shlex.split(docker_pull_cmd), stderr = subprocess.STDOUT, stdout = subprocess.PIPE, bufsize=1)
         log.debug('started pull subprocess with pid %s. now wait to finish',proc.pid)
         time.sleep(0.5)
@@ -200,12 +197,12 @@ def docker_pull(docker_pull_cmd,log,state,nametag):
     finally:
         log.debug('finally for pull')
 
-def docker_run_cmd(fullest_command,log,state,nametag):
+def docker_run_cmd(fullest_command,log,state,metadata):
     log.debug('docker run  command: \n%s',fullest_command)
     if 'PACKTIVITY_DRYRUN' in os.environ:
         return
     try:
-        runlog = logutils.setup_logging_topic(nametag,state,'run', return_logger = True)
+        runlog = logutils.setup_logging_topic(metadata,state,'run', return_logger = True)
         proc = subprocess.Popen(shlex.split(fullest_command), stderr = subprocess.STDOUT, stdout = subprocess.PIPE, bufsize=1)
         log.debug('started run subprocess with pid %s. now wait to finish',proc.pid)
         time.sleep(0.5)
@@ -232,45 +229,42 @@ def docker_run_cmd(fullest_command,log,state,nametag):
 
 
 @environment('docker-encapsulated')
-def docker_enc_handler(environment,state,job):
-    nametag = state.identifier()
-    log  = logutils.setup_logging_topic(nametag,state,'step',return_logger = True)
+def docker_enc_handler(environment,state,job,metadata):
+    log  = logutils.setup_logging_topic(metadata,state,'step',return_logger = True)
     
     #setup more detailed logging
-    logutils.setup_logging(nametag, state)
+    logutils.setup_logging(metadata, state)
     
-    log.debug('starting log for step: %s',nametag)
+    log.debug('starting log for step: %s',metadata)
     if 'PACKTIVITY_DOCKER_NOPULL' not in os.environ:
         log.info('prepare pull')
         docker_pull_cmd = 'docker pull {container}:{tag}'.format(
             container = environment['image'],
             tag = environment['imagetag']
         )
-        docker_pull(docker_pull_cmd,log,state,nametag)
+        docker_pull(docker_pull_cmd,log,state,metadata)
         
     log.info('running job')
     
     if 'command' in job:
         # log.info('running oneliner command')
-        docker_run_cmd_str = prepare_full_docker_with_oneliner(state,environment,job['command'],log)
-        docker_run_cmd(docker_run_cmd_str,log,state,nametag)
+        docker_run_cmd_str = prepare_full_docker_with_oneliner(state,environment,job['command'],log,metadata)
+        docker_run_cmd(docker_run_cmd_str,log,state,metadata)
         log.debug('reached return for docker_enc_handler')
     elif 'script' in job:
-        run_docker_with_script(state,environment,job,log)
+        run_docker_with_script(state,environment,job,log,metadata)
     else:
         raise RuntimeError('do not know yet how to run this...')
 
 @environment('noop-env')
-def noop_env(environment,state,job):
-    nametag = state.identifier()
-    log  = logutils.setup_logging_topic(nametag,state,'step',return_logger = True)
+def noop_env(environment,state,job,metadata):
+    log  = logutils.setup_logging_topic(metadata,state,'step',return_logger = True)
     log.info('state is: %s',state)
     log.info('would be running this job: %s',job)
 
 @environment('localproc-env')
-def localproc_env(environment,state,job):
-    nametag = state.identifier()
-    log  =  logutils.setup_logging_topic(nametag,state,'step',return_logger = True)
+def localproc_env(environment,state,job,metadata):
+    log  =  logutils.setup_logging_topic(metadata,state,'step',return_logger = True)
     olddir = os.path.realpath(os.curdir)
     workdir = state.readwrite[0]
     log.info('running local command %s',job['command'])
@@ -289,15 +283,15 @@ def localproc_env(environment,state,job):
         os.chdir(olddir)
 
 @environment('manual-env')
-def manual_env(environment,state,job):
+def manual_env(environment,state,job,metadata):
     instructions = environment['instructions']
     ctx = yaml.safe_dump(state,default_flow_style = False)
     click.secho(instructions, fg = 'blue')
     click.secho(ctx, fg = 'cyan')
 
 @environment('test-env')
-def test_process(environment,state,job):
-    log  = logutils.setup_logging_topic(state.identifier(),state,'step',return_logger = True)
+def test_process(environment,state,job,metadata):
+    log  = logutils.setup_logging_topic(metadata,state,'step',return_logger = True)
     log.info('a complicated test environment')
     log.info('job:  {}'.format(job))
     log.info('env:  {}'.format(environment))
