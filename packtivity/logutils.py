@@ -1,7 +1,6 @@
 import os
 import logging
 import importlib
-from packtivity.utils import mkdir_p
 
 
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
