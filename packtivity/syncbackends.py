@@ -1,8 +1,18 @@
+import yaml
+import os
+
+
 import packtivity.logutils as logutils
+from  packtivity.handlers import enable_plugins
+enable_plugins()
 
 class packconfig(object):
     def __init__(self,**kwargs):
         self.handler_selection = kwargs
+        fromenv = os.environ.get('PACKTIVITY_SYNCCONFIGFILE',None)
+        if fromenv:
+            override = yaml.load(open(fromenv))
+            self.handler_selection.update(**override)
 
     def get_impl(self,category,handler):
         try:
