@@ -114,11 +114,11 @@ def run_docker_with_script(state,environment,job,log,metadata):
         proc = subprocess.Popen(shlex.split(subcmd), stdin = subprocess.PIPE, stderr = subprocess.STDOUT, stdout = subprocess.PIPE, bufsize=1)
 
         log.debug('started run subprocess with pid %s. now piping script',proc.pid)
-        proc.stdin.write(script)
+        proc.stdin.write(script.encode('utf-8'))
         proc.stdin.close()
         time.sleep(0.5)
 
-        for line in iter(proc.stdout.readline, ''):
+        for line in iter(proc.stdout.readline, b''):
             runlog.info(line.strip())
         while proc.poll() is None:
             pass

@@ -6,16 +6,16 @@ import packtivity.syncbackends as syncbackends
 
 def proxy_from_json(jsondata, best_effort_backend = True):
     if jsondata['proxyname'] == 'CeleryProxy':
-        from asyncbackends import CeleryProxy
+        from .asyncbackends import CeleryProxy
         proxy = CeleryProxy.fromJSON(jsondata)
         _, backend = backend_from_string('celery')
     if jsondata['proxyname'] == 'CeleryProxy':
-        from asyncbackends import CeleryProxy
+        from .asyncbackends import CeleryProxy
         proxy = CeleryProxy.fromJSON(jsondata)
         _, backend = backend_from_string('celery')
 
     if jsondata['proxyname'] == 'ForegroundProxy':
-        from asyncbackends import ForegroundProxy
+        from .asyncbackends import ForegroundProxy
         proxy = ForegroundProxy.fromJSON(jsondata)
         _, backend = backend_from_string('foregroundasync')
 
