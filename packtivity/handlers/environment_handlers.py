@@ -173,7 +173,7 @@ def docker_pull(docker_pull_cmd,log,state,metadata):
         time.sleep(0.5)
         log.debug('process children: %s',[x for x in psutil.Process(proc.pid).children(recursive = True)])
 
-        for line in iter(proc.stdout.readline, ''):
+        for line in iter(proc.stdout.readline, b''):
             pulllog.info(line.strip())
         while proc.poll() is None:
             pass
@@ -206,7 +206,7 @@ def docker_run_cmd(fullest_command,log,state,metadata):
         time.sleep(0.5)
         log.debug('process children: %s',[x for x in psutil.Process(proc.pid).children(recursive = True)])
 
-        for line in iter(proc.stdout.readline, ''):
+        for line in iter(proc.stdout.readline, b''):
             runlog.info(line.strip())
         while proc.poll() is None:
             pass
