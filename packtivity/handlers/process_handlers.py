@@ -1,6 +1,7 @@
-import packtivity.utils as utils
 import click
 import yaml
+
+import packtivity.utils as utils
 handlers,process = utils.handler_decorator()
 
 @process('string-interpolated-cmd')

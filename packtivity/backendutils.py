@@ -1,8 +1,8 @@
 import os
 import importlib
 
-import asyncbackends
-import syncbackends
+import packtivity.asyncbackends as asyncbackends
+import packtivity.syncbackends as syncbackends
 
 def proxy_from_json(jsondata, best_effort_backend = True):
     if jsondata['proxyname'] == 'CeleryProxy':

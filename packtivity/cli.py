@@ -7,9 +7,9 @@ import yadageschemas
 import logging
 import json
 
-import utils
-import backendutils as bkutils
-from statecontexts.posixfs_context import LocalFSState
+import packtivity.utils as utils
+import packtivity.backendutils as bkutils
+from .statecontexts.posixfs_context import LocalFSState
 
 log = logging.getLogger(__name__)
 

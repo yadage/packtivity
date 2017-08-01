@@ -3,9 +3,10 @@ import itertools
 import os
 import shutil
 import json
-import packtivity.utils as utils
 import logging
 import checksumdir
+
+import packtivity.utils as utils
 log = logging.getLogger(__name__)
 
 class LocalFSState(object):

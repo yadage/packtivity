@@ -3,7 +3,7 @@ import os
 
 
 import packtivity.logutils as logutils
-from  packtivity.handlers import enable_plugins
+from packtivity.handlers import enable_plugins
 enable_plugins()
 
 class packconfig(object):

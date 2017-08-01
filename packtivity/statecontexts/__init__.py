@@ -1,4 +1,4 @@
-import posixfs_context
+from .posixfs_context import LocalFSState,LocalFSProvider
 
 def load_state(jsondata):
 	if jsondata['state_type'] == 'localfs':

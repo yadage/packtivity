@@ -1,10 +1,11 @@
 import yaml
-import packtivity.utils as utils
 import glob2
 import json
 import click
 import copy
 import logging
+
+import packtivity.utils as utils
 
 log = logging.getLogger(__name__)
 handlers, publisher = utils.handler_decorator()

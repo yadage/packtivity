@@ -1,8 +1,9 @@
 import time
 import logging
-import syncbackends
 from datetime import datetime
-import utils
+
+import packtivity.utils as utils
+import packtivity.syncbackends as syncbackends
 
 log = logging.getLogger(__name__)
 

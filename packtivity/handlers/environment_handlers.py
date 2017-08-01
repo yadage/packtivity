@@ -72,14 +72,13 @@ def prepare_docker(state,do_cvmfs,do_auth,log,metadata):
     return docker_mod
 
 def prepare_docker_context(state,environment,log,metadata):
-    container = environment['image']
     report = '''\n\
 --------------
-run in docker container: {container}
+run in docker container image: {image}
 with env: {env}
 resources: {resources}
 --------------
-    '''.format(container = container,
+    '''.format(image = environment['image'],
                env = environment['envscript'] if environment['envscript'] else 'default env',
                resources = environment['resources']
               )
@@ -89,8 +88,7 @@ resources: {resources}
     do_auth  = ('GRIDProxy'  in environment['resources']) or ('KRB5Auth' in environment['resources'])
     log.debug('do_auth: %s do_cvmfs: %s',do_auth,do_cvmfs)
     
-    docker_mod = prepare_docker(state,do_cvmfs,do_auth,log,metadata)
-    return docker_mod
+    return prepare_docker(state,do_cvmfs,do_auth,log,metadata)
 
 def run_docker_with_script(state,environment,job,log,metadata):
     image = environment['image']
