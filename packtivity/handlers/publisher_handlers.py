@@ -52,13 +52,19 @@ def manual_pub(publisher,parameters,state):
     instructions = publisher['instructions']
     click.secho(instructions, fg = 'magenta')
     while True:
-        published_json = raw_input("Enter JSON data to publish: ")
+        try:
+            published_json = raw_input("Enter JSON data to publish: ")
+        except NameError:
+            published_json = input("Enter JSON data to publish: ")
         try:
             data = json.loads(published_json)
         except:
             click.secho('uhm something went wrong, enter valid JSON please', fg = 'red')
             continue
-        shall = raw_input("got: \n {} \npublish? (y/N) ".format(yaml.safe_dump(data, default_flow_style = False))).lower() == 'y'
+        try:
+            shall = raw_input("got: \n {} \npublish? (y/N) ".format(yaml.safe_dump(data, default_flow_style = False))).lower() == 'y'
+        except:
+            shall = input("got: \n {} \npublish? (y/N) ".format(yaml.safe_dump(data, default_flow_style = False))).lower() == 'y'
         if shall:
             break
     click.secho('publishing', fg = 'green')
