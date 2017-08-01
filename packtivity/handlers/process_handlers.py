@@ -6,14 +6,14 @@ handlers,process = utils.handler_decorator()
 
 @process('string-interpolated-cmd')
 def stringinterp_handler(process_spec,parameters):
-    flattened = {k:v if not (type(v)==list) else ' '.join([str(x) for x in v]) for k,v in parameters.iteritems()}
+    flattened = {k:v if not (type(v)==list) else ' '.join([str(x) for x in v]) for k,v in parameters.items()}
     return {
         'command':process_spec['cmd'].format(**flattened)
     }
 
 @process('interpolated-script-cmd')
 def interp_script(process_spec,parameters):
-    flattened = {k:v if not (type(v)==list) else ' '.join([str(x) for x in v]) for k,v in parameters.iteritems()}
+    flattened = {k:v if not (type(v)==list) else ' '.join([str(x) for x in v]) for k,v in parameters.items()}
     return {
         'script':process_spec['script'].format(**flattened),
         'interpreter':process_spec['interpreter']
