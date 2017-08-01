@@ -7,7 +7,6 @@ deps = [
       'jsonschema',
       'jsonref',
       'pyyaml',
-      'functools32',
       'click',
       'glob2',
       'jsonpointer',
