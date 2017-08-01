@@ -15,8 +15,8 @@ class LocalFSState(object):
     '''
     def __init__(self,readwrite = None,readonly = None, dependencies = None, identifier = 'unidentified_state'):
         self._identifier = identifier
-        self.readwrite = map(os.path.realpath,readwrite) if readwrite else  []
-        self.readonly  = map(os.path.realpath,readonly) if readonly else  []
+        self.readwrite = list(map(os.path.realpath,readwrite) if readwrite else  [])
+        self.readonly  = list(map(os.path.realpath,readonly) if readonly else  [])
         self.dependencies = dependencies or []
 
     @property
@@ -59,7 +59,7 @@ class LocalFSState(object):
 
         #hash out writing state
         state_checksums = [checksumdir.dirhash(d) for d in self.readwrite if os.path.isdir(d)]
-        return hashlib.sha1(json.dumps([dep_checksums,state_checksums])).hexdigest()
+        return hashlib.sha1(json.dumps([dep_checksums,state_checksums]).encode('utf-8')).hexdigest()
 
     def contextualize_data(self,data):
         '''

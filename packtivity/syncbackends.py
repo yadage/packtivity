@@ -26,7 +26,7 @@ def build_job(process,parameters,pack_config):
     '''
     proc_type =  process['process_type']
     impl = pack_config.get_impl('process',proc_type)
-    from handlers.process_handlers import handlers as proc_handlers
+    from .handlers.process_handlers import handlers as proc_handlers
     handler = proc_handlers[proc_type][impl]
     return handler(process,parameters)
 
@@ -37,14 +37,14 @@ def run_in_env(environment,job,state,metadata,pack_config):
     '''
     env_type = environment['environment_type']
     impl = pack_config.get_impl('environment',env_type)
-    from handlers.environment_handlers import handlers as env_handlers
+    from .handlers.environment_handlers import handlers as env_handlers
     handler = env_handlers[env_type][impl]
     return handler(environment,state,job,metadata)
 
 def publish(publisher,parameters,state, pack_config):
     pub_type   = publisher['publisher_type']
     impl = pack_config.get_impl('publisher',pub_type)
-    from handlers.publisher_handlers import handlers as pub_handlers
+    from .handlers.publisher_handlers import handlers as pub_handlers
     handler = pub_handlers[pub_type][impl]
     return handler(publisher,parameters,state)
 
