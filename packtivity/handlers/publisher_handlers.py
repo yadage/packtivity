@@ -63,7 +63,7 @@ def manual_pub(publisher,parameters,state):
             continue
         try:
             shall = raw_input("got: \n {} \npublish? (y/N) ".format(yaml.safe_dump(data, default_flow_style = False))).lower() == 'y'
-        except:
+        except NameError:
             shall = input("got: \n {} \npublish? (y/N) ".format(yaml.safe_dump(data, default_flow_style = False))).lower() == 'y'
         if shall:
             break
