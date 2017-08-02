@@ -1,6 +1,6 @@
 import os
 import importlib
-
+import yaml
 import packtivity.asyncbackends as asyncbackends
 import packtivity.syncbackends as syncbackends
 
@@ -56,7 +56,10 @@ def backend_from_string(backendstring):
         return is_async, backend
     if backendstring == 'fromenv':
         module, backend, _ = os.environ['PACKTIVITY_ASYNCBACKEND'].split(':')
+        ctor_kwargs = os.environ.get('PACKTIVITY_ASYNCBACKEND_OPTS',{})
+        if ctor_kwargs:
+            ctor_kwargs = yaml.load(open(ctor_kwargs))
         module = importlib.import_module(module)
         backendclass = getattr(module,backend)
-        return is_async, backendclass()
+        return is_async, backendclass(**ctor_kwargs)
     raise RuntimeError('Unknown Backend')
