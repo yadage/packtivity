@@ -69,6 +69,9 @@ def prepare_docker(state,do_cvmfs,do_auth,log,metadata):
         log.warning('cid file %s seems to exist, docker run will crash',cidfile)
     docker_mod += ' --cidfile {}'.format(cidfile)
 
+
+    docker_mod += ' {}'.format(os.environ.get('PACKTIVITY_DOCKER_CMD_MOD',''))
+
     return docker_mod
 
 def prepare_docker_context(state,environment,log,metadata):
