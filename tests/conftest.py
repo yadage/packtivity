@@ -13,6 +13,10 @@ def localproc_pack(tmpdir):
 def basic_localfs_state(tmpdir):
 	return LocalFSState([str(tmpdir)])
 
+@pytest.fixture
+def default_handler_config():
+    return packtivity.syncbackends.packconfig()
+
 @pytest.fixture()
 def localproc_pack_fail(tmpdir):
 	return packtivity.pack_object.fromspec('tests/testspecs/localtouchfail.yml')

@@ -1,6 +1,7 @@
 import yaml
 import os
-
+import jq
+import copy
 
 import packtivity.logutils as logutils
 from packtivity.handlers import enable_plugins
@@ -20,9 +21,9 @@ class packconfig(object):
         except KeyError:
             return 'default'
 
-def build_job(process,parameters,pack_config):
+def build_job(process,parameters,state,pack_config):
     '''
-    takes a process description and builds a job out of it using a handler.
+    takes a process template and builds a job out of it using a handler.
     '''
     proc_type =  process['process_type']
     impl = pack_config.get_impl('process',proc_type)
@@ -30,15 +31,26 @@ def build_job(process,parameters,pack_config):
     handler = proc_handlers[proc_type][impl]
     return handler(process,parameters)
 
+def build_env(environment,parameters,state,pack_config):
+    '''
+    builds an environment template description and builds a fully-defined env
+    this will use a handler in the future (just as build_job)
+    '''
+    env = copy.deepcopy(environment)
+    if environment['environment_type'] == 'docker-encapsulated':
+        for i,x in enumerate(env['par_mounts']):
+            script = x.pop('jqscript')
+            x['mountcontent'] = jq.jq(script).transform(parameters, text_output = True)
+    return env
+
 def run_in_env(environment,job,state,metadata,pack_config):
     '''
-    takes a built job and runs it blockingly in the environment with
-    the state context attached
+    takes a job and an environment and executes with the state context attached
     '''
     env_type = environment['environment_type']
     impl = pack_config.get_impl('environment',env_type)
-    from .handlers.environment_handlers import handlers as env_handlers
-    handler = env_handlers[env_type][impl]
+    from .handlers.execution_handlers import handlers as exec_handlers
+    handler = exec_handlers[env_type][impl]
     return handler(environment,state,job,metadata)
 
 def publish(publisher,parameters,state, pack_config):
@@ -60,9 +72,10 @@ def prepublish(spec, parameters, state, pack_config):
 def run_packtivity(spec, parameters,state,metadata,config):
     log = logutils.setup_logging_topic(metadata,state,'step',return_logger = True)
     try:
-        job = build_job(spec['process'],parameters, config)
-        run_in_env(spec['environment'],job,state,metadata,config)
-        pubdata = publish(spec['publisher'],parameters,state,config)
+        job = build_job(spec['process'], parameters, state, config)
+        env = build_env(spec['environment'], parameters, state, config)
+        run_in_env(env,job,state,metadata,config)
+        pubdata = publish(spec['publisher'], parameters,state, config)
         log.info('publishing data: %s',pubdata)
         return pubdata
     except:
