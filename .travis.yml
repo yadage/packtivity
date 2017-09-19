@@ -1,21 +1,27 @@
 sudo: required
-
 services:
-  - docker
-
+- docker
 language: python
 python:
-  - '2.7'
-  - '3.5'
+- '2.7'
+- '3.5'
 install:
-  - pip install pyflakes pytest pytest-cov python-coveralls
-  - pip install --process-dependency-links -e '.[celery]'
-
+- pip install pyflakes pytest pytest-cov python-coveralls
+- pip install --process-dependency-links -e '.[celery]'
 script:
-  - pyflakes packtivity
-  - pytest --cov=packtivity -vv
-  - packtivity-run tests/testspecs/noop-test.yml -p a_parameter=hello
-
+- pyflakes packtivity
+- pytest --cov=packtivity -vv
+- packtivity-run tests/testspecs/noop-test.yml -p a_parameter=hello
+jobs:
+  include:
+    - stage: deploy
+      deploy:
+        provider: pypi
+        password:
+          secure: OCaYWRAgoQIgyraeTMOpDxRYh0bIazkB1pwNo/7yxbmDloYZeoHTMYZOWYJ9D6Al9wFzveHvW+iABOhP8Zc3e4crep94VIMfYj+IzPFnVMk4+t2ZnTArJRwuuKdzAl2+aeFcRjgUidORWKwzp/T4kf1ScLjSSf7SQQAQexnhGpGgHB4CHdXhV03fGydKeoBJKNhfXzmQtaNdtJtRURi0s86SQSpJJBDb1Jeike2ZpShJBiehLWQ0TMAivcPKaCI1stRwCeFKpInvxqrJBTj7oov+EdsH0eh1uMgwlNiHjd94RG2epFvlr1GBvq8Dr86/4KKykHrDtwQjLpsIvADzzS/9U+EEd4OKTGkXgF7RFcMKzrJ6MWrdLc5EzeeZRR2k3cPqDByy1Mnmevc+9EzqJHpQteigkXR7pcNjaq7vhFuzbwDcqtgwWZz1g3wenRpdqeYMq3qkkJ8D4yTBtTZejE1mWkUEFKR83ehS8J/7B1XkekHRncLm4vhNGOlcPFIcuvko1NayNmKejH+5BntpO0pZAafeE2vhK8kCDexQbf/P773IOAKPBU7b/pBs/xZ6EwCCqGj2HETsxgFMshMXwjq5f3hOseP8QHlbgelxlKu3Qf816SpUxBZH0STTS6xq3we6feCFpYyza2f9eB98zmF56PJRuzTjUs9+nh0QyEI=
+        username:
+          secure: E5tapPXNvC1e92k4KdCojyN2ZUxsN+EZWgB6rLtMh9qgNWZd0FmnX15IuXRD/HzPbSFa10Qus9M7kK0B8Bm0FhmU9a1KnzSPJEDaAGJ1RIx50EfFqJGbqpSp++HVzhHx6y3Jer6ltpeKoYdxFQwi+NVFHGEuJHltzKYcOx8XLWNe0AtZdi5LLqocJyk7MuQ/5QYGIygAR4/+sK7Pe8xmBR6uzrVcKRuoIzfxJEeXepLk779UnxD4Yqn0R19j8hdBNBd2q7ue9iAbPr+Uv3uTRnHjLGVPU4cKy8qeO5h4GXQBbeT1QyJsm+so/fSxqVIb50NNlaOlHSqaAmDGZ+fR70snEYOS+n2LqoD/KpOLip1upgjLo1bIqvUOStqVq4kLPUeb1pX3gONDq1YloSkJwKObNOXP5THMBf2mhtUDsT//iEGKytzclGISYyL77nyVKwcyix6BpHY1IcAvieenEMRtpcz2BaQWAd8s3Xgdk1Ht10wpskbAUomb8R8oI9kf3isvmSEjr57kLmr7zkCIODvHZt2y5Xj16bsruWMTtqfewkgniUOskGV3SNmMhdrgQnFBgv8M4P0C8CK+5zrpO2SXGqjOvyQJw06RjCKPqnWGl2kTPVds3cbrZ668clJexEpRj8m4wR1bgOUh4u1qLVIQtpO7eb6h/roFfAs7onA=
+        on:
+          tags: true
 after_success:
-  - coveralls 
-
+- coveralls

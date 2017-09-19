@@ -70,17 +70,17 @@ def prepublish(spec, parameters, state, pack_config):
     return None
 
 def run_packtivity(spec, parameters,state,metadata,config):
-    log = logutils.setup_logging_topic(metadata,state,'step',return_logger = True)
-    try:
-        job = build_job(spec['process'], parameters, state, config)
-        env = build_env(spec['environment'], parameters, state, config)
-        run_in_env(env,job,state,metadata,config)
-        pubdata = publish(spec['publisher'], parameters,state, config)
-        log.info('publishing data: %s',pubdata)
-        return pubdata
-    except:
-        log.exception('%s raised exception',metadata)
-        raise
+    with logutils.setup_logging_topic(metadata,state,'step',return_logger = True) as log:
+        try:
+            job = build_job(spec['process'], parameters, state, config)
+            env = build_env(spec['environment'], parameters, state, config)
+            run_in_env(env,job,state,metadata,config)
+            pubdata = publish(spec['publisher'], parameters,state, config)
+            log.info('publishing data: %s',pubdata)
+            return pubdata
+        except:
+            log.exception('%s raised exception',metadata)
+            raise
 
 class defaultsyncbackend(object):
     def __init__(self,packconfig_spec = None):
