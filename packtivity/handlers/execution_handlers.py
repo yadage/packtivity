@@ -134,20 +134,22 @@ def run_docker_with_script(state,environment,job,log,metadata):
     indocker = envmod+indocker
     
     try:
-        runlog = logutils.setup_logging_topic(metadata,state,'run', return_logger = True)
-        subcmd = 'docker run --rm -i {docker_mod} {image}:{imagetag} sh -c \'{indocker}\' '.format(image = image, imagetag = imagetag, docker_mod = docker_mod, indocker = indocker)
-        log.debug('running docker cmd: %s',subcmd)
-        proc = subprocess.Popen(shlex.split(subcmd), stdin = subprocess.PIPE, stderr = subprocess.STDOUT, stdout = subprocess.PIPE, bufsize=1)
+        with logutils.setup_logging_topic(metadata,state,'run', return_logger = True) as runlog:
+            subcmd = 'docker run --rm -i {docker_mod} {image}:{imagetag} sh -c \'{indocker}\' '.format(image = image, imagetag = imagetag, docker_mod = docker_mod, indocker = indocker)
+            log.debug('running docker cmd: %s',subcmd)
+            proc = subprocess.Popen(shlex.split(subcmd), stdin = subprocess.PIPE, stderr = subprocess.STDOUT, stdout = subprocess.PIPE, bufsize=1, close_fds = True)
 
-        log.debug('started run subprocess with pid %s. now piping script',proc.pid)
-        proc.stdin.write(script.encode('utf-8'))
-        proc.stdin.close()
-        time.sleep(0.5)
+            log.debug('started run subprocess with pid %s. now piping script',proc.pid)
+            proc.stdin.write(script.encode('utf-8'))
+            proc.stdin.close()
+            time.sleep(0.5)
 
-        for line in iter(proc.stdout.readline, b''):
-            runlog.info(line.strip())
-        while proc.poll() is None:
-            pass
+            for line in iter(proc.stdout.readline, b''):
+                runlog.info(line.strip())
+            while proc.poll() is None:
+                pass
+
+            proc.stdout.close()
 
         log.debug('docker run subprocess finished. return code: %s',proc.returncode)
         if proc.returncode:
@@ -194,16 +196,18 @@ def docker_pull(docker_pull_cmd,log,state,metadata):
     if 'PACKTIVITY_DRYRUN' in os.environ:
         return
     try:
-        pulllog = logutils.setup_logging_topic(metadata,state,'pull', return_logger = True)
-        proc = subprocess.Popen(shlex.split(docker_pull_cmd), stderr = subprocess.STDOUT, stdout = subprocess.PIPE, bufsize=1)
-        log.debug('started pull subprocess with pid %s. now wait to finish',proc.pid)
-        time.sleep(0.5)
-        log.debug('process children: %s',[x for x in psutil.Process(proc.pid).children(recursive = True)])
+        with logutils.setup_logging_topic(metadata,state,'pull', return_logger = True) as pulllog:
+            proc = subprocess.Popen(shlex.split(docker_pull_cmd), stderr = subprocess.STDOUT, stdout = subprocess.PIPE, bufsize=1, close_fds = True)
+            log.debug('started pull subprocess with pid %s. now wait to finish',proc.pid)
+            time.sleep(0.5)
+            log.debug('process children: %s',[x for x in psutil.Process(proc.pid).children(recursive = True)])
 
-        for line in iter(proc.stdout.readline, b''):
-            pulllog.info(line.strip())
-        while proc.poll() is None:
-            pass
+            for line in iter(proc.stdout.readline, b''):
+                pulllog.info(line.strip())
+            while proc.poll() is None:
+                pass
+
+            proc.stdout.close()
 
         log.debug('pull subprocess finished. return code: %s',proc.returncode)
         if proc.returncode:
@@ -227,16 +231,18 @@ def docker_run_cmd(fullest_command,log,state,metadata):
     if 'PACKTIVITY_DRYRUN' in os.environ:
         return
     try:
-        runlog = logutils.setup_logging_topic(metadata,state,'run', return_logger = True)
-        proc = subprocess.Popen(shlex.split(fullest_command), stderr = subprocess.STDOUT, stdout = subprocess.PIPE, bufsize=1)
-        log.debug('started run subprocess with pid %s. now wait to finish',proc.pid)
-        time.sleep(0.5)
-        log.debug('process children: %s',[x for x in psutil.Process(proc.pid).children(recursive = True)])
+        with logutils.setup_logging_topic(metadata,state,'run', return_logger = True) as runlog:
+            proc = subprocess.Popen(shlex.split(fullest_command), stderr = subprocess.STDOUT, stdout = subprocess.PIPE, bufsize=1, close_fds = True)
+            log.debug('started run subprocess with pid %s. now wait to finish',proc.pid)
+            time.sleep(0.5)
+            log.debug('process children: %s',[x for x in psutil.Process(proc.pid).children(recursive = True)])
 
-        for line in iter(proc.stdout.readline, b''):
-            runlog.info(line.strip())
-        while proc.poll() is None:
-            pass
+            for line in iter(proc.stdout.readline, b''):
+                runlog.info(line.strip())
+            while proc.poll() is None:
+                pass
+
+            proc.stdout.close()
 
         log.debug('docker run subprocess finished. return code: %s',proc.returncode)
         if proc.returncode:
@@ -257,58 +263,53 @@ def docker_run_cmd(fullest_command,log,state,metadata):
 
 @executor('docker-encapsulated')
 def docker_enc_handler(environment,state,job,metadata):
-    log  = logutils.setup_logging_topic(metadata,state,'step',return_logger = True)
-    
-    #setup more detailed logging
-    logutils.setup_logging(metadata, state)
-    
-
-    log.debug('starting log for step: %s',metadata)
-    if 'PACKTIVITY_DOCKER_NOPULL' not in os.environ:
-        log.info('prepare pull')
-        docker_pull_cmd = 'docker pull {container}:{tag}'.format(
-            container = environment['image'],
-            tag = environment['imagetag']
-        )
-        docker_pull(docker_pull_cmd,log,state,metadata)
+    with logutils.setup_logging_topic(metadata,state,'step',return_logger = True) as log:
+        log.debug('starting log for step: %s',metadata)
+        if 'PACKTIVITY_DOCKER_NOPULL' not in os.environ:
+            log.info('prepare pull')
+            docker_pull_cmd = 'docker pull {container}:{tag}'.format(
+                container = environment['image'],
+                tag = environment['imagetag']
+            )
+            docker_pull(docker_pull_cmd,log,state,metadata)
+            
+        log.info('running job')
         
-    log.info('running job')
-    
-    if 'command' in job:
-        # log.info('running oneliner command')
-        docker_run_cmd_str = prepare_full_docker_with_oneliner(state,environment,job['command'],log,metadata)
-        docker_run_cmd(docker_run_cmd_str,log,state,metadata)
-        log.debug('reached return for docker_enc_handler')
-    elif 'script' in job:
-        run_docker_with_script(state,environment,job,log,metadata)
-    else:
-        raise RuntimeError('do not know yet how to run this...')
+        if 'command' in job:
+            # log.info('running oneliner command')
+            docker_run_cmd_str = prepare_full_docker_with_oneliner(state,environment,job['command'],log,metadata)
+            docker_run_cmd(docker_run_cmd_str,log,state,metadata)
+            log.debug('reached return for docker_enc_handler')
+        elif 'script' in job:
+            run_docker_with_script(state,environment,job,log,metadata)
+        else:
+            raise RuntimeError('do not know yet how to run this...')
 
 @executor('noop-env')
 def noop_env(environment,state,job,metadata):
-    log  = logutils.setup_logging_topic(metadata,state,'step',return_logger = True)
-    log.info('state is: %s',state)
-    log.info('would be running this job: %s',job)
+    with logutils.setup_logging_topic(metadata,state,'step',return_logger = True) as log:
+        log.info('state is: %s',state)
+        log.info('would be running this job: %s',job)
 
 @executor('localproc-env')
 def localproc_env(environment,state,job,metadata):
-    log  =  logutils.setup_logging_topic(metadata,state,'step',return_logger = True)
-    olddir = os.path.realpath(os.curdir)
-    workdir = state.readwrite[0]
-    log.info('running local command %s',job['command'])
-    try:
-        log.info('changing to workdirectory %s',workdir)
-        utils.mkdir_p(workdir)
-        os.chdir(workdir)
-        #this is used for testing and we will keep this shell
-        #doesn't make sense to wrap in sh ...
-        subprocess.check_call(job['command'], shell = True)
-    except:
-        log.exception('local job failed. job: %s',job)
-        raise
-    finally:
-        log.info('changing back to original directory %s',olddir)
-        os.chdir(olddir)
+    with logutils.setup_logging_topic(metadata,state,'step',return_logger = True) as log:
+        olddir = os.path.realpath(os.curdir)
+        workdir = state.readwrite[0]
+        log.info('running local command %s',job['command'])
+        try:
+            log.info('changing to workdirectory %s',workdir)
+            utils.mkdir_p(workdir)
+            os.chdir(workdir)
+            #this is used for testing and we will keep this shell
+            #doesn't make sense to wrap in sh ...
+            subprocess.check_call(job['command'], shell = True)
+        except:
+            log.exception('local job failed. job: %s',job)
+            raise
+        finally:
+            log.info('changing back to original directory %s',olddir)
+            os.chdir(olddir)
 
 @executor('manual-env')
 def manual_env(environment,state,job,metadata):
@@ -319,8 +320,8 @@ def manual_env(environment,state,job,metadata):
 
 @executor('test-env')
 def test_process(environment,state,job,metadata):
-    log  = logutils.setup_logging_topic(metadata,state,'step',return_logger = True)
-    log.info('a complicated test environment')
-    log.info('job:  {}'.format(job))
-    log.info('env:  {}'.format(environment))
-    log.info('state {}'.format(state))
+    with logutils.setup_logging_topic(metadata,state,'step',return_logger = True) as log:
+        log.info('a complicated test environment')
+        log.info('job:  {}'.format(job))
+        log.info('env:  {}'.format(environment))
+        log.info('state {}'.format(state))
