@@ -11,27 +11,12 @@ def get_base_loggername(metadata):
 def get_topic_loggername(metadata,topic):
     return 'packtivity_logger_{}.{}'.format(metadata['name'],topic)
 
-def setup_logging(metadata,state):
-    ## prepare logging for the execution of the job. We're ready to handle up to DEBUG
-    log = logging.getLogger(get_base_loggername(metadata))
-    log.setLevel(logging.DEBUG)
-
-    fh  = logging.StreamHandler()
-    fh.setLevel(logging.INFO)
-    fh.setFormatter(formatter)
-    log.addHandler(fh)
-
-    ## this is all internal logging, we don't want to escalate to handlers of parent loggers
-    ## we will have two handlers, a stream handler logging to stdout at INFO
-    log.propagate = False
-    setup_logging_topic(metadata,state,'step')
-
 def default_logging_handlers(log,metadata,state,topic):
     if topic == 'step':
-        fh  = logging.StreamHandler()
-        fh.setLevel(logging.INFO)
-        fh.setFormatter(formatter)
-        log.addHandler(fh)
+        sh  = logging.StreamHandler()
+        sh.setLevel(logging.INFO)
+        sh.setFormatter(formatter)
+        log.addHandler(sh)
 
     # Now that we have  place to store meta information we put a file based logger in place
     # to log at DEBUG
@@ -51,6 +36,7 @@ def setup_logging_topic(metadata,state,topic,return_logger = False):
     The logger can be recreated multiple times
     '''
     log = logging.getLogger(get_topic_loggername(metadata,topic))
+    log.setLevel(logging.DEBUG)
     log.propagate = False
 
     if not log.handlers:
