@@ -9,23 +9,27 @@ def proxy_from_json(jsondata, best_effort_backend = True, raise_on_unknown = Fal
     if jsondata['proxyname'] == 'CeleryProxy':
         from .asyncbackends import CeleryProxy
         proxy = CeleryProxy.fromJSON(jsondata)
-        _, backend = backend_from_string('celery')
+        if best_effort_backend:
+            _, backend = backend_from_string('celery')
     if jsondata['proxyname'] == 'CeleryProxy':
         from .asyncbackends import CeleryProxy
         proxy = CeleryProxy.fromJSON(jsondata)
-        _, backend = backend_from_string('celery')
+        if best_effort_backend:
+            _, backend = backend_from_string('celery')
 
     if jsondata['proxyname'] == 'ForegroundProxy':
         from .asyncbackends import ForegroundProxy
         proxy = ForegroundProxy.fromJSON(jsondata)
-        _, backend = backend_from_string('foregroundasync')
+        if best_effort_backend:
+            _, backend = backend_from_string('foregroundasync')
 
     if 'PACKTIVITY_ASYNCBACKEND' in os.environ:
         module, _, proxyclass = os.environ['PACKTIVITY_ASYNCBACKEND'].split(':')
         module = importlib.import_module(module)
         proxyclass = getattr(module,proxyclass)
         proxy = proxyclass.fromJSON(jsondata)
-        _, backend = backend_from_string('fromenv')
+        if best_effort_backend:
+            _, backend = backend_from_string('fromenv')
     if not proxy and raise_on_unknown:
         raise RuntimeError('unknown proxy type: %s', jsondata['proxyname'])
     if best_effort_backend:
