@@ -14,6 +14,11 @@ class LocalFSState(object):
     Local Filesyste State consisting of a number of readwrite and readonly directories
     '''
     def __init__(self,readwrite = None,readonly = None, dependencies = None, identifier = 'unidentified_state'):
+        try:
+            assert type(readwrite) in [list, type(None)]
+            assert type(readonly) in [list, type(None)]
+        except AssertionError:
+            raise TypeError('readwrite and readonly must be None or a list {} {}'.format(type(readwrite), type(readonly)))
         self._identifier = identifier
         self.readwrite = list(map(os.path.realpath,readwrite) if readwrite else  [])
         self.readonly  = list(map(os.path.realpath,readonly) if readonly else  [])
@@ -66,7 +71,7 @@ class LocalFSState(object):
         contextualizes string data by string interpolation.
         replaces '{workdir}' placeholder with first readwrite directory
         '''
-        try: 
+        try:
             workdir = self.readwrite[0]
             return data.format(workdir = workdir)
         except AttributeError:
@@ -146,7 +151,7 @@ class LocalFSProvider(object):
         newstate = LocalFSState(readwrite = new_readwrites, readonly = new_readonlies, identifier = new_identifier)
 
         if self.ensure:
-            newstate.ensure()        
+            newstate.ensure()
         return newstate
 
     def json(self):
@@ -160,5 +165,3 @@ class LocalFSProvider(object):
     @classmethod
     def fromJSON(cls,jsondata):
         return cls(LocalFSState.fromJSON(jsondata['base_state']), nest = jsondata['nest'], ensure = jsondata['ensure'])
-
-
