@@ -69,4 +69,3 @@ def manual_pub(publisher,parameters,state):
             break
     click.secho('publishing', fg = 'green')
     return data
-

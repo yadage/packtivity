@@ -67,6 +67,9 @@ def prepublish(spec, parameters, state, pack_config):
     pub = spec['publisher']
     if pub['publisher_type'] in ['frompar-pub','constant-pub']:
         return publish(pub,parameters,state,pack_config)
+    if pub['publisher_type'] == 'interpolated-pub':
+        if pub['glob'] == False:
+            return publish(pub,parameters,state,pack_config)
     return None
 
 def run_packtivity(spec, parameters,state,metadata,config):
