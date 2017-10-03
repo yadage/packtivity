@@ -8,8 +8,6 @@ def load_state(jsondata):
     if 'PACKTIVITY_STATEPROVIDER' in os.environ:
         module = importlib.import_module(os.environ['PACKTIVITY_STATEPROVIDER'])
         return module.load_state(jsondata)
-
-
     raise TypeError('unknown state type {}'.format(jsondata['state_type']))
 
 def load_provider(jsondata):
@@ -17,3 +15,7 @@ def load_provider(jsondata):
         return None
     if jsondata['state_provider_type'] == 'localfs_provider':
         return LocalFSProvider.fromJSON(jsondata)
+    if 'PACKTIVITY_STATEPROVIDER' in os.environ:
+        module = importlib.import_module(os.environ['PACKTIVITY_STATEPROVIDER'])
+        return module.load_provider(jsondata)
+    raise TypeError('unknown provider type {}'.format(jsondata['state_provider_type']))

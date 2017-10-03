@@ -4,7 +4,8 @@ import yaml
 import packtivity.asyncbackends as asyncbackends
 import packtivity.syncbackends as syncbackends
 
-def proxy_from_json(jsondata, best_effort_backend = True):
+def proxy_from_json(jsondata, best_effort_backend = True, raise_on_unknown = False):
+    proxy, backend = None, None
     if jsondata['proxyname'] == 'CeleryProxy':
         from .asyncbackends import CeleryProxy
         proxy = CeleryProxy.fromJSON(jsondata)
@@ -25,6 +26,8 @@ def proxy_from_json(jsondata, best_effort_backend = True):
         proxyclass = getattr(module,proxyclass)
         proxy = proxyclass.fromJSON(jsondata)
         _, backend = backend_from_string('fromenv')
+    if not proxy and raise_on_unknown:
+        raise RuntimeError('unknown proxy type: %s', jsondata['proxyname'])
     if best_effort_backend:
         return proxy, backend
     return proxy
