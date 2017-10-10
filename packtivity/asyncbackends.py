@@ -3,10 +3,13 @@ import functools
 import sys
 import traceback
 import os
+import logging
 
 from .syncbackends import run_packtivity
 from .syncbackends import prepublish
 from .syncbackends import packconfig
+
+log = logging.getLogger(__name__)
 
 class PacktivityProxyBase(object):
     '''
@@ -59,6 +62,8 @@ class MultiProcBackend(PythonCallableAsyncBackend):
         super(MultiProcBackend,self).__init__(packconfig_spec)
         if poolsize == 'auto':
             poolsize = multiprocessing.cpu_count()
+
+        log.info('configured pool size to %s', poolsize)
         self.pool = multiprocessing.Pool(int(poolsize))
 
     def submit_callable(self,callable):
