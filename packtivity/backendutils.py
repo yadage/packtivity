@@ -3,6 +3,10 @@ import importlib
 import yaml
 import packtivity.asyncbackends as asyncbackends
 import packtivity.syncbackends as syncbackends
+import logging
+
+log = logging.getLogger(__name__)
+
 
 def proxy_from_json(jsondata, best_effort_backend = True, raise_on_unknown = False):
     proxy, backend = None, None
