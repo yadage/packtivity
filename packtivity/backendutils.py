@@ -3,6 +3,10 @@ import importlib
 import yaml
 import packtivity.asyncbackends as asyncbackends
 import packtivity.syncbackends as syncbackends
+import logging
+
+log = logging.getLogger(__name__)
+
 
 def proxy_from_json(jsondata, best_effort_backend = True, raise_on_unknown = False):
     proxy, backend = None, None
@@ -36,37 +40,41 @@ def proxy_from_json(jsondata, best_effort_backend = True, raise_on_unknown = Fal
         return proxy, backend
     return proxy
 
-def backend_from_string(backendstring):
+def backend_from_string(backendstring,backendopts = None):
     '''
     creates (a)sync backends from strings
     returns tuple (boolean,backend) where boolean
     specifies whether this is a syncbackend (True) or
     asyncbackend (False)
     '''
+    backendopts = backendopts or {}
+    ctor_kwargs = os.environ.get('PACKTIVITY_ASYNCBACKEND_OPTS',{})
+    if ctor_kwargs:
+        ctor_kwargs = yaml.load(open(ctor_kwargs))
+        log.info('overriding using envvar opts %s', ctor_kwargs)
+        backendopts.update(**ctor_kwargs)
     is_sync, is_async = True, False
     if backendstring == 'defaultsync':
-        return is_sync, syncbackends.defaultsyncbackend()
+        return is_sync, syncbackends.defaultsyncbackend(**backendopts)
     if backendstring.startswith('multiproc'):
         _,poolsize = backendstring.split(':')
-        backend = asyncbackends.MultiProcBackend(poolsize = poolsize)
+        backendopts.update(poolsize = poolsize)
+        backend = asyncbackends.MultiProcBackend(**backendopts)
         return is_async, backend
 
     if  backendstring == 'foregroundasync':
-        backend = asyncbackends.ForegroundBackend()
+        backend = asyncbackends.ForegroundBackend(**backendopts)
         return is_async, backend
 
     if  backendstring == 'ipcluster':
-        backend = asyncbackends.IPythonParallelBackend()
+        backend = asyncbackends.IPythonParallelBackend(**backendopts)
         return is_async, backend
     if backendstring == 'celery':
-        backend = asyncbackends.CeleryBackend()
+        backend = asyncbackends.CeleryBackend(**backendopts)
         return is_async, backend
     if backendstring == 'fromenv':
         module, backend, _ = os.environ['PACKTIVITY_ASYNCBACKEND'].split(':')
-        ctor_kwargs = os.environ.get('PACKTIVITY_ASYNCBACKEND_OPTS',{})
-        if ctor_kwargs:
-            ctor_kwargs = yaml.load(open(ctor_kwargs))
         module = importlib.import_module(module)
         backendclass = getattr(module,backend)
-        return is_async, backendclass(**ctor_kwargs)
-    raise RuntimeError('Unknown Backend')
+        return is_async, backendclass(**backendopts)
+    raise RuntimeError('Unknown Backend %s', backendstring)
