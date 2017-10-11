@@ -8,7 +8,8 @@ import logging
 log = logging.getLogger(__name__)
 
 
-def proxy_from_json(jsondata, best_effort_backend = True, raise_on_unknown = False):
+def proxy_from_json(jsondata, deserialization_opts = None, best_effort_backend = True, raise_on_unknown = False):
+    deserialization_opts = deserialization_opts or {}
     proxy, backend = None, None
     if jsondata['proxyname'] == 'CeleryProxy':
         from .asyncbackends import CeleryProxy
