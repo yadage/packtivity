@@ -65,13 +65,17 @@ def backend_from_string(backendstring,backendopts = None):
     if  backendstring == 'foregroundasync':
         backend = asyncbackends.ForegroundBackend(**backendopts)
         return is_async, backend
-
     if  backendstring == 'ipcluster':
         backend = asyncbackends.IPythonParallelBackend(**backendopts)
         return is_async, backend
     if backendstring == 'celery':
         backend = asyncbackends.CeleryBackend(**backendopts)
         return is_async, backend
+    if backendstring.startswith('py:'):
+        _, module, backend = backendstring.split(':')
+        module = importlib.import_module(module)
+        backendclass = getattr(module,backend)
+        return is_async, backendclass(**backendopts)
     if backendstring == 'fromenv':
         module, backend, _ = os.environ['PACKTIVITY_ASYNCBACKEND'].split(':')
         module = importlib.import_module(module)
