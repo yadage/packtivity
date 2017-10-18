@@ -10,7 +10,8 @@ def load_state(jsondata):
         return module.load_state(jsondata)
     raise TypeError('unknown state type {}'.format(jsondata['state_type']))
 
-def load_provider(jsondata):
+def load_provider(jsondata,deserialization_opts = None):
+    deserialization_opts = deserialization_opts or {}
     if jsondata == None:
         return None
     if jsondata['state_provider_type'] == 'localfs_provider':
