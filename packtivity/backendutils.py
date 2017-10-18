@@ -8,9 +8,28 @@ import logging
 log = logging.getLogger(__name__)
 
 
-def proxy_from_json(jsondata, deserialization_opts = None, best_effort_backend = True, raise_on_unknown = False):
+def load_proxy(jsondata, deserialization_opts = None, best_effort_backend = True, raise_on_unknown = False):
+    log.debug('load_proxy opts %s', deserialization_opts)
     deserialization_opts = deserialization_opts or {}
     proxy, backend = None, None
+
+    if 'proxy' in deserialization_opts:
+        proxystring = deserialization_opts.pop('proxy')
+        if proxystring.startswith('py:'):
+            _, module, proxyclass = proxystring.split(':')
+            module = importlib.import_module(module)
+            proxyclass = getattr(module,proxyclass)
+            proxyopts = {}
+            return proxyclass.fromJSON(jsondata,**proxyopts)
+
+    if 'PACKTIVITY_ASYNCBACKEND' in os.environ:
+        module, _, proxyclass = os.environ['PACKTIVITY_ASYNCBACKEND'].split(':')
+        module = importlib.import_module(module)
+        proxyclass = getattr(module,proxyclass)
+        proxy = proxyclass.fromJSON(jsondata)
+        if best_effort_backend:
+            _, backend = backend_from_string('fromenv')
+
     if jsondata['proxyname'] == 'CeleryProxy':
         from .asyncbackends import CeleryProxy
         proxy = CeleryProxy.fromJSON(jsondata)
@@ -28,13 +47,6 @@ def proxy_from_json(jsondata, deserialization_opts = None, best_effort_backend =
         if best_effort_backend:
             _, backend = backend_from_string('foregroundasync')
 
-    if 'PACKTIVITY_ASYNCBACKEND' in os.environ:
-        module, _, proxyclass = os.environ['PACKTIVITY_ASYNCBACKEND'].split(':')
-        module = importlib.import_module(module)
-        proxyclass = getattr(module,proxyclass)
-        proxy = proxyclass.fromJSON(jsondata)
-        if best_effort_backend:
-            _, backend = backend_from_string('fromenv')
     if not proxy and raise_on_unknown:
         raise RuntimeError('unknown proxy type: %s', jsondata['proxyname'])
     if best_effort_backend:
