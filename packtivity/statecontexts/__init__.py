@@ -9,7 +9,7 @@ def load_state(jsondata,deserialization_opts = None):
     log.debug('load_state opts %s', deserialization_opts)
     deserialization_opts = deserialization_opts or {}
     if 'state' in deserialization_opts:
-        statestring = deserialization_opts.get('state'.'')
+        statestring = deserialization_opts.get('state','')
         if statestring.startswith('py:'):
             _, module, stateclass = statestring.split(':')
             module = importlib.import_module(module)
