@@ -9,7 +9,7 @@ def load_state(jsondata,deserialization_opts = None):
     log.debug('load_state opts %s', deserialization_opts)
     deserialization_opts = deserialization_opts or {}
     if 'state' in deserialization_opts:
-        statestring = deserialization_opts.pop('state')
+        statestring = deserialization_opts.get('state'.'')
         if statestring.startswith('py:'):
             _, module, stateclass = statestring.split(':')
             module = importlib.import_module(module)
@@ -29,7 +29,7 @@ def load_provider(jsondata,deserialization_opts = None):
     if jsondata == None:
         return None
     if 'state_provider' in deserialization_opts:
-        providerstring = deserialization_opts.pop('state_provider')
+        providerstring = deserialization_opts.get('state_provider','')
         if providerstring.startswith('py:'):
             _, module, providerclass = providerstring.split(':')
             module = importlib.import_module(module)
