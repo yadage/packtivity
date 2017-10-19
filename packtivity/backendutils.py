@@ -14,7 +14,7 @@ def load_proxy(jsondata, deserialization_opts = None, best_effort_backend = True
     proxy, backend = None, None
 
     if 'proxy' in deserialization_opts:
-        proxystring = deserialization_opts.pop('proxy')
+        proxystring = deserialization_opts.get('proxy','')
         if proxystring.startswith('py:'):
             _, module, proxyclass = proxystring.split(':')
             module = importlib.import_module(module)
