@@ -4,6 +4,8 @@ import json
 import click
 import copy
 import logging
+import jq
+import os
 
 import packtivity.utils as utils
 
@@ -25,6 +27,8 @@ def interpolated_pub_handler(publisher,parameters,state):
     result = copy.deepcopy(publisher['publish'])
     for path,value in utils.leaf_iterator(publisher['publish']):
         resultval = value.format(**forinterp)
+        if publisher['relative_paths'] and os.path.commonprefix([state.readwrite[0],resultval]) == '':
+            resultval = os.path.join(state.readwrite[0],resultval)
         if publisher['glob']:
             resultval = glob2.glob(resultval)
         path.set(result,resultval)
@@ -35,7 +39,21 @@ def fromyaml_pub_handler(publisher,parameters,state):
     workdir  = state.readwrite[0]
     yamlfile =  publisher['yamlfile']
     pubdata = yaml.load(open('{}/{}'.format(workdir,yamlfile)))
+
     return pubdata
+
+@publisher('fromparjq-pub')
+def fromparjq_pub(publisher,parameters,state):
+    inputjson = parameters
+    result = jq.jq(publisher['script']).transform(inputjson)
+    assert type(result)==dict
+    for path,value in utils.leaf_iterator(result):
+        if publisher['relative_paths'] and os.path.commonprefix([state.readwrite[0],value]) == '':
+            value = os.path.join(state.readwrite[0],value)
+        if publisher['glob']:
+            value = glob2.glob(value)
+        path.set(result,value)
+    return result
 
 @publisher('fromglob-pub')
 def glob_pub_handler(publisher,parameters,state):
