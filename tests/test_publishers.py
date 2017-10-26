@@ -20,6 +20,7 @@ def test_interp_pub(tmpdir,basic_localfs_state):
 		'publish': {
 			'hello': 'hello_{mypar}_world',
 		},
+		'relative_paths': False,
 		'glob': False
 	}
 	pars = {
@@ -36,6 +37,7 @@ def test_interp_pub_glob(tmpdir,basic_localfs_state):
 		'publish': {
 			'hello': '{workdir}/hello_{mypar}_*.txt',
 		},
+		'relative_paths': False,
 		'glob': True
 	}
 	pars = {
