@@ -42,6 +42,10 @@ def dockeproc_script_pack(tmpdir):
 	return packtivity.pack_object.fromspec('tests/testspecs/dockertouchfile_script.yml')
 
 @pytest.fixture()
+def fromjq_pub_default(tmpdir):
+	return packtivity.pack_object.fromspec('tests/testspecs/publisher_tests/fromjq-pub-default.yml')
+
+@pytest.fixture()
 def default_sync():
 	return packtivity.syncbackends.defaultsyncbackend()
 
