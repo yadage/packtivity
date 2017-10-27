@@ -107,11 +107,11 @@ resources: {resources}
                resources = environment['resources']
               )
     log.debug(report)
-    
+
     do_cvmfs = 'CVMFS' in environment['resources']
     do_auth  = ('GRIDProxy'  in environment['resources']) or ('KRB5Auth' in environment['resources'])
     log.debug('do_auth: %s do_cvmfs: %s',do_auth,do_cvmfs)
-    
+
     par_mounts = prepare_par_mounts(environment['par_mounts'], state)
 
     return prepare_docker(state,do_cvmfs,do_auth,par_mounts,log,metadata)
@@ -119,23 +119,29 @@ resources: {resources}
 def run_docker_with_script(state,environment,job,log,metadata):
     image = environment['image']
     imagetag = environment['imagetag']
-    
+
     script = job['script']
     interpreter = job['interpreter']
-    
+
     log.debug('script is:')
     log.debug('\n--------------\n'+script+'\n--------------')
     docker_mod = prepare_docker_context(state,environment,log,metadata)
     if 'PACKTIVITY_DRYRUN' in os.environ:
         return
-        
+
     indocker = interpreter
     envmod = 'source {} && '.format(environment['envscript']) if environment['envscript'] else ''
     indocker = envmod+indocker
-    
+
     try:
         with logutils.setup_logging_topic(metadata,state,'run', return_logger = True) as runlog:
-            subcmd = 'docker run --rm -i {docker_mod} {image}:{imagetag} sh -c \'{indocker}\' '.format(image = image, imagetag = imagetag, docker_mod = docker_mod, indocker = indocker)
+            subcmd = 'docker run --rm -i {workdir_flag} {docker_mod} {image}:{imagetag} sh -c \'{indocker}\' '.format(
+                image = image,
+                workdir_flag = '-w {}'.format(environment['workdir']) if environment['workdir'] is not None else '',
+                imagetag = imagetag,
+                docker_mod = docker_mod,
+                indocker = indocker
+            )
             log.debug('running docker cmd: %s',subcmd)
             proc = subprocess.Popen(shlex.split(subcmd), stdin = subprocess.PIPE, stderr = subprocess.STDOUT, stdout = subprocess.PIPE, bufsize=1, close_fds = True)
 
@@ -163,13 +169,13 @@ def run_docker_with_script(state,environment,job,log,metadata):
         log.exception("Unexpected error: %s",sys.exc_info())
         raise
     finally:
-        
+
         log.debug('finally for run')
 
 def prepare_full_docker_with_oneliner(state,environment,command,log,metadata):
     image = environment['image']
     imagetag = environment['imagetag']
-    
+
     report = '''\n\
 --------------
 running one liner in container.
@@ -177,14 +183,15 @@ command: {command}
 --------------
     '''.format(command = command)
     log.debug(report)
-    
+
     docker_mod = prepare_docker_context(state,environment,log,metadata)
-    
+
     envmod = 'source {} &&'.format(environment['envscript']) if environment['envscript'] else ''
     in_docker_cmd = '{envmodifier} {command}'.format(envmodifier = envmod, command = command)
-    
-    fullest_command = 'docker run --rm {docker_mod} {image}:{imagetag} sh -c \'{in_dock}\''.format(
+
+    fullest_command = 'docker run --rm {workdir_flag} {docker_mod} {image}:{imagetag} sh -c \'{in_dock}\''.format(
                         docker_mod = docker_mod,
+                        workdir_flag = '-w {}'.format(environment['workdir']) if environment['workdir'] is not None else '',
                         image = image,
                         imagetag = imagetag,
                         in_dock = in_docker_cmd
@@ -272,9 +279,9 @@ def docker_enc_handler(environment,state,job,metadata):
                 tag = environment['imagetag']
             )
             docker_pull(docker_pull_cmd,log,state,metadata)
-            
+
         log.info('running job')
-        
+
         if 'command' in job:
             # log.info('running oneliner command')
             docker_run_cmd_str = prepare_full_docker_with_oneliner(state,environment,job['command'],log,metadata)

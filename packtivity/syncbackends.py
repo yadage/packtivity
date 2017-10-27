@@ -36,11 +36,15 @@ def build_env(environment,parameters,state,pack_config):
     builds an environment template description and builds a fully-defined env
     this will use a handler in the future (just as build_job)
     '''
+
     env = copy.deepcopy(environment)
     if environment['environment_type'] == 'docker-encapsulated':
         for i,x in enumerate(env['par_mounts']):
             script = x.pop('jqscript')
             x['mountcontent'] = jq.jq(script).transform(parameters, text_output = True)
+
+        if env['workdir'] is not None:
+            env['workdir'] = state.contextualize_data(env['workdir'])
     return env
 
 def run_in_env(environment,job,state,metadata,pack_config):
