@@ -1,6 +1,5 @@
 import os
 import pytest
-import subprocess
 
 def test_pack_call_local(tmpdir,basic_localfs_state,localproc_pack):
 	basic_localfs_state.ensure()
@@ -17,7 +16,7 @@ def test_pack_call_docker(tmpdir,basic_localfs_state,dockeproc_pack):
 def test_pack_call_local_fail(tmpdir,basic_localfs_state,localproc_pack_fail,default_async):
 	basic_localfs_state.ensure()
 	pars =  {'outputfile': basic_localfs_state.contextualize_data('{workdir}/helloworld.txt')}
-	with pytest.raises(subprocess.CalledProcessError):
+	with pytest.raises(RuntimeError):
 		localproc_pack_fail(parameters = pars, state = basic_localfs_state)
 	assert tmpdir.join('helloworld.txt').check()
 

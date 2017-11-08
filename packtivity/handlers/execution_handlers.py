@@ -4,6 +4,7 @@ import sys
 import time
 import psutil
 import shlex
+import pipes
 
 import click
 import yaml
@@ -87,7 +88,7 @@ def prepare_docker(state,do_cvmfs,do_auth,par_mounts,log,metadata):
     cidfile = '{}/{}.cid'.format(state.metadir,metadata['name'])
 
     if os.path.exists(cidfile):
-        log.warning('cid file %s seems to exist, docker run will crash',cidfile)
+        log.warning('cid file %s seems to exist, container execution will crash',cidfile)
     docker_mod += ' --cidfile {}'.format(cidfile)
 
 
@@ -117,15 +118,11 @@ resources: {resources}
     return prepare_docker(state,do_cvmfs,do_auth,par_mounts,log,metadata)
 
 def run_docker_with_script(state,environment,job,log,metadata):
-    image = environment['image']
-    imagetag = environment['imagetag']
-
     script = job['script']
     interpreter = job['interpreter']
 
     log.debug('script is:')
     log.debug('\n--------------\n'+script+'\n--------------')
-    docker_mod = prepare_docker_context(state,environment,log,metadata)
     if 'PACKTIVITY_DRYRUN' in os.environ:
         return
 
@@ -135,12 +132,10 @@ def run_docker_with_script(state,environment,job,log,metadata):
 
     try:
         with logutils.setup_logging_topic(metadata,state,'run', return_logger = True) as runlog:
-            subcmd = 'docker run --rm -i {workdir_flag} {docker_mod} {image}:{imagetag} sh -c \'{indocker}\' '.format(
-                image = image,
-                workdir_flag = '-w {}'.format(environment['workdir']) if environment['workdir'] is not None else '',
-                imagetag = imagetag,
-                docker_mod = docker_mod,
-                indocker = indocker
+            subcmd = docker_execution_cmdline(
+                state,environment,log,metadata,
+                combined_flags = '--rm -i',
+                cmd_argv = ['sh', '-c', indocker]
             )
             log.debug('running docker cmd: %s',subcmd)
             proc = subprocess.Popen(shlex.split(subcmd), stdin = subprocess.PIPE, stderr = subprocess.STDOUT, stdout = subprocess.PIPE, bufsize=1, close_fds = True)
@@ -157,14 +152,14 @@ def run_docker_with_script(state,environment,job,log,metadata):
 
             proc.stdout.close()
 
-        log.debug('docker run subprocess finished. return code: %s',proc.returncode)
+        log.debug('container execution finished. return code: %s',proc.returncode)
         if proc.returncode:
             log.error('non-zero return code raising exception')
             raise subprocess.CalledProcessError(returncode =  proc.returncode, cmd = subcmd)
         log.debug('moving on from run')
     except subprocess.CalledProcessError as exc:
         log.exception('subprocess failed. code: %s,  command %s',exc.returncode,exc.cmd)
-        raise RuntimeError('failed docker run subprocess in docker_enc_handler.')
+        raise RuntimeError('failed container execution.')
     except:
         log.exception("Unexpected error: %s",sys.exc_info())
         raise
@@ -172,34 +167,43 @@ def run_docker_with_script(state,environment,job,log,metadata):
 
         log.debug('finally for run')
 
-def prepare_full_docker_with_oneliner(state,environment,command,log,metadata):
+def docker_execution_cmdline(state,environment,log,metadata,combined_flags,cmd_argv):
+    quoted_string = ' '.join(map(pipes.quote,cmd_argv))
+
     image = environment['image']
     imagetag = environment['imagetag']
+    docker_mod = prepare_docker_context(state,environment,log,metadata)
+    workdir_flag =  '-w {}'.format(environment['workdir']) if environment['workdir'] is not None else ''
 
-    report = '''\n\
+    return 'docker run {} {} {} {}:{} {}'.format(
+        combined_flags,
+        workdir_flag,
+        docker_mod,
+        image,
+        imagetag,
+        quoted_string
+    )
+
+def run_docker_with_oneliner(state,environment,command,log,metadata):
+    log.debug('''\n\
 --------------
 running one liner in container.
 command: {command}
 --------------
-    '''.format(command = command)
-    log.debug(report)
-
-    docker_mod = prepare_docker_context(state,environment,log,metadata)
+    '''.format(command = command))
 
     envmod = 'source {} &&'.format(environment['envscript']) if environment['envscript'] else ''
     in_docker_cmd = '{envmodifier} {command}'.format(envmodifier = envmod, command = command)
 
-    fullest_command = 'docker run --rm {workdir_flag} {docker_mod} {image}:{imagetag} sh -c \'{in_dock}\''.format(
-                        docker_mod = docker_mod,
-                        workdir_flag = '-w {}'.format(environment['workdir']) if environment['workdir'] is not None else '',
-                        image = image,
-                        imagetag = imagetag,
-                        in_dock = in_docker_cmd
-                        )
-    return fullest_command
+    docker_run_cmd_str = docker_execution_cmdline(
+        state,environment,log,metadata,
+        combined_flags = '--rm',
+        cmd_argv = ['sh', '-c', in_docker_cmd]
+    )
+    docker_run_cmd(docker_run_cmd_str,log,state,metadata)
 
 def docker_pull(docker_pull_cmd,log,state,metadata):
-    log.debug('docker pull command: \n  %s',docker_pull_cmd)
+    log.debug('container image pull command: \n  %s',docker_pull_cmd)
     if 'PACKTIVITY_DRYRUN' in os.environ:
         return
     try:
@@ -226,7 +230,7 @@ def docker_pull(docker_pull_cmd,log,state,metadata):
         raise e
     except subprocess.CalledProcessError as exc:
         log.exception('subprocess failed. code: %s,  command %s',exc.returncode,exc.cmd)
-        raise RuntimeError('failed docker pull subprocess in docker_enc_handler.')
+        raise RuntimeError('failed container image pull subprocess in docker_enc_handler.')
     except:
         log.exception("Unexpected error: %s",sys.exc_info())
         raise
@@ -234,7 +238,7 @@ def docker_pull(docker_pull_cmd,log,state,metadata):
         log.debug('finally for pull')
 
 def docker_run_cmd(fullest_command,log,state,metadata):
-    log.debug('docker run  command: \n%s',fullest_command)
+    log.debug('container execution command: \n%s',fullest_command)
     if 'PACKTIVITY_DRYRUN' in os.environ:
         return
     try:
@@ -251,14 +255,14 @@ def docker_run_cmd(fullest_command,log,state,metadata):
 
             proc.stdout.close()
 
-        log.debug('docker run subprocess finished. return code: %s',proc.returncode)
+        log.debug('container execution subprocess finished. return code: %s',proc.returncode)
         if proc.returncode:
             log.error('non-zero return code raising exception')
             raise subprocess.CalledProcessError(returncode =  proc.returncode, cmd = fullest_command)
         log.debug('moving on from run')
     except subprocess.CalledProcessError as exc:
         log.exception('subprocess failed. code: %s,  command %s',exc.returncode,exc.cmd)
-        raise RuntimeError('failed docker run subprocess in docker_enc_handler.')
+        raise RuntimeError('failed container execution subprocess.')
     except:
         log.exception("Unexpected error: %s",sys.exc_info())
         raise
@@ -283,9 +287,7 @@ def docker_enc_handler(environment,state,job,metadata):
         log.info('running job')
 
         if 'command' in job:
-            # log.info('running oneliner command')
-            docker_run_cmd_str = prepare_full_docker_with_oneliner(state,environment,job['command'],log,metadata)
-            docker_run_cmd(docker_run_cmd_str,log,state,metadata)
+            run_docker_with_oneliner(state,environment,job['command'],log,metadata)
             log.debug('reached return for docker_enc_handler')
         elif 'script' in job:
             run_docker_with_script(state,environment,job,log,metadata)
@@ -303,17 +305,17 @@ def localproc_env(environment,state,job,metadata):
     with logutils.setup_logging_topic(metadata,state,'step',return_logger = True) as log:
         olddir = os.path.realpath(os.curdir)
         workdir = state.readwrite[0]
-        log.info('running local command %s',job['command'])
         try:
             log.info('changing to workdirectory %s',workdir)
             utils.mkdir_p(workdir)
             os.chdir(workdir)
-            #this is used for testing and we will keep this shell
-            #doesn't make sense to wrap in sh ...
-            subprocess.check_call(job['command'], shell = True)
+            shell = ['sh', '-c', str(job['command'])]
+            # shell = ['sh','-c','echo hello world']
+            log.info('running %s', shell)
+            subprocess.check_call(shell)
         except:
             log.exception('local job failed. job: %s',job)
-            raise
+            raise RuntimeError('failed')
         finally:
             log.info('changing back to original directory %s',olddir)
             os.chdir(olddir)
