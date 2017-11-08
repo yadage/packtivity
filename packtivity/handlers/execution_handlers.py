@@ -136,18 +136,13 @@ def run_docker_with_script(state,environment,job,log,metadata):
 
     try:
         with logutils.setup_logging_topic(metadata,state,'run', return_logger = True) as runlog:
-
-
-            docker_shell = ['sh', '-c', indocker]
-            docker_quoted_string = ' '.join(map(pipes.quote,docker_shell))
-
             subcmd = docker_execution_cmdline(
                 combined_flags = '--rm -i',
                 image = image,
                 workdir_flag = '-w {}'.format(environment['workdir']) if environment['workdir'] is not None else '',
                 imagetag = imagetag,
                 docker_mod = docker_mod,
-                quoted_string = docker_quoted_string
+                cmd_argv = ['sh', '-c', indocker]
             )
             log.debug('running docker cmd: %s',subcmd)
             proc = subprocess.Popen(shlex.split(subcmd), stdin = subprocess.PIPE, stderr = subprocess.STDOUT, stdout = subprocess.PIPE, bufsize=1, close_fds = True)
@@ -179,7 +174,9 @@ def run_docker_with_script(state,environment,job,log,metadata):
 
         log.debug('finally for run')
 
-def docker_execution_cmdline(combined_flags,workdir_flag,docker_mod,image,imagetag,quoted_string):
+def docker_execution_cmdline(combined_flags,workdir_flag,docker_mod,image,imagetag,cmd_argv):
+    quoted_string = ' '.join(map(pipes.quote,cmd_argv))
+
     return 'docker run {} {} {} {}:{} {}'.format(
         combined_flags,
         workdir_flag,
@@ -206,21 +203,17 @@ command: {command}
     envmod = 'source {} &&'.format(environment['envscript']) if environment['envscript'] else ''
     in_docker_cmd = '{envmodifier} {command}'.format(envmodifier = envmod, command = command)
 
-    docker_shell = ['sh', '-c', in_docker_cmd]
-    docker_quoted_string = ' '.join(map(pipes.quote,docker_shell))
-
-
     return docker_execution_cmdline(
         combined_flags = '--rm',
         docker_mod = docker_mod,
         workdir_flag = '-w {}'.format(environment['workdir']) if environment['workdir'] is not None else '',
         image = image,
         imagetag = imagetag,
-        quoted_string = docker_quoted_string
+        cmd_argv = ['sh', '-c', in_docker_cmd]
     )
 
 def docker_pull(docker_pull_cmd,log,state,metadata):
-    log.debug('docker pull command: \n  %s',docker_pull_cmd)
+    log.debug('container image pull command: \n  %s',docker_pull_cmd)
     if 'PACKTIVITY_DRYRUN' in os.environ:
         return
     try:
@@ -247,7 +240,7 @@ def docker_pull(docker_pull_cmd,log,state,metadata):
         raise e
     except subprocess.CalledProcessError as exc:
         log.exception('subprocess failed. code: %s,  command %s',exc.returncode,exc.cmd)
-        raise RuntimeError('failed docker pull subprocess in docker_enc_handler.')
+        raise RuntimeError('failed container image pull subprocess in docker_enc_handler.')
     except:
         log.exception("Unexpected error: %s",sys.exc_info())
         raise
