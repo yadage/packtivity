@@ -118,9 +118,6 @@ resources: {resources}
     return prepare_docker(state,do_cvmfs,do_auth,par_mounts,log,metadata)
 
 def run_docker_with_script(state,environment,job,log,metadata):
-    image = environment['image']
-    imagetag = environment['imagetag']
-
     script = job['script']
     interpreter = job['interpreter']
 
@@ -188,9 +185,6 @@ def docker_execution_cmdline(state,environment,log,metadata,combined_flags,cmd_a
     )
 
 def run_docker_with_oneliner(state,environment,command,log,metadata):
-    image = environment['image']
-    imagetag = environment['imagetag']
-
     log.debug('''\n\
 --------------
 running one liner in container.
