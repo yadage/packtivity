@@ -126,7 +126,6 @@ def run_docker_with_script(state,environment,job,log,metadata):
 
     log.debug('script is:')
     log.debug('\n--------------\n'+script+'\n--------------')
-    docker_mod = prepare_docker_context(state,environment,log,metadata)
     if 'PACKTIVITY_DRYRUN' in os.environ:
         return
 
@@ -137,11 +136,8 @@ def run_docker_with_script(state,environment,job,log,metadata):
     try:
         with logutils.setup_logging_topic(metadata,state,'run', return_logger = True) as runlog:
             subcmd = docker_execution_cmdline(
+                state,environment,log,metadata,
                 combined_flags = '--rm -i',
-                image = image,
-                workdir_flag = '-w {}'.format(environment['workdir']) if environment['workdir'] is not None else '',
-                imagetag = imagetag,
-                docker_mod = docker_mod,
                 cmd_argv = ['sh', '-c', indocker]
             )
             log.debug('running docker cmd: %s',subcmd)
@@ -174,8 +170,13 @@ def run_docker_with_script(state,environment,job,log,metadata):
 
         log.debug('finally for run')
 
-def docker_execution_cmdline(combined_flags,workdir_flag,docker_mod,image,imagetag,cmd_argv):
+def docker_execution_cmdline(state,environment,log,metadata,combined_flags,cmd_argv):
     quoted_string = ' '.join(map(pipes.quote,cmd_argv))
+
+    image = environment['image']
+    imagetag = environment['imagetag']
+    docker_mod = prepare_docker_context(state,environment,log,metadata)
+    workdir_flag =  '-w {}'.format(environment['workdir']) if environment['workdir'] is not None else ''
 
     return 'docker run {} {} {} {}:{} {}'.format(
         combined_flags,
@@ -186,31 +187,26 @@ def docker_execution_cmdline(combined_flags,workdir_flag,docker_mod,image,imaget
         quoted_string
     )
 
-def prepare_full_docker_with_oneliner(state,environment,command,log,metadata):
+def run_docker_with_oneliner(state,environment,command,log,metadata):
     image = environment['image']
     imagetag = environment['imagetag']
 
-    report = '''\n\
+    log.debug('''\n\
 --------------
 running one liner in container.
 command: {command}
 --------------
-    '''.format(command = command)
-    log.debug(report)
-
-    docker_mod = prepare_docker_context(state,environment,log,metadata)
+    '''.format(command = command))
 
     envmod = 'source {} &&'.format(environment['envscript']) if environment['envscript'] else ''
     in_docker_cmd = '{envmodifier} {command}'.format(envmodifier = envmod, command = command)
 
-    return docker_execution_cmdline(
+    docker_run_cmd_str = docker_execution_cmdline(
+        state,environment,log,metadata,
         combined_flags = '--rm',
-        docker_mod = docker_mod,
-        workdir_flag = '-w {}'.format(environment['workdir']) if environment['workdir'] is not None else '',
-        image = image,
-        imagetag = imagetag,
         cmd_argv = ['sh', '-c', in_docker_cmd]
     )
+    docker_run_cmd(docker_run_cmd_str,log,state,metadata)
 
 def docker_pull(docker_pull_cmd,log,state,metadata):
     log.debug('container image pull command: \n  %s',docker_pull_cmd)
@@ -297,9 +293,7 @@ def docker_enc_handler(environment,state,job,metadata):
         log.info('running job')
 
         if 'command' in job:
-            # log.info('running oneliner command')
-            docker_run_cmd_str = prepare_full_docker_with_oneliner(state,environment,job['command'],log,metadata)
-            docker_run_cmd(docker_run_cmd_str,log,state,metadata)
+            run_docker_with_oneliner(state,environment,job['command'],log,metadata)
             log.debug('reached return for docker_enc_handler')
         elif 'script' in job:
             run_docker_with_script(state,environment,job,log,metadata)
