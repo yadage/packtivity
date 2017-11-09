@@ -40,7 +40,7 @@ def prepare_par_mounts(parmounts,state):
             f.write(x['mountcontent'])
 
         mounts.append(' -v {}:{}'.format(
-            os.path.abspath(parmountfile),
+            sourcepath(os.path.abspath(parmountfile)),
             x['mountpath']
         ))
 
