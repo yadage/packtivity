@@ -23,6 +23,9 @@ class LocalFSState(object):
         self.readonly  = list(map(os.path.realpath,readonly) if readonly else  [])
         self.dependencies = dependencies or []
 
+    def __repr__(self):
+        return '<LocalFSState rw: {}, ro: {}>'.format(self.readwrite,self.readonly)
+
     @property
     def metadir(self):
         return '{}/_packtivity'.format(self.readwrite[0])
@@ -74,6 +77,8 @@ class LocalFSState(object):
             workdir = self.readwrite[0]
             return data.format(workdir = workdir)
         except AttributeError:
+            return data
+        except IndexError:
             return data
 
 
