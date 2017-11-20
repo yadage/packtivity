@@ -1,5 +1,4 @@
 import hashlib
-import itertools
 import os
 import shutil
 import json
