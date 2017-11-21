@@ -35,6 +35,9 @@ def interpolated_pub_handler(publisher,parameters,state):
             globbed = glob2.glob(globexpr)
             if globbed:
                 resultval = globbed
+        else:
+             #if it's a string and the full path exists replace relative path
+             resultval = globexpr
         path.set(result,resultval)
     return result
 
@@ -66,6 +69,9 @@ def fromparjq_pub(publisher,parameters,state):
             globbed = glob2.glob(globexpr)
             if globbed:
                 value = globbed
+        else:
+             #if it's a string and the full path exists replace relative path
+             value = globexpr
         path.set(result,value)
     return result
 
