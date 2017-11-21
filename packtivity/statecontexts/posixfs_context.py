@@ -28,7 +28,9 @@ class LocalFSState(object):
 
     @property
     def metadir(self):
-        return '{}/_packtivity'.format(self.readwrite[0])
+        if self.readwrite:
+            return '{}/_packtivity'.format(self.readwrite[0])
+        return None
 
     def identifier(self):
         return self._identifier
