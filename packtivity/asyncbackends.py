@@ -53,7 +53,7 @@ class PythonCallableAsyncBackend(object):
             spec = spec,
             parameters = parameters,
             state = state,
-            metadata = metadata or {'name': state.identifier()},
+            metadata = metadata,
             config = self.config
         )
         return self.submit_callable(nullary)

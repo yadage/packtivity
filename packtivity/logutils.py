@@ -20,7 +20,7 @@ def default_logging_handlers(log,metadata,state,topic):
 
     # Now that we have  place to store meta information we put a file based logger in place
     # to log at DEBUG
-    if state.metadir:
+    if state and state.metadir:
         logname = '{}/{}.{}.log'.format(state.metadir,metadata['name'],topic)
         fh  = logging.FileHandler(logname)
         fh.setLevel(logging.DEBUG)
