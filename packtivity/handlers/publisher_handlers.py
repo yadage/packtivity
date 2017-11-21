@@ -6,6 +6,8 @@ import copy
 import logging
 import jq
 import os
+from six import string_types
+
 
 import packtivity.utils as utils
 
@@ -26,11 +28,18 @@ def interpolated_pub_handler(publisher,parameters,state):
     forinterp.update(workdir = state.readwrite[0])
     result = copy.deepcopy(publisher['publish'])
     for path,value in utils.leaf_iterator(publisher['publish']):
+        if not isinstance(value, string_types): continue
         resultval = value.format(**forinterp)
-        if publisher['relative_paths'] and os.path.commonprefix([state.readwrite[0],resultval]) == '':
-            resultval = os.path.join(state.readwrite[0],resultval)
+        globexpr = resultval
+        if publisher['relative_paths'] and os.path.commonprefix([state.readwrite[0],globexpr]) == '':
+            globexpr = os.path.join(state.readwrite[0],resultval)
         if publisher['glob']:
-            resultval = glob2.glob(resultval)
+            globbed = glob2.glob(globexpr)
+            if globbed:
+                resultval = globbed
+        else:
+             #if it's a string and the full path exists replace relative path
+             resultval = globexpr
         path.set(result,resultval)
     return result
 
@@ -48,10 +57,23 @@ def fromparjq_pub(publisher,parameters,state):
     result = jq.jq(publisher['script']).transform(inputjson)
     assert type(result)==dict
     for path,value in utils.leaf_iterator(result):
-        if publisher['relative_paths'] and os.path.commonprefix([state.readwrite[0],value]) == '':
-            value = os.path.join(state.readwrite[0],value)
+        if not isinstance(value, string_types): continue
+        if not state: break
+        if state.readwrite:
+            globdir = state.readwrite[0]
+        elif state.readonly and len(state.readonly)==1:
+            globdir = state.readonly[0]
+        else: break
+        globexpr = value
+        if publisher['relative_paths'] and os.path.commonprefix([globdir,globexpr]) == '':
+            globexpr = os.path.join(globdir,value)
         if publisher['glob']:
-            value = glob2.glob(value)
+            globbed = glob2.glob(globexpr)
+            if globbed:
+                value = globbed
+        else:
+             #if it's a string and the full path exists replace relative path
+             value = globexpr
         path.set(result,value)
     return result
 
