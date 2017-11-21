@@ -18,11 +18,16 @@ class PacktivityProxyBase(object):
     that is passed in the ctor. Implementations can override details,
     proxyname methods..
     '''
-    def __init__(self,proxy):
-        self.proxy = proxy
+    def __init__(self,proxy = None, details = None):
+        if proxy:
+            self.proxy = proxy
+        self._details = details
 
     def details(self):
-        return None
+        return self._details
+
+    def set_details(self, details):
+        self._details = details
 
     def proxyname(self):
         return 'PacktivityProxyBase'
@@ -89,24 +94,28 @@ class MultiProcBackend(PythonCallableAsyncBackend):
             return (t,v)
 
 class ForegroundProxy(PacktivityProxyBase):
-    def __init__(self,result,success):
+    def __init__(self,result, success, details = None):
+        super(ForegroundProxy,self).__init__(details = details)
         self.result = result
-        self.success = True
+        self.success = success
 
     def proxyname(self):
         return 'ForegroundProxy'
 
     def details(self):
-        return {
-            'result': self.result,
-            'success': self.success
-        }
+        d = super(ForegroundProxy, self).details() or {}
+        d.update(
+            result = self.result,
+            success = self.success
+        )
+        return d
 
     @classmethod
     def fromJSON(cls, data):
         return cls(
             data['proxydetails']['result'],
-            data['proxydetails']['success']
+            data['proxydetails']['success'],
+            data['proxydetails']
         )
 
 class ForegroundBackend(PythonCallableAsyncBackend):
