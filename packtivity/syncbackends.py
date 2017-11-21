@@ -71,17 +71,22 @@ def prepublish(spec, parameters, state, pack_config):
     pub = spec['publisher']
     if pub['publisher_type'] in ['frompar-pub','constant-pub']:
         return publish(pub,parameters,state,pack_config)
-    if pub['publisher_type'] == 'interpolated-pub':
-        if pub['glob'] == False:
+    if pub['publisher_type'] in ['interpolated-pub', 'fromparjq-pub']:
+        from .statecontexts.posixfs_context import LocalFSState
+        if not state:
             return publish(pub,parameters,state,pack_config)
+        if type(state) == LocalFSState:
+            if pub['glob'] == False  or len(state.readwrite)==0:
+                return publish(pub,parameters,state,pack_config)
     return None
 
 def run_packtivity(spec, parameters,state,metadata,config):
     with logutils.setup_logging_topic(metadata,state,'step',return_logger = True) as log:
         try:
-            job = build_job(spec['process'], parameters, state, config)
-            env = build_env(spec['environment'], parameters, state, config)
-            run_in_env(env,job,state,metadata,config)
+            if spec['process'] and spec['environment']:
+                job = build_job(spec['process'], parameters, state, config)
+                env = build_env(spec['environment'], parameters, state, config)
+                run_in_env(env,job,state,metadata,config)
             pubdata = publish(spec['publisher'], parameters,state, config)
             log.info('publishing data: %s',pubdata)
             return pubdata

@@ -120,7 +120,6 @@ def docker_execution_cmdline(state,environment,log,metadata,combined_flags,cmd_a
     # volume mounts (resources, parameter mounts and state mounts)
     state_mounts = state_context_to_mounts(state)
     rsrcs_mounts = resource_mounts(state,environment,log,metadata)
-
     par_mounts = ' '.join(prepare_par_mounts(environment['par_mounts'], state))
 
     return 'docker run {combined} {cid} {workdir} {custom} {state_mounts} {rsrcs} {par_mounts} {img}:{tag} {command}'.format(
