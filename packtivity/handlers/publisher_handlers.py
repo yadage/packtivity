@@ -57,23 +57,27 @@ def fromparjq_pub(publisher,parameters,state):
     result = jq.jq(publisher['script']).transform(inputjson)
     assert type(result)==dict
     for path,value in utils.leaf_iterator(result):
+        ## if the leaf value is not stringy or no state to operate on, ignore
         if not isinstance(value, string_types): continue
         if not state: break
+
+        #  either take first rw or fall back on first ro directory
         if state.readwrite:
             globdir = state.readwrite[0]
         elif state.readonly and len(state.readonly)==1:
             globdir = state.readonly[0]
         else: break
-        globexpr = value
-        if publisher['relative_paths'] and os.path.commonprefix([globdir,globexpr]) == '':
-            globexpr = os.path.join(globdir,value)
-        if publisher['glob']:
-            globbed = glob2.glob(globexpr)
-            if globbed:
-                value = globbed
-        else:
-             #if it's a string and the full path exists replace relative path
-             value = globexpr
+
+        searchval = value
+        if publisher['relative_paths'] and not os.path.isabs(searchval):
+            searchval = os.path.join(globdir,value)
+
+        # if requested try first exact match and then try glob (if requested)
+        if publisher['tryExact'] and os.path.exists(searchval):
+            #if it's a string and the full path exists replace relative path
+            value = searchval
+        elif publisher['glob']:
+            value = glob2.glob(searchval)
         path.set(result,value)
     return result
 

@@ -73,6 +73,7 @@ def test_fromparjq_pub(tmpdir,basic_localfs_state):
 		'publisher_type': 'fromparjq-pub',
 		'script': '{hello: ["hello_myvalue_2.txt","hello_myvalue_1.txt"]}',
 		'relative_paths': True,
+		'tryExact': True,
 		'glob': False
 	}
 	pars = {
@@ -89,7 +90,8 @@ def test_fromparjq_pub_relative(tmpdir,basic_localfs_state):
 		'publisher_type': 'fromparjq-pub',
 		'script': '{hello: "*.txt"}',
 		'relative_paths': True,
-		'glob': True
+		'glob': True,
+		'tryExact': True
 	}
 	pars = {
 		'mypar': 'myvalue'
