@@ -5,7 +5,7 @@ import copy
 
 import packtivity.logutils as logutils
 from packtivity.handlers import enable_plugins
-from utils import leaf_iterator
+from .utils import leaf_iterator
 
 enable_plugins()
 
