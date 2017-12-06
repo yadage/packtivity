@@ -98,7 +98,6 @@ def run_packtivity(spec, parameters,state,metadata,config):
     with logutils.setup_logging_topic(metadata,state,'step',return_logger = True) as log:
         try:
             parameters = contextualize_parameters(parameters, state)
-            log.info('contextualized... %s', parameters)
             if spec['process'] and spec['environment']:
                 job = build_job(spec['process'], parameters, state, config)
                 env = build_env(spec['environment'], parameters, state, config)
