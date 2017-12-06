@@ -90,10 +90,7 @@ def prepublish(spec, parameters, state, pack_config):
         if not state:
             return publish(pub,parameters,state,pack_config)
         if type(state) == LocalFSState:
-            print state.readwrite
-            print (pub['glob'] == False), len(state.readwrite)==0
             if pub['glob'] == False or len(state.readwrite)==0:
-                print 'CAN PREPUBLISH!!'
                 return publish(pub,parameters,state,pack_config)
     return None
 
@@ -103,11 +100,9 @@ def run_packtivity(spec, parameters,state,metadata,config):
             parameters = contextualize_parameters(parameters, state)
             log.info('contextualized... %s', parameters)
             if spec['process'] and spec['environment']:
-                log.info('run..... %s', parameters)
                 job = build_job(spec['process'], parameters, state, config)
                 env = build_env(spec['environment'], parameters, state, config)
                 run_in_env(env,job,state,metadata,config)
-                log.info('done..... %s', parameters)
 
             pubdata = publish(spec['publisher'], parameters,state, config)
             log.info('publishing data: %s',pubdata)
