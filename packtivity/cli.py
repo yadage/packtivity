@@ -13,12 +13,6 @@ from .statecontexts.posixfs_context import LocalFSState
 
 log = logging.getLogger(__name__)
 
-def finalize_input(jsondata,state):
-    for path,value in utils.leaf_iterator(jsondata):
-        actualval = state.contextualize_data(value)
-        path.set(jsondata,actualval)
-    return jsondata
-
 def getinit_data(initfiles,parameters):
     '''
     get initial data from both a list of files and a list of 'pname=pvalue'
@@ -38,7 +32,6 @@ def getinit_data(initfiles,parameters):
 @click.option('--parameter', '-p', multiple=True)
 @click.option('-r', '--read', multiple=True, default = [])
 @click.option('-w', '--write', multiple=True, default = [os.curdir])
-@click.option('--contextualize/--no-contextualize', default = True)
 @click.option('-s','--state', default = '')
 @click.option('-t','--toplevel', default = os.getcwd())
 @click.option('-c','--schemasource', default = yadageschemas.schemadir)
@@ -49,7 +42,7 @@ def getinit_data(initfiles,parameters):
 @click.option('-x','--proxyfile',default = 'proxy.json')
 @click.argument('spec')
 @click.argument('parfiles', nargs = -1)
-def runcli(spec,parfiles,state,parameter,read,write,toplevel,schemasource,asyncwait,contextualize,validate,verbosity,backend,proxyfile):
+def runcli(spec,parfiles,state,parameter,read,write,toplevel,schemasource,asyncwait,validate,verbosity,backend,proxyfile):
     logging.basicConfig(level = getattr(logging,verbosity))
 
     spec = utils.load_packtivity(spec,toplevel,schemasource,validate)
@@ -62,8 +55,6 @@ def runcli(spec,parfiles,state,parameter,read,write,toplevel,schemasource,asyncw
     state = LocalFSState(state['readwrite'],state['readonly'])
     state.ensure()
 
-    if contextualize:
-        parameters = finalize_input(parameters,state)
 
     is_sync, backend = bkutils.backend_from_string(backend)
     backend_kwargs = {
