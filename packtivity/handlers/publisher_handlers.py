@@ -79,6 +79,7 @@ def fromparjq_pub(publisher,parameters,state):
             globresult = glob2.glob(searchval)
             if globresult:
                 value = globresult
+        path.set(result,value)
     return result
 
 @publisher('fromglob-pub')
