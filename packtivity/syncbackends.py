@@ -5,6 +5,8 @@ import copy
 
 import packtivity.logutils as logutils
 from packtivity.handlers import enable_plugins
+from utils import leaf_iterator
+
 enable_plugins()
 
 class packconfig(object):
@@ -64,11 +66,23 @@ def publish(publisher,parameters,state, pack_config):
     handler = pub_handlers[pub_type][impl]
     return handler(publisher,parameters,state)
 
+
+def contextualize_parameters(parameters, state):
+    if not state: return parameters
+
+    contextualized_parameters = copy.deepcopy(parameters)
+    for leaf_pointer, leaf_value in leaf_iterator(parameters):
+        leaf_pointer.set(contextualized_parameters,state.contextualize_data(leaf_value))
+
+    return contextualized_parameters
+
 def prepublish(spec, parameters, state, pack_config):
     '''
     attempts to prepublish output data, returns None if not possible
     '''
+    parameters = contextualize_parameters(parameters, state)
     pub = spec['publisher']
+
     if pub['publisher_type'] in ['frompar-pub','constant-pub']:
         return publish(pub,parameters,state,pack_config)
     if pub['publisher_type'] in ['interpolated-pub', 'fromparjq-pub']:
@@ -76,17 +90,25 @@ def prepublish(spec, parameters, state, pack_config):
         if not state:
             return publish(pub,parameters,state,pack_config)
         if type(state) == LocalFSState:
-            if pub['glob'] == False  or len(state.readwrite)==0:
+            print state.readwrite
+            print (pub['glob'] == False), len(state.readwrite)==0
+            if pub['glob'] == False or len(state.readwrite)==0:
+                print 'CAN PREPUBLISH!!'
                 return publish(pub,parameters,state,pack_config)
     return None
 
 def run_packtivity(spec, parameters,state,metadata,config):
     with logutils.setup_logging_topic(metadata,state,'step',return_logger = True) as log:
         try:
+            parameters = contextualize_parameters(parameters, state)
+            log.info('contextualized... %s', parameters)
             if spec['process'] and spec['environment']:
+                log.info('run..... %s', parameters)
                 job = build_job(spec['process'], parameters, state, config)
                 env = build_env(spec['environment'], parameters, state, config)
                 run_in_env(env,job,state,metadata,config)
+                log.info('done..... %s', parameters)
+
             pubdata = publish(spec['publisher'], parameters,state, config)
             log.info('publishing data: %s',pubdata)
             return pubdata
