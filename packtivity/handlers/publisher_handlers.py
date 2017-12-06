@@ -71,14 +71,14 @@ def fromparjq_pub(publisher,parameters,state):
         searchval = value
         if publisher['relative_paths'] and not os.path.isabs(searchval):
             searchval = os.path.join(globdir,value)
-
         # if requested try first exact match and then try glob (if requested)
         if publisher['tryExact'] and os.path.exists(searchval):
             #if it's a string and the full path exists replace relative path
             value = searchval
         elif publisher['glob']:
-            value = glob2.glob(searchval)
-        path.set(result,value)
+            globresult = glob2.glob(searchval)
+            if globresult:
+                value = globresult
     return result
 
 @publisher('fromglob-pub')
