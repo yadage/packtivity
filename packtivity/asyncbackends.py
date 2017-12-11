@@ -38,6 +38,7 @@ class PacktivityProxyBase(object):
             'proxydetails': self.details()
         }
 
+
 class PythonCallableAsyncBackend(object):
     '''
     Basic Base Backends that turn (spec,parameters, state)

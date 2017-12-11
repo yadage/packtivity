@@ -74,7 +74,7 @@ def auth_mount():
     else:
         return ' -v {}:/recast_auth'.format(os.environ['PACKTIVITY_AUTH_LOCATION'])
 
-def resource_mounts(state,environment,log,metadata):
+def resource_mounts(state,environment,log):
     report = '''\n\
 --------------
 run in docker container image: {image}
@@ -119,7 +119,7 @@ def docker_execution_cmdline(state,environment,log,metadata,combined_flags,cmd_a
 
     # volume mounts (resources, parameter mounts and state mounts)
     state_mounts = state_context_to_mounts(state)
-    rsrcs_mounts = resource_mounts(state,environment,log,metadata)
+    rsrcs_mounts = resource_mounts(state,environment,log)
     par_mounts = ' '.join(prepare_par_mounts(environment['par_mounts'], state))
 
     return 'docker run {combined} {cid} {workdir} {custom} {state_mounts} {rsrcs} {par_mounts} {img}:{tag} {command}'.format(
@@ -135,7 +135,7 @@ def docker_execution_cmdline(state,environment,log,metadata,combined_flags,cmd_a
         command = quoted_string
     )
 
-def run_docker_with_script(state,environment,job,log,metadata):
+def run_docker_with_script(state,environment,job,log):
     script = job['script']
     interpreter = job['interpreter']
 
@@ -146,16 +146,10 @@ def run_docker_with_script(state,environment,job,log,metadata):
 
     indocker = interpreter
     envmod = 'source {} && '.format(environment['envscript']) if environment['envscript'] else ''
-    indocker = envmod+indocker
+    in_docker_cmd = envmod+indocker
+    return in_docker_cmd, script
 
-    docker_run_cmd_str = docker_execution_cmdline(
-        state,environment,log,metadata,
-        combined_flags = '--rm -i',
-        cmd_argv = ['sh', '-c', indocker]
-    )
-    execute_docker(metadata,state,log,docker_run_cmd_str,stdin_content=script)
-
-def run_docker_with_oneliner(state,environment,command,log,metadata):
+def run_docker_with_oneliner(state,environment,command,log):
     log.debug('''\n\
 --------------
 running one liner in container.
@@ -165,16 +159,11 @@ command: {command}
 
     envmod = 'source {} &&'.format(environment['envscript']) if environment['envscript'] else ''
     in_docker_cmd = '{envmodifier} {command}'.format(envmodifier = envmod, command = command)
-
-    docker_run_cmd_str = docker_execution_cmdline(
-        state,environment,log,metadata,
-        combined_flags = '--rm',
-        cmd_argv = ['sh', '-c', in_docker_cmd]
-    )
-    execute_docker(metadata,state,log,docker_run_cmd_str)
+    return in_docker_cmd, None
 
 def execute_docker(metadata,state,log,docker_run_cmd_str,stdin_content = None):
     log.debug('container execution command: \n%s',docker_run_cmd_str)
+    log.debug('stdin if any: %s', stdin_content)
     if 'PACKTIVITY_DRYRUN' in os.environ:
         return
     try:
@@ -256,7 +245,24 @@ def docker_pull(docker_pull_cmd,log,state,metadata):
 @executor('docker-encapsulated')
 def docker_enc_handler(environment,state,job,metadata):
     with logutils.setup_logging_topic(metadata,state,'step',return_logger = True) as log:
-        log.debug('starting log for step: %s',metadata)
+        if 'command' in job:
+            combined_flags = '--rm'
+            in_docker_cmd, stdin = run_docker_with_oneliner(state,environment,job['command'],log)
+        elif 'script' in job:
+            combined_flags = '--rm  -i'
+            in_docker_cmd, stdin = run_docker_with_script(state,environment,job,log)
+        else:
+            raise RuntimeError('do not know yet how to run this...')
+
+        container_argv  = ['sh', '-c', in_docker_cmd]
+        container_stdin = stdin
+
+        cmdline = docker_execution_cmdline(
+            state,environment,log,metadata,
+            combined_flags = combined_flags,
+            cmd_argv = container_argv
+        )
+
         if 'PACKTIVITY_DOCKER_NOPULL' not in os.environ:
             log.info('prepare pull')
             docker_pull_cmd = 'docker pull {container}:{tag}'.format(
@@ -264,15 +270,7 @@ def docker_enc_handler(environment,state,job,metadata):
                 tag = environment['imagetag']
             )
             docker_pull(docker_pull_cmd,log,state,metadata)
-
-        log.info('running job')
-
-        if 'command' in job:
-            run_docker_with_oneliner(state,environment,job['command'],log,metadata)
-        elif 'script' in job:
-            run_docker_with_script(state,environment,job,log,metadata)
-        else:
-            raise RuntimeError('do not know yet how to run this...')
+        execute_docker(metadata,state,log,cmdline, stdin_content = container_stdin)
 
 @executor('noop-env')
 def noop_env(environment,state,job,metadata):
