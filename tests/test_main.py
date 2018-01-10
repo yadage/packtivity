@@ -32,6 +32,12 @@ def test_pack_call_docker_script_fail(tmpdir,basic_localfs_state,docker_script_p
 	with pytest.raises(RuntimeError):
 		docker_script_pack_fail(parameters = pars, state = basic_localfs_state)
 
+def test_pack_workdir(tmpdir,basic_localfs_state,docker_touchfile_workdir,default_async):
+	basic_localfs_state.ensure()
+	pars =  {'outputfile': '{workdir}/helloworld.txt'}
+	with pytest.raises(RuntimeError):
+		docker_touchfile_workdir(parameters = pars, state = basic_localfs_state)
+
 def test_pack_call_docker_script(tmpdir,basic_localfs_state,dockeproc_script_pack):
 	basic_localfs_state.ensure()
 	pars =  {'outputfile': '{workdir}/helloworld.txt'}

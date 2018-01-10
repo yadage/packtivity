@@ -4,10 +4,6 @@ import jq
 import copy
 
 import packtivity.logutils as logutils
-from packtivity.handlers import enable_plugins
-from .utils import leaf_iterator
-
-enable_plugins()
 
 class packconfig(object):
     def __init__(self,**kwargs):
@@ -46,7 +42,7 @@ def build_env(environment,parameters,state,pack_config):
             x['mountcontent'] = jq.jq(script).transform(parameters, text_output = True)
 
         if env['workdir'] is not None:
-            env['workdir'] = state.contextualize_data(env['workdir'])
+            env['workdir'] = state.contextualize_value(env['workdir'])
     return env
 
 def run_in_env(environment,job,state,metadata,pack_config):
@@ -67,20 +63,15 @@ def publish(publisher,parameters,state, pack_config):
     return handler(publisher,parameters,state)
 
 
-def contextualize_parameters(parameters, state):
+def model_parameters(parameters, state):
     if not state: return parameters
-
-    contextualized_parameters = copy.deepcopy(parameters)
-    for leaf_pointer, leaf_value in leaf_iterator(parameters):
-        leaf_pointer.set(contextualized_parameters,state.contextualize_data(leaf_value))
-
-    return contextualized_parameters
+    return state.model(parameters)
 
 def prepublish(spec, parameters, state, pack_config):
     '''
     attempts to prepublish output data, returns None if not possible
     '''
-    parameters = contextualize_parameters(parameters, state)
+    parameters = model_parameters(parameters, state)
     pub = spec['publisher']
 
     if pub['publisher_type'] in ['frompar-pub','constant-pub']:
@@ -97,7 +88,7 @@ def prepublish(spec, parameters, state, pack_config):
 def run_packtivity(spec, parameters,state,metadata,config):
     with logutils.setup_logging_topic(metadata,state,'step',return_logger = True) as log:
         try:
-            parameters = contextualize_parameters(parameters, state)
+            parameters = model_parameters(parameters, state)
             if spec['process'] and spec['environment']:
                 job = build_job(spec['process'], parameters, state, config)
                 env = build_env(spec['environment'], parameters, state, config)

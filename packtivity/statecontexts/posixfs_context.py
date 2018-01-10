@@ -4,7 +4,8 @@ import shutil
 import json
 import logging
 import checksumdir
-
+import copy
+from ..utils import leaf_iterator
 import packtivity.utils as utils
 log = logging.getLogger(__name__)
 
@@ -70,19 +71,24 @@ class LocalFSState(object):
         state_checksums = [checksumdir.dirhash(d) for d in self.readwrite if os.path.isdir(d)]
         return hashlib.sha1(json.dumps([dep_checksums,state_checksums]).encode('utf-8')).hexdigest()
 
-    def contextualize_data(self,data):
+    def contextualize_value(self,value):
         '''
         contextualizes string data by string interpolation.
         replaces '{workdir}' placeholder with first readwrite directory
         '''
         try:
             workdir = self.readwrite[0]
-            return data.format(workdir = workdir)
+            return value.format(workdir = workdir)
         except AttributeError:
-            return data
+            return value
         except IndexError:
-            return data
+            return value
 
+    def model(self, data):
+        contextualized_data = copy.deepcopy(data)
+        for leaf_pointer, leaf_value in leaf_iterator(data):
+            leaf_pointer.set(contextualized_data,self.contextualize_value(leaf_value))
+        return contextualized_data
 
     def json(self):
         return {
