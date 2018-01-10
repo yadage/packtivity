@@ -1,0 +1,15 @@
+process:
+  process_type: 'string-interpolated-cmd'
+  cmd: 'echo Hello World > {outputfile}; touch inworkdir.txt'
+publisher:
+  publisher_type: 'interpolated-pub'
+  glob: True
+  relative_paths: True
+  publish:
+    main_output: '{outputfile}'
+    inworkdir: inworkdir.txt
+environment:
+  environment_type: 'docker-encapsulated'
+  image: atlas/slc6-atlasos
+  imagetag: '8862202-20171025'
+  workdir: '{workdir}'
