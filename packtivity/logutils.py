@@ -2,6 +2,7 @@ import os
 import logging
 import importlib
 import contextlib
+import yaml
 
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
@@ -37,19 +38,23 @@ def setup_logging_topic(metadata,state,topic,return_logger = False):
     resoures may dry up. that's why we need a specific end point.
     The logger can be recreated multiple times
     '''
+
     log = logging.getLogger(get_topic_loggername(metadata,topic))
     log.setLevel(logging.DEBUG)
     log.propagate = False
 
-    if not log.handlers:
-        customhandlers = os.environ.get('PACKTIVITY_LOGGING_HANDLER')
-        if customhandlers:
-            module,func = customhandlers.split(':')
-            m = importlib.import_module(module)
-            f = getattr(m,func)
-            f(log,metadata,state,topic)
-        else:
-            default_logging_handlers(log,metadata,state,topic)
+    if yaml.load(os.environ.get('PACKTIVITY_LOGGING_DISABLE','false')):
+        pass
+    else:
+        if not log.handlers:
+            customhandlers = os.environ.get('PACKTIVITY_LOGGING_HANDLER')
+            if customhandlers:
+                module,func = customhandlers.split(':')
+                m = importlib.import_module(module)
+                f = getattr(m,func)
+                f(log,metadata,state,topic)
+            else:
+                default_logging_handlers(log,metadata,state,topic)
 
     yield log if return_logger else None
 

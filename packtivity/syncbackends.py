@@ -27,7 +27,7 @@ def build_job(process,parameters,state,pack_config):
     impl = pack_config.get_impl('process',proc_type)
     from .handlers.process_handlers import handlers as proc_handlers
     handler = proc_handlers[proc_type][impl]
-    return handler(process,parameters)
+    return handler(process,parameters, state)
 
 def build_env(environment,parameters,state,pack_config):
     '''
@@ -50,7 +50,7 @@ def run_in_env(environment,job,state,metadata,pack_config):
     takes a job and an environment and executes with the state context attached
     '''
     env_type = environment['environment_type']
-    impl = pack_config.get_impl('environment',env_type)
+    impl = pack_config.get_impl('executor',env_type)
     from .handlers.execution_handlers import handlers as exec_handlers
     handler = exec_handlers[env_type][impl]
     return handler(environment,state,job,metadata)
@@ -60,8 +60,8 @@ def publish(publisher,parameters,state, pack_config):
     impl = pack_config.get_impl('publisher',pub_type)
     from .handlers.publisher_handlers import handlers as pub_handlers
     handler = pub_handlers[pub_type][impl]
-    return handler(publisher,parameters,state)
-
+    pubdata = handler(publisher,parameters,state)
+    return pubdata
 
 def model_parameters(parameters, state):
     if not state: return parameters
