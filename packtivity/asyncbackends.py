@@ -10,6 +10,8 @@ from .syncbackends import run_packtivity
 from .syncbackends import prepublish
 from .syncbackends import packconfig
 
+from packtivity.typedleafs import TypedLeafs
+
 log = logging.getLogger(__name__)
 
 class PacktivityProxyBase(object):
@@ -106,7 +108,7 @@ class ForegroundProxy(PacktivityProxyBase):
     def details(self):
         d = super(ForegroundProxy, self).details() or {}
         d.update(
-            result = self.result,
+            result = self.result.json(),
             success = self.success
         )
         return d
@@ -114,7 +116,7 @@ class ForegroundProxy(PacktivityProxyBase):
     @classmethod
     def fromJSON(cls, data):
         return cls(
-            data['proxydetails']['result'],
+            TypedLeafs(data['proxydetails']['result']),
             data['proxydetails']['success'],
             data['proxydetails']
         )

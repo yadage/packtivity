@@ -110,4 +110,4 @@ def checkproxy(jsonfile):
         click.secho('successful: {}'.format(successful))
         if successful:
             result = backend.result(proxy)
-            click.secho('result: {}'.format(json.dumps(result)))
+            click.secho('result: {}'.format(json.dumps(result.json())))

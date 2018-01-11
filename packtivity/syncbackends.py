@@ -4,6 +4,7 @@ import jq
 import copy
 
 import packtivity.logutils as logutils
+from packtivity.typedleafs import TypedLeafs
 
 class packconfig(object):
     def __init__(self,**kwargs):
@@ -61,7 +62,7 @@ def publish(publisher,parameters,state, pack_config):
     from .handlers.publisher_handlers import handlers as pub_handlers
     handler = pub_handlers[pub_type][impl]
     pubdata = handler(publisher,parameters,state)
-    return pubdata
+    return TypedLeafs(pubdata)
 
 def model_parameters(parameters, state):
     if not state: return parameters
@@ -88,6 +89,7 @@ def prepublish(spec, parameters, state, pack_config):
 def run_packtivity(spec, parameters,state,metadata,config):
     with logutils.setup_logging_topic(metadata,state,'step',return_logger = True) as log:
         try:
+            parameters = parameters.json()
             parameters = model_parameters(parameters, state)
             if spec['process'] and spec['environment']:
                 job = build_job(spec['process'], parameters, state, config)
