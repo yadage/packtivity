@@ -91,7 +91,7 @@ class TypedLeafs(collections.MutableMapping):
 
 
     @classmethod
-    def fromJSON(cls, deserialization_opts):
+    def fromJSON(cls, data, deserialization_opts):
         return cls(data, deserialization_opts['leafmodel'], deserialization_opts['idleafs'])
 
     def _load_from_string(self,jsonstring, typed = True, idleafs = False):
