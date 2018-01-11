@@ -7,6 +7,7 @@ import checksumdir
 import copy
 from ..utils import leaf_iterator
 import packtivity.utils as utils
+from packtivity.typedleafs import TypedLeafs
 log = logging.getLogger(__name__)
 
 class LocalFSState(object):
@@ -23,6 +24,7 @@ class LocalFSState(object):
         self.readwrite = list(map(os.path.realpath,readwrite) if readwrite else  [])
         self.readonly  = list(map(os.path.realpath,readonly) if readonly else  [])
         self.dependencies = dependencies or []
+        self.datamodel = None
 
     def __repr__(self):
         return '<LocalFSState rw: {}, ro: {}>'.format(self.readwrite,self.readonly)
@@ -85,10 +87,10 @@ class LocalFSState(object):
             return value
 
     def model(self, data):
-        contextualized_data = copy.deepcopy(data)
-        for leaf_pointer, leaf_value in leaf_iterator(data):
-            leaf_pointer.set(contextualized_data,self.contextualize_value(leaf_value))
-        return contextualized_data
+        data = data.copy()
+        for p, v in data.leafs():
+            p.set(data, self.contextualize_value(v))
+        return data
 
     def json(self):
         return {

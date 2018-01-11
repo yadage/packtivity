@@ -26,7 +26,7 @@ class pack_object(object):
                  asyncbackend = None, asyncwait = False,
                  waitperiod = 0.01, timeout = 43200 ):   #default timeout is 12h
 
-        parameters = TypedLeafs(parameters)
+        parameters = TypedLeafs(parameters, state.datamodel)
         if syncbackend and not asyncbackend:
             return syncbackend.run(self.spec,parameters,state)
         elif asyncbackend:

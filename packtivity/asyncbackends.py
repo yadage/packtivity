@@ -97,9 +97,10 @@ class MultiProcBackend(PythonCallableAsyncBackend):
             return (t,v)
 
 class ForegroundProxy(PacktivityProxyBase):
-    def __init__(self,result, success, details = None):
+    def __init__(self,resultdata, datamodel, success, details = None):
         super(ForegroundProxy,self).__init__(details = details)
-        self.result = result
+        self.resultdata = resultdata
+        self.datamodel = datamodel
         self.success = success
 
     def proxyname(self):
@@ -108,15 +109,17 @@ class ForegroundProxy(PacktivityProxyBase):
     def details(self):
         d = super(ForegroundProxy, self).details() or {}
         d.update(
-            result = self.result.json(),
-            success = self.success
+            resultdata = self.resultdata,
+            datamodel  = self.datamodel,
+            success    = self.success
         )
         return d
 
     @classmethod
     def fromJSON(cls, data):
         return cls(
-            TypedLeafs(data['proxydetails']['result']),
+            data['proxydetails']['resultdata'],
+            data['proxydetails']['datamodel'],
             data['proxydetails']['success'],
             data['proxydetails']
         )
@@ -125,18 +128,22 @@ class ForegroundBackend(PythonCallableAsyncBackend):
     def __init__(self, packconfig_spec = None):
         super(ForegroundBackend,self).__init__(packconfig_spec)
 
-    def submit_callable(self,callable):
-        return ForegroundProxy(callable(),True)
+    def submit(self, spec, parameters, state, metadata = None):
+        result = run_packtivity(
+            spec,  parameters, state,
+            metadata = metadata or {'name': 'packtivity'}, config = self.config
+        )
+        return ForegroundProxy(result.json(), state.datamodel, success = True)
 
     def result(self,resultproxy):
-        return resultproxy.result
+        return TypedLeafs(resultproxy.resultdata, resultproxy.datamodel)
 
     def ready(self,resultproxy):
         return True
 
     def successful(self,resultproxy):
         if not self.ready(resultproxy): return False
-        return resultproxy.result
+        return self.result(resultproxy)
 
     def fail_info(self,resultproxy):
         pass

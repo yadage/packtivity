@@ -62,9 +62,10 @@ def publish(publisher,parameters,state, pack_config):
     from .handlers.publisher_handlers import handlers as pub_handlers
     handler = pub_handlers[pub_type][impl]
     pubdata = handler(publisher,parameters,state)
-    return TypedLeafs(pubdata)
+    return TypedLeafs(pubdata, state.datamodel)
 
 def model_parameters(parameters, state):
+    parameters = TypedLeafs(parameters,state.datamodel)
     if not state: return parameters
     return state.model(parameters)
 
@@ -89,7 +90,6 @@ def prepublish(spec, parameters, state, pack_config):
 def run_packtivity(spec, parameters,state,metadata,config):
     with logutils.setup_logging_topic(metadata,state,'step',return_logger = True) as log:
         try:
-            parameters = parameters.json()
             parameters = model_parameters(parameters, state)
             if spec['process'] and spec['environment']:
                 job = build_job(spec['process'], parameters, state, config)
