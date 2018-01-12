@@ -4,10 +4,7 @@ import shutil
 import json
 import logging
 import checksumdir
-import copy
-from ..utils import leaf_iterator
 import packtivity.utils as utils
-from packtivity.typedleafs import TypedLeafs
 log = logging.getLogger(__name__)
 
 class LocalFSState(object):

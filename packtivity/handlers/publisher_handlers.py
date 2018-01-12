@@ -4,7 +4,6 @@ import json
 import click
 import copy
 import logging
-import jq
 import os
 from six import string_types
 
