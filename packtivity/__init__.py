@@ -5,6 +5,8 @@ from datetime import datetime
 import packtivity.utils as utils
 import packtivity.syncbackends as syncbackends
 
+from packtivity.typedleafs import TypedLeafs
+
 log = logging.getLogger(__name__)
 
 def prepublish_default(spec,parameters,state):
@@ -24,6 +26,7 @@ class pack_object(object):
                  asyncbackend = None, asyncwait = False,
                  waitperiod = 0.01, timeout = 43200 ):   #default timeout is 12h
 
+        parameters = TypedLeafs(parameters, state.datamodel)
         if syncbackend and not asyncbackend:
             return syncbackend.run(self.spec,parameters,state)
         elif asyncbackend:

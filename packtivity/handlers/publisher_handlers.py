@@ -4,7 +4,6 @@ import json
 import click
 import copy
 import logging
-import jq
 import os
 from six import string_types
 
@@ -53,10 +52,8 @@ def fromyaml_pub_handler(publisher,parameters,state):
 
 @publisher('fromparjq-pub')
 def fromparjq_pub(publisher,parameters,state):
-    inputjson = parameters
-    result = jq.jq(publisher['script']).transform(inputjson)
-    assert type(result)==dict
-    for path,value in utils.leaf_iterator(result):
+    result = parameters.jq(publisher['script'])
+    for path,value in result.leafs():
         ## if the leaf value is not stringy or no state to operate on, ignore
         if not isinstance(value, string_types): continue
         if not state: break
@@ -79,8 +76,9 @@ def fromparjq_pub(publisher,parameters,state):
             globresult = glob2.glob(searchval)
             if globresult:
                 value = globresult
-        path.set(result,value)
+        result.replace(path, value)
     return result
+
 
 @publisher('fromglob-pub')
 def glob_pub_handler(publisher,parameters,state):
