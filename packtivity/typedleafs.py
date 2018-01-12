@@ -104,6 +104,8 @@ class TypedLeafs(collections.MutableMapping):
     def _dump_to_string(self,data):
         return json.dumps(data, default = self._leafmodel.dumper)
 
+    def replace(self, path, value):
+        path.set(self.json(), value)
 
     ### representation methods
     def json(self):
