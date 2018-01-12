@@ -62,10 +62,10 @@ def publish(publisher,parameters,state, pack_config):
     from .handlers.publisher_handlers import handlers as pub_handlers
     handler = pub_handlers[pub_type][impl]
     pubdata = handler(publisher,parameters,state)
-    return TypedLeafs(pubdata, state.datamodel)
+    return TypedLeafs(pubdata, state.datamodel if state else None)
 
 def model_parameters(parameters, state):
-    parameters = TypedLeafs(parameters,state.datamodel)
+    parameters = TypedLeafs(parameters,state.datamodel if state else None)
     if not state: return parameters
     return state.model(parameters)
 

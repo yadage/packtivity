@@ -54,9 +54,8 @@ def fromyaml_pub_handler(publisher,parameters,state):
 @publisher('fromparjq-pub')
 def fromparjq_pub(publisher,parameters,state):
     inputjson = parameters
-    result = jq.jq(publisher['script']).transform(inputjson)
-    assert type(result)==dict
-    for path,value in utils.leaf_iterator(result):
+    result = parameters.jq(publisher['script'])
+    for path,value in result.leafs():
         ## if the leaf value is not stringy or no state to operate on, ignore
         if not isinstance(value, string_types): continue
         if not state: break

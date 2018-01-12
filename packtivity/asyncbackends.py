@@ -133,7 +133,7 @@ class ForegroundBackend(PythonCallableAsyncBackend):
             spec,  parameters, state,
             metadata = metadata or {'name': 'packtivity'}, config = self.config
         )
-        return ForegroundProxy(result.json(), state.datamodel, success = True)
+        return ForegroundProxy(result.json(), state.datamodel if state else None, success = True)
 
     def result(self,resultproxy):
         return TypedLeafs(resultproxy.resultdata, resultproxy.datamodel)
