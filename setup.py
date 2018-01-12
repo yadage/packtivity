@@ -10,6 +10,8 @@ deps = [
       'click',
       'glob2',
       'jsonpointer',
+      'jsonpath-rw',
+      'jq',
       'psutil',
       'yadage-schemas',
       'mock',

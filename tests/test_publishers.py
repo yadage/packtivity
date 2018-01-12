@@ -1,4 +1,5 @@
 from packtivity.handlers.publisher_handlers import handlers
+from packtivity.typedleafs import TypedLeafs
 
 def test_parpub(tmpdir,basic_localfs_state):
 	pub = {
@@ -79,6 +80,7 @@ def test_fromparjq_pub(tmpdir,basic_localfs_state):
 	pars = {
 		'mypar': 'myvalue'
 	}
+	pars = TypedLeafs(pars)
 	pubbed = handlers['fromparjq-pub']['default'](pub,pars,basic_localfs_state)
 	filelist = map(str,[tmpdir.join('hello_myvalue_1.txt'),tmpdir.join('hello_myvalue_2.txt')])
 	assert set(pubbed['hello']) == set(filelist)
@@ -96,8 +98,10 @@ def test_fromparjq_pub_relative(tmpdir,basic_localfs_state):
 	pars = {
 		'mypar': 'myvalue'
 	}
+	pars = TypedLeafs(pars)
 	pubbed = handlers['fromparjq-pub']['default'](pub,pars,basic_localfs_state)
 	filelist = map(str,[tmpdir.join('hello_myvalue_1.txt'),tmpdir.join('hello_myvalue_2.txt')])
+	assert set(pubbed['hello']) == set(filelist)
 
 
 def test_glob_pub(tmpdir,basic_localfs_state):
