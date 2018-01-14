@@ -95,7 +95,6 @@ def run_packtivity(spec, parameters,state,metadata,config):
                 job = build_job(spec['process'], parameters, state, config)
                 env = build_env(spec['environment'], parameters, state, config)
                 run_in_env(env,job,state,metadata,config)
-
             pubdata = publish(spec['publisher'], parameters,state, config)
             log.info('publishing data: %s',pubdata)
             return pubdata
