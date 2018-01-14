@@ -1,7 +1,5 @@
 import yaml
 import os
-import jq
-import copy
 
 import packtivity.logutils as logutils
 from packtivity.typedleafs import TypedLeafs

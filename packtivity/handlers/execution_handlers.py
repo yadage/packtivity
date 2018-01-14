@@ -101,7 +101,7 @@ resources: {resources}
 
     return resource_mounts
 
-def docker_execution_cmdline(state,environment,log,metadata,combined_flags,cmd_argv):
+def docker_execution_cmdline(state,environment,log,metadata,stdin,cmd_argv):
     quoted_string = ' '.join(map(pipes.quote,cmd_argv))
 
     image = environment['image']
@@ -122,8 +122,8 @@ def docker_execution_cmdline(state,environment,log,metadata,combined_flags,cmd_a
     rsrcs_mounts = resource_mounts(state,environment,log)
     par_mounts = ' '.join(prepare_par_mounts(environment['par_mounts'], state))
 
-    return 'docker run {combined} {cid} {workdir} {custom} {state_mounts} {rsrcs} {par_mounts} {img}:{tag} {command}'.format(
-        combined = combined_flags,
+    return 'docker run --rm {stdin} {cid} {workdir} {custom} {state_mounts} {rsrcs} {par_mounts} {img}:{tag} {command}'.format(
+        stdin = '-i' if stdin else '',
         cid = cid_file,
         workdir = workdir_flag,
         custom = custom_mod,
@@ -246,10 +246,10 @@ def docker_pull(docker_pull_cmd,log,state,metadata):
 def docker_enc_handler(environment,state,job,metadata):
     with logutils.setup_logging_topic(metadata,state,'step',return_logger = True) as log:
         if 'command' in job:
-            combined_flags = '--rm'
+            stdin = False
             in_docker_cmd, stdin = run_docker_with_oneliner(state,environment,job['command'],log)
         elif 'script' in job:
-            combined_flags = '--rm  -i'
+            stdin = True
             in_docker_cmd, stdin = run_docker_with_script(state,environment,job,log)
         else:
             raise RuntimeError('do not know yet how to run this...')
@@ -259,7 +259,7 @@ def docker_enc_handler(environment,state,job,metadata):
 
         cmdline = docker_execution_cmdline(
             state,environment,log,metadata,
-            combined_flags = combined_flags,
+            stdin = stdin,
             cmd_argv = container_argv
         )
 
