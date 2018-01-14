@@ -44,16 +44,6 @@ def build_env(environment,parameters,state,pack_config):
     except KeyError:
         handler = env_handlers['default']['default']
     return handler(environment,parameters,state)
-    #
-    # env = copy.deepcopy(environment)
-    # if environment['environment_type'] == 'docker-encapsulated':
-    #     for i,x in enumerate(env['par_mounts']):
-    #         script = x.pop('jqscript')
-    #         x['mountcontent'] = jq.jq(script).transform(parameters, text_output = True)
-    #
-    #     if env['workdir'] is not None:
-    #         env['workdir'] = state.contextualize_value(env['workdir'])
-    # return env
 
 def run_in_env(environment,job,state,metadata,pack_config):
     '''
