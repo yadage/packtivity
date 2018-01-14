@@ -36,15 +36,24 @@ def build_env(environment,parameters,state,pack_config):
     this will use a handler in the future (just as build_job)
     '''
 
-    env = copy.deepcopy(environment)
-    if environment['environment_type'] == 'docker-encapsulated':
-        for i,x in enumerate(env['par_mounts']):
-            script = x.pop('jqscript')
-            x['mountcontent'] = jq.jq(script).transform(parameters, text_output = True)
-
-        if env['workdir'] is not None:
-            env['workdir'] = state.contextualize_value(env['workdir'])
-    return env
+    env_type =  environment['environment_type']
+    impl = pack_config.get_impl('environment',env_type)
+    from .handlers.environment_handlers import handlers as env_handlers
+    try:
+        handler = env_handlers[env_type][impl]
+    except KeyError:
+        handler = env_handlers['default']['default']
+    return handler(environment,parameters,state)
+    #
+    # env = copy.deepcopy(environment)
+    # if environment['environment_type'] == 'docker-encapsulated':
+    #     for i,x in enumerate(env['par_mounts']):
+    #         script = x.pop('jqscript')
+    #         x['mountcontent'] = jq.jq(script).transform(parameters, text_output = True)
+    #
+    #     if env['workdir'] is not None:
+    #         env['workdir'] = state.contextualize_value(env['workdir'])
+    # return env
 
 def run_in_env(environment,job,state,metadata,pack_config):
     '''
