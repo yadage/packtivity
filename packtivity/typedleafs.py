@@ -57,6 +57,9 @@ class TypedLeafs(collections.MutableMapping):
             data = data.json()
         self._jsonable = data
 
+    def __repr__(self):
+        return '<TypedLeafs: {}>'.format(self.typed())
+
     def __getitem__(self,key):
         return self.typed().__getitem__(key)
     def __iter__(self):
