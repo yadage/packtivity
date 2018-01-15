@@ -6,10 +6,8 @@ import os
 import logging
 import yaml
 
-from .syncbackends import run_packtivity
-from .syncbackends import prepublish
-from .syncbackends import packconfig
-
+from .syncbackends import prepublish, packconfig, run_packtivity, run_in_env, finalize_inputs, finalize_outputs, acquire_job_env, publish
+from packtivity.statecontexts import load_state
 from packtivity.typedleafs import TypedLeafs
 
 log = logging.getLogger(__name__)
@@ -40,6 +38,73 @@ class PacktivityProxyBase(object):
             'proxydetails': self.details()
         }
 
+class ExternalAsyncProxy(PacktivityProxyBase):
+    def __init__(self, jobproxy, spec, statedata, pardata):
+        self.jobproxy  = jobproxy
+        self.spec = spec
+        self.statedata = statedata
+        self.pardata   = pardata
+        self._details = None
+
+class ExternalAsyncBackend(object):
+    def __init__(self, job_backend, deserialization_opts = None, config = None):
+        self.deserialization_opts = deserialization_opts
+        self.job_backend = job_backend
+        self.config = packconfig(**config) if config else packconfig()
+
+    def prepublish(self,spec, parameters, state):
+        return prepublish(spec, parameters, state, self.config)
+
+    def submit(self, spec, parameters, state, metadata = None):
+        parameters, state = finalize_inputs(parameters, state)
+        job, env   = acquire_job_env(spec, parameters,state,metadata,self.config)
+        jobproxy = self.job_backend.submit(job, env, state, metadata)
+        return ExternalAsyncProxy(jobproxy, spec, state.json(), parameters.json())
+
+    def result(self,resultproxy):
+        state = load_state(resultproxy.statedata, self.deserialization_opts)
+        parameters = TypedLeafs(resultproxy.pardata, state.datamodel)
+        pubdata = publish(resultproxy.spec['publisher'], parameters,state,self.config)
+        pubdata = finalize_outputs(pubdata)
+        return pubdata
+
+    def ready(self,resultproxy):
+        return self.job_backend.ready(resultproxy.jobproxy)
+
+    def successful(self,resultproxy):
+        return self.job_backend.successful(resultproxy.jobproxy)
+
+    def fail_info(self,resultproxy):
+        return self.job_backend.fail_info(resultproxy.jobproxy)
+
+class DefaultExternalJobBackend(object):
+    def __init__(self, config = None):
+        self.pool = multiprocessing.Pool(1)
+        self.config = packconfig(**config) if config else packconfig()
+
+    def submit(self, job, env,state, metadata):
+        nullary = functools.partial(run_in_env,
+            job = job,
+            environment = env,
+            state = state,
+            metadata = metadata,
+            pack_config = self.config
+        )
+        return self.pool.apply_async(nullary)
+
+    def ready(self,resultproxy):
+        return resultproxy.ready()
+
+    def successful(self,resultproxy):
+        return resultproxy.successful()
+
+    def fail_info(self,resultproxy):
+        try:
+            self.result(resultproxy)
+        except:
+            t,v,tb =    sys.exc_info()
+            traceback.print_tb(tb)
+            return (t,v)
 
 class PythonCallableAsyncBackend(object):
     '''
