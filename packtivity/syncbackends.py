@@ -89,11 +89,10 @@ def prepublish(spec, parameters, state, pack_config):
     return pubdata
 
 def acquire_job_env(spec, parameters,state,metadata,config):
-    with logutils.setup_logging_topic(metadata,state,'step',return_logger = True) as log:
-        if spec['process'] and spec['environment']:
-            job = build_job(spec['process'], parameters, state, config)
-            env = build_env(spec['environment'], parameters, state, config)
-            return job, env
+    if spec['process'] and spec['environment']:
+        job = build_job(spec['process'], parameters, state, config)
+        env = build_env(spec['environment'], parameters, state, config)
+        return job, env
     return None, None
 
 def run_packtivity(spec, parameters,state,metadata,config):
