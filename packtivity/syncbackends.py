@@ -43,7 +43,7 @@ def build_env(environment,parameters,state,pack_config):
         handler = env_handlers['default']['default']
     return handler(environment,parameters,state)
 
-def run_in_env(environment,job,state,metadata,pack_config):
+def run_in_env(job,environment,state,metadata,pack_config):
     '''
     takes a job and an environment and executes with the state context attached
     '''
@@ -61,18 +61,22 @@ def publish(publisher,parameters,state, pack_config):
     pubdata = handler(publisher,parameters,state)
     return TypedLeafs(pubdata, state.datamodel if state else None)
 
-def model_parameters(parameters, state):
+def finalize_inputs(parameters, state):
     parameters = TypedLeafs(parameters,state.datamodel if state else None)
-    if not state: return parameters
-    return state.model(parameters)
+    if not state: return parameters, state
+    return state.model(parameters), state
+
+def finalize_outputs(pubdata):
+    return pubdata
 
 def prepublish(spec, parameters, state, pack_config):
     '''
     attempts to prepublish output data, returns None if not possible
     '''
-    parameters = model_parameters(parameters, state)
+    parameters, state = finalize_inputs(parameters, state)
     pub = spec['publisher']
 
+    pubdata = None
     if pub['publisher_type'] in ['frompar-pub','constant-pub']:
         return publish(pub,parameters,state,pack_config)
     if pub['publisher_type'] in ['interpolated-pub', 'fromparjq-pub']:
@@ -81,23 +85,32 @@ def prepublish(spec, parameters, state, pack_config):
             return publish(pub,parameters,state,pack_config)
         if type(state) == LocalFSState:
             if pub['glob'] == False or len(state.readwrite)==0:
-                return publish(pub,parameters,state,pack_config)
-    return None
+                pubdata = publish(pub,parameters,state,pack_config)
+    return pubdata
+
+def acquire_job_env(spec, parameters,state,metadata,config):
+    if spec['process'] and spec['environment']:
+        job = build_job(spec['process'], parameters, state, config)
+        env = build_env(spec['environment'], parameters, state, config)
+        return job, env
+    return None, None
 
 def run_packtivity(spec, parameters,state,metadata,config):
     with logutils.setup_logging_topic(metadata,state,'step',return_logger = True) as log:
-        try:
-            parameters = model_parameters(parameters, state)
-            if spec['process'] and spec['environment']:
-                job = build_job(spec['process'], parameters, state, config)
-                env = build_env(spec['environment'], parameters, state, config)
-                run_in_env(env,job,state,metadata,config)
-            pubdata = publish(spec['publisher'], parameters,state, config)
-            log.info('publishing data: %s',pubdata)
-            return pubdata
-        except:
-            log.exception('%s raised exception',metadata)
-            raise
+        parameters, state = finalize_inputs(parameters, state)
+        job, env = acquire_job_env(spec, parameters,state,metadata,config)
+
+        if job and env:
+            try:
+                run_in_env(job, env,state,metadata,config)
+            except:
+                log.exception('job execution if job %s raise exception exception',metadata)
+                raise
+
+        pubdata = publish(spec['publisher'], parameters,state, config)
+        pubdata = finalize_outputs(pubdata)
+        log.info('publishing data: %s',pubdata)
+        return pubdata
 
 class defaultsyncbackend(object):
     def __init__(self,packconfig_spec = None):

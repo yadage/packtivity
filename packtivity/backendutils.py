@@ -84,6 +84,14 @@ def backend_from_string(backendstring,backendopts = None):
     if backendstring == 'celery':
         backend = asyncbackends.CeleryBackend(**backendopts)
         return is_async, backend
+    if backendstring.startswith('externalasync'):
+        _,externalbackend = backendstring.split(':')
+        if externalbackend == 'default':
+            external = asyncbackends.DefaultExternalJobBackend()
+            backend = asyncbackends.ExternalAsyncBackend(external)
+            return is_async, backend
+        else:
+            raise NotImplementedError('...')
     if backendstring.startswith('py:'):
         _, module, backend = backendstring.split(':')
         module = importlib.import_module(module)
@@ -94,4 +102,7 @@ def backend_from_string(backendstring,backendopts = None):
         module = importlib.import_module(module)
         backendclass = getattr(module,backend)
         return is_async, backendclass(**backendopts)
+
+
+
     raise RuntimeError('Unknown Backend %s', backendstring)
