@@ -9,6 +9,7 @@ deps = [
       'pyyaml',
       'click',
       'glob2',
+      'monkeypatch',
       'jsonpointer',
       'jsonpath-rw',
       'jq',
