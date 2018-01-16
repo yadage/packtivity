@@ -25,11 +25,22 @@ def sourcepath(path):
 def state_context_to_mounts(state):
     readwrites  = state.readwrite
     readonlies = state.readonly
-    mounts = ''
+
+    mounts = []
     for rw in readwrites:
-        mounts += '-v {}:{}:rw'.format(sourcepath(os.path.abspath(rw)),rw)
+        mounts.append({
+            'type': 'bind',
+            'source': sourcepath(os.path.abspath(rw)),
+            'destination': rw,
+            'readonly': False
+        })
     for ro in readonlies:
-        mounts += ' -v {}:{}:ro'.format(sourcepath(ro),ro)
+        mounts.append({
+            'type': 'bind',
+            'source': sourcepath(os.path.abspath(ro)),
+            'destination': ro,
+            'readonly': False
+        })
     return mounts
 
 def prepare_par_mounts(parmounts,state):
@@ -39,10 +50,12 @@ def prepare_par_mounts(parmounts,state):
         with open(parmountfile,'w') as f:
             f.write(x['mountcontent'])
 
-        mounts.append(' -v {}:{}'.format(
-            sourcepath(os.path.abspath(parmountfile)),
-            x['mountpath']
-        ))
+        mounts.append({
+            'type': 'bind',
+            'source': sourcepath(os.path.abspath(parmountfile)),
+            'destination': x['mountpath'],
+            'readonly': False
+        })
 
     return mounts
 
@@ -51,13 +64,26 @@ def cvmfs_from_volume_plugin(cvmfs_repos = None):
         cvmfs_repos = yaml.load(os.environ.get('PACKTIVITY_CVMFS_REPOS','null'))
     if not cvmfs_repos:
         cvmfs_repos  = ['atlas.cern.ch','atlas-condb.cern.ch','sft.cern.ch']
-    command_line = ' --security-opt label:disable'
+
+    options = '--security-opt label:disable'
+    mounts = []
     for repo in cvmfs_repos:
-        command_line += ' --volume-driver cvmfs -v {cvmfs_repo}:/cvmfs/{cvmfs_repo}'.format(cvmfs_repo = repo)
-    return command_line
+        mounts.append({
+            'type': 'volume',
+            'source': repo,
+            'destination': '/cvmfs/{}'.format(repo),
+            'readonly': False
+        })
+
+    return options, mounts
 
 def cvmfs_from_external_mount():
-    return ' -v {}:/cvmfs'.format(os.environ.get('PACKTIVITY_CVMFS_LOCATION','/cvmfs'))
+    return '', [{
+        'type': 'volume',
+        'source': os.environ.get('PACKTIVITY_CVMFS_LOCATION','/cvmfs'),
+        'destination': '/cvmfs',
+        'readonly': False
+    }]
 
 def cvmfs_mount():
     cvmfs_source = os.environ.get('PACKTIVITY_CVMFS_SOURCE','external')
@@ -69,10 +95,12 @@ def cvmfs_mount():
         raise RuntimeError('unknown CVMFS location requested')
 
 def auth_mount():
-    if 'PACKTIVITY_AUTH_LOCATION' not in os.environ:
-        return ' -v /home/recast/recast_auth:/recast_auth'
-    else:
-        return ' -v {}:/recast_auth'.format(os.environ['PACKTIVITY_AUTH_LOCATION'])
+    return [{
+        'type': 'bind',
+        'source': os.environ.get('PACKTIVITY_AUTH_LOCATION','/home/recast/recast_auth'),
+        'destination': '/recast_auth',
+        'readonly': False
+    }]
 
 def resource_mounts(state,environment,log):
     report = '''\n\
@@ -91,15 +119,16 @@ resources: {resources}
     do_auth  = ('GRIDProxy'  in environment['resources']) or ('KRB5Auth' in environment['resources'])
     log.debug('do_auth: %s do_cvmfs: %s',do_auth,do_cvmfs)
 
+    options, mounts = '', []
 
-    resource_mounts = ''
     if do_cvmfs:
-        resource_mounts+=cvmfs_mount()
-
+        cvfms_options, cvmfs_mounts = cvmfs_mount()
+        options += cvfms_options
+        mounts  += cvmfs_mounts
     if do_auth:
-        resource_mounts+=auth_mount()
+        mounts  += auth_mount()
 
-    return resource_mounts
+    return options, mounts
 
 def docker_execution_cmdline(state,environment,log,metadata,stdin,cmd_argv):
     quoted_string = ' '.join(map(pipes.quote,cmd_argv))
@@ -119,23 +148,31 @@ def docker_execution_cmdline(state,environment,log,metadata,stdin,cmd_argv):
 
     # volume mounts (resources, parameter mounts and state mounts)
     state_mounts = state_context_to_mounts(state)
-    rsrcs_mounts = resource_mounts(state,environment,log)
-    par_mounts = ' '.join(prepare_par_mounts(environment['par_mounts'], state))
+    par_mounts   = prepare_par_mounts(environment['par_mounts'], state)
+    rsrcs_opts, rsrcs_mounts = resource_mounts(state,environment,log)
 
-    return 'docker run --rm {stdin} {cid} {workdir} {custom} {state_mounts} {rsrcs} {par_mounts} {img}:{tag} {command}'.format(
+
+    mount_args = ''
+    for s in state_mounts + par_mounts + rsrcs_mounts:
+        mount_args += ' -v {source}:{destination}:{mode}'.format(
+            source = s['source'],
+            destination = s['destination'],
+            mode = 'ro' if s['readonly'] else 'rw'
+        )
+
+    return 'docker run --rm {stdin} {cid} {workdir} {custom} {mount_args} {rsrcs_opts} {img}:{tag} {command}'.format(
         stdin = '-i' if stdin else '',
         cid = cid_file,
         workdir = workdir_flag,
         custom = custom_mod,
-        state_mounts = state_mounts,
-        rsrcs = rsrcs_mounts,
-        par_mounts = par_mounts,
+        mount_args = mount_args,
+        rsrcs_opts = rsrcs_opts,
         img = image,
         tag = imagetag,
         command = quoted_string
     )
 
-def run_docker_with_script(state,environment,job,log):
+def run_docker_with_script(environment,job,log):
     script = job['script']
     interpreter = job['interpreter']
 
@@ -147,19 +184,19 @@ def run_docker_with_script(state,environment,job,log):
     indocker = interpreter
     envmod = 'source {} && '.format(environment['envscript']) if environment['envscript'] else ''
     in_docker_cmd = envmod+indocker
-    return in_docker_cmd, script
+    return ['sh', '-c', in_docker_cmd], script
 
-def run_docker_with_oneliner(state,environment,command,log):
+def run_docker_with_oneliner(environment,job,log):
     log.debug('''\n\
 --------------
 running one liner in container.
 command: {command}
 --------------
-    '''.format(command = command))
+    '''.format(command = job['command']))
 
-    envmod = 'source {} &&'.format(environment['envscript']) if environment['envscript'] else ''
-    in_docker_cmd = '{envmodifier} {command}'.format(envmodifier = envmod, command = command)
-    return in_docker_cmd, None
+    envmod = 'source {} && '.format(environment['envscript']) if environment['envscript'] else ''
+    in_docker_cmd = envmod + job['command']
+    return ['sh', '-c', in_docker_cmd], None
 
 def execute_docker(metadata,state,log,docker_run_cmd_str,stdin_content = None):
     log.debug('container execution command: \n%s',docker_run_cmd_str)
@@ -247,15 +284,12 @@ def docker_enc_handler(environment,state,job,metadata):
     with logutils.setup_logging_topic(metadata,state,'step',return_logger = True) as log:
         if 'command' in job:
             stdin = False
-            in_docker_cmd, stdin = run_docker_with_oneliner(state,environment,job['command'],log)
+            container_argv, container_stdin = run_docker_with_oneliner(environment,job,log)
         elif 'script' in job:
             stdin = True
-            in_docker_cmd, stdin = run_docker_with_script(state,environment,job,log)
+            container_argv, container_stdin = run_docker_with_script(environment,job,log)
         else:
             raise RuntimeError('do not know yet how to run this...')
-
-        container_argv  = ['sh', '-c', in_docker_cmd]
-        container_stdin = stdin
 
         cmdline = docker_execution_cmdline(
             state,environment,log,metadata,

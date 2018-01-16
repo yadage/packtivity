@@ -6,16 +6,23 @@ import copy
 import base64
 import importlib
 import collections
+from six import string_types
 
 class LeafModel(object):
     def __init__(self, spec):
         self.datamodel = spec or {'keyword': None, 'types': {}}
         self._types2str, self._str2types = {}, {}
-        for name,module_class in self.datamodel['types'].items():
-            m, c = module_class.split(':')
-            c = getattr(importlib.import_module(m),c)
-            self._types2str[c] = name
-            self._str2types[name] = c
+        for name,class_def in self.datamodel['types'].items():
+            if type(class_def)==type:
+                self._types2str[class_def] = name
+                self._str2types[name] = class_def
+            elif isinstance(class_def, string_types):
+                m, c = class_def.split(':')
+                c = getattr(importlib.import_module(m),c)
+                self._types2str[c] = name
+                self._str2types[name] = c
+            else:
+                raise RuntimeError('not sure how to interpret type def %s',class_def)
         self.keyword = self.datamodel['keyword']
         self.leaf_magic = '___leaf___'
 
@@ -95,7 +102,7 @@ class TypedLeafs(collections.MutableMapping):
 
     @classmethod
     def fromJSON(cls, data, deserialization_opts):
-        return cls(data, deserialization_opts['leafmodel'], deserialization_opts['idleafs'])
+        return cls(data, deserialization_opts.get('leafmodel',None), deserialization_opts.get('idleafs',False))
 
     def _load_from_string(self,jsonstring, typed = True, idleafs = False):
         if typed:
@@ -121,20 +128,23 @@ class TypedLeafs(collections.MutableMapping):
         return TypedLeafs(copy.deepcopy(self.typed()), self.leafmodel)
 
     def asrefs(self):
-        data = copy.deepcopy(self.typed())
+        data = copy.deepcopy(self.json())
         for p, v in self.leafs():
             p.set(data, p)
         return data
 
     ### QUERY methods
     def resolve_ref(self, reference):
-        return reference.resolve(self.typed())
+        return reference.get(self.typed())
 
     def jsonpointer(self,pointer_str):
         return jsonpointer.JsonPointer(pointer_str).resolve( self.typed() )
 
-    def jsonpath(self,jsonpath_expression):
-        return jsonpath_rw.parse(jsonpath_expression).find( self.typed() )[0].value
+    def jsonpath(self,jsonpath_expression, multiple_output = False):
+        if not multiple_output:
+            return jsonpath_rw.parse(jsonpath_expression).find( self.typed() )[0].value
+        else:
+            return [x.value for x in jsonpath_rw.parse(jsonpath_expression).find( self.typed())]
 
     def jq(self,jq_program, *args, **kwargs):
         return TypedLeafs(jq.jq(jq_program).transform(self.typed(idleafs = True), *args, **kwargs), self.leafmodel, idleafs = True)

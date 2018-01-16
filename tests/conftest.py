@@ -46,6 +46,14 @@ def docker_touchfile_workdir(tmpdir):
 	return packtivity.pack_object.fromspec('tests/testspecs/environment_tests/touchfile_docker_inworkdir.yml')
 
 @pytest.fixture()
+def docker_env_resources(tmpdir):
+	return packtivity.pack_object.fromspec('tests/testspecs/environment_tests/resources_docker.yml')
+
+@pytest.fixture()
+def docker_env_parmounts(tmpdir):
+	return packtivity.pack_object.fromspec('tests/testspecs/environment_tests/resources_parmounts.yml')
+
+@pytest.fixture()
 def fromjq_pub_default(tmpdir):
 	return packtivity.pack_object.fromspec('tests/testspecs/publisher_tests/fromjq-pub-default.yml')
 
