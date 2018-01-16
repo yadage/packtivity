@@ -5,7 +5,6 @@ from packtivity.handlers.environment_handlers import handlers
 from packtivity.syncbackends import finalize_inputs
 
 import logging
-import monkeypatch
 
 def test_docker_parmounts(tmpdir,basic_localfs_state, docker_env_parmounts):
 	state = basic_localfs_state
