@@ -3,7 +3,6 @@ from packtivity.typedleafs import TypedLeafs
 
 from packtivity.handlers.execution_handlers import run_docker_with_oneliner, docker_execution_cmdline
 import logging
-import monkeypatch
 
 def test_docker_cvmfs(tmpdir,basic_localfs_state, docker_env_resources, monkeypatch):
 	state = basic_localfs_state
