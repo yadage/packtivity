@@ -27,11 +27,11 @@ class LeafModel(object):
         self.leaf_magic = '___leaf___'
 
     def leaf_encode(self,obj):
-        return self.leaf_magic + base64.b64encode(json.dumps(self.dumper(obj)))
+        return self.leaf_magic + base64.b64encode(json.dumps(self.dumper(obj)).encode('utf-8'))
 
     @staticmethod
     def leaf_decode(str):
-        return json.loads(base64.b64decode(str))
+        return json.loads(base64.b64decode(str).decode('utf-8'))
 
     def loader(self, spec, idleafs):
         if not self.keyword: return spec
