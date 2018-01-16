@@ -27,7 +27,7 @@ class LeafModel(object):
         self.leaf_magic = '___leaf___'
 
     def leaf_encode(self,obj):
-        return self.leaf_magic + base64.b64encode(json.dumps(self.dumper(obj)).encode('utf-8'))
+        return self.leaf_magic + base64.b64encode(json.dumps(self.dumper(obj)).encode('utf-8')).decode('utf-8')
 
     @staticmethod
     def leaf_decode(str):
