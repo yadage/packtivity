@@ -20,7 +20,7 @@ def load_proxy(jsondata, deserialization_opts = None, best_effort_backend = True
             module = importlib.import_module(module)
             proxyclass = getattr(module,proxyclass)
             proxyopts = {}
-            return proxyclass.fromJSON(jsondata,**proxyopts)
+            proxy = proxyclass.fromJSON(jsondata,**proxyopts)
 
     if 'PACKTIVITY_ASYNCBACKEND' in os.environ:
         module, _, proxyclass = os.environ['PACKTIVITY_ASYNCBACKEND'].split(':')
@@ -30,11 +30,6 @@ def load_proxy(jsondata, deserialization_opts = None, best_effort_backend = True
         if best_effort_backend:
             _, backend = backend_from_string('fromenv')
 
-    if jsondata['proxyname'] == 'CeleryProxy':
-        from .asyncbackends import CeleryProxy
-        proxy = CeleryProxy.fromJSON(jsondata)
-        if best_effort_backend:
-            _, backend = backend_from_string('celery')
     if jsondata['proxyname'] == 'CeleryProxy':
         from .asyncbackends import CeleryProxy
         proxy = CeleryProxy.fromJSON(jsondata)
@@ -98,7 +93,7 @@ def backend_from_string(backendstring,backendopts = None):
         backendclass = getattr(module,backend)
         return is_async, backendclass(**backendopts)
     if backendstring == 'fromenv':
-        module, backend, _ = os.environ['PACKTIVITY_ASYNCBACKEND'].split(':')
+        module, backend,proxy = os.environ['PACKTIVITY_ASYNCBACKEND'].split(':')
         module = importlib.import_module(module)
         backendclass = getattr(module,backend)
         return is_async, backendclass(**backendopts)

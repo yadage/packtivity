@@ -35,7 +35,7 @@ setup(
   install_requires = deps,
   extras_require={
    'celery':  [
-       'celery'
+       'celery','redis'
     ],
   },
   entry_points = {
