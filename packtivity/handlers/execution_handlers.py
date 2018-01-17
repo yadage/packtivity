@@ -130,7 +130,8 @@ resources: {resources}
 
     return options, mounts
 
-def docker_execution_cmdline(state,environment,log,metadata,stdin,cmd_argv):
+def docker_execution_cmdline(state,environment,log,metadata,cmd_argv):
+    print 'WHA',cmd_argv
     quoted_string = ' '.join(map(pipes.quote,cmd_argv))
 
     image = environment['image']
@@ -160,8 +161,7 @@ def docker_execution_cmdline(state,environment,log,metadata,stdin,cmd_argv):
             mode = 'ro' if s['readonly'] else 'rw'
         )
 
-    return 'docker run --rm {stdin} {cid} {workdir} {custom} {mount_args} {rsrcs_opts} {img}:{tag} {command}'.format(
-        stdin = '-i' if stdin else '',
+    return 'docker run --rm {cid} {workdir} {custom} {mount_args} {rsrcs_opts} {img}:{tag} {command}'.format(
         cid = cid_file,
         workdir = workdir_flag,
         custom = custom_mod,
@@ -181,10 +181,13 @@ def run_docker_with_script(environment,job,log):
     if 'PACKTIVITY_DRYRUN' in os.environ:
         return
 
-    indocker = interpreter
-    envmod = 'source {} && '.format(environment['envscript']) if environment['envscript'] else ''
-    in_docker_cmd = envmod+indocker
-    return ['sh', '-c', in_docker_cmd], script
+    indocker = ['sh','-c','\n'.join([
+        '''source {} &&'''.format(environment['envscript']) if environment['envscript'] else ''
+        '''cat << 'EOF' | {}'''.format(interpreter),
+        script,
+        ''''EOF'''
+    ])]
+    return indocker
 
 def run_docker_with_oneliner(environment,job,log):
     log.debug('''\n\
@@ -196,29 +199,19 @@ command: {command}
 
     envmod = 'source {} && '.format(environment['envscript']) if environment['envscript'] else ''
     in_docker_cmd = envmod + job['command']
-    return ['sh', '-c', in_docker_cmd], None
+    return ['sh', '-c', in_docker_cmd]
 
-def execute_docker(metadata,state,log,docker_run_cmd_str,stdin_content = None):
+def execute_docker(metadata,state,log,docker_run_cmd_str):
     log.debug('container execution command: \n%s',docker_run_cmd_str)
-    log.debug('stdin if any: %s', stdin_content)
+    print docker_run_cmd_str,"<<<<<<"
+    raise
     if 'PACKTIVITY_DRYRUN' in os.environ:
         return
     try:
         with logutils.setup_logging_topic(metadata,state,'run', return_logger = True) as runlog:
 
             proc = None
-            if stdin_content:
-                log.debug('stdin: \n%s',stdin_content)
-                proc = subprocess.Popen(shlex.split(docker_run_cmd_str),
-                                        stdin = subprocess.PIPE,
-                                        stderr = subprocess.STDOUT,
-                                        stdout = subprocess.PIPE,
-                                        bufsize=1,
-                                        close_fds = True)
-                proc.stdin.write(stdin_content.encode('utf-8'))
-                proc.stdin.close()
-            else:
-                proc = subprocess.Popen(shlex.split(docker_run_cmd_str), stderr = subprocess.STDOUT, stdout = subprocess.PIPE, bufsize=1, close_fds = True)
+            proc = subprocess.Popen(shlex.split(docker_run_cmd_str), stderr = subprocess.STDOUT, stdout = subprocess.PIPE, bufsize=1, close_fds = True)
 
             log.debug('started run subprocess with pid %s. now wait to finish',proc.pid)
             time.sleep(0.5)
@@ -283,17 +276,14 @@ def docker_pull(docker_pull_cmd,log,state,metadata):
 def docker_enc_handler(environment,state,job,metadata):
     with logutils.setup_logging_topic(metadata,state,'step',return_logger = True) as log:
         if 'command' in job:
-            stdin = False
-            container_argv, container_stdin = run_docker_with_oneliner(environment,job,log)
+            container_argv = run_docker_with_oneliner(environment,job,log)
         elif 'script' in job:
-            stdin = True
-            container_argv, container_stdin = run_docker_with_script(environment,job,log)
+            container_argv = run_docker_with_script(environment,job,log)
         else:
             raise RuntimeError('do not know yet how to run this...')
 
         cmdline = docker_execution_cmdline(
             state,environment,log,metadata,
-            stdin = stdin,
             cmd_argv = container_argv
         )
 
@@ -304,7 +294,7 @@ def docker_enc_handler(environment,state,job,metadata):
                 tag = environment['imagetag']
             )
             docker_pull(docker_pull_cmd,log,state,metadata)
-        execute_docker(metadata,state,log,cmdline, stdin_content = container_stdin)
+        execute_docker(metadata,state,log,cmdline)
 
 @executor('noop-env')
 def noop_env(environment,state,job,metadata):
