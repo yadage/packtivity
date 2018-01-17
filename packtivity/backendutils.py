@@ -20,7 +20,7 @@ def load_proxy(jsondata, deserialization_opts = None, best_effort_backend = True
             module = importlib.import_module(module)
             proxyclass = getattr(module,proxyclass)
             proxyopts = {}
-            return proxyclass.fromJSON(jsondata,**proxyopts)
+            proxy = proxyclass.fromJSON(jsondata,**proxyopts)
 
     if 'PACKTIVITY_ASYNCBACKEND' in os.environ:
         module, _, proxyclass = os.environ['PACKTIVITY_ASYNCBACKEND'].split(':')

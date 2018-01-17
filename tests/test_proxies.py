@@ -18,6 +18,14 @@ def test_foreground():
     p,_ = load_proxy(p.json())
     assert type(p) == ForegroundProxy
 
+
+def test_python():
+    from packtivity.asyncbackends import ForegroundProxy
+
+    p = ForegroundProxy({'hello': 'world'}, None, True)
+    p,_ = load_proxy(p.json(), {'proxy': 'py:packtivity.asyncbackends:ForegroundProxy'})
+    assert type(p) == ForegroundProxy
+
 def test_env(monkeypatch):
     from packtivity.asyncbackends import ForegroundProxy
 
