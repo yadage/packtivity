@@ -42,7 +42,8 @@ class LocalFSState(object):
         '''
         resets state by deleting readwrite directory contents (deletes tree and re-creates)
         '''
-        for rw in self.readwrite:
+        for rw in self.readwrite + [self.metadir]:
+            if rw is None: continue
             if os.path.exists(rw):
                 shutil.rmtree(rw)
         self.ensure()
