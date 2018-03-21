@@ -178,8 +178,6 @@ def run_docker_with_script(environment,job,log):
 
     log.debug('script is:')
     log.debug('\n--------------\n'+script+'\n--------------')
-    if 'PACKTIVITY_DRYRUN' in os.environ:
-        return
 
     indocker = interpreter
     envmod = 'source {} && '.format(environment['envscript']) if environment['envscript'] else ''
