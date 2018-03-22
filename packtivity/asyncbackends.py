@@ -245,6 +245,7 @@ try:
     default_celeryapp = Celery('defaultapp')
     default_celeryapp.conf.update(
         task_serializer = 'pickle',
+        result_serializer = 'pickle',
         accept_content = ['pickle','json'],
         broker_url = os.environ.get('PACKTIVITY_CELERY_REDIS_BROKER','redis://localhost:6379'),
         result_backend = os.environ.get('PACKTIVITY_CELERY_REDIS_BROKER','redis://localhost:6379'),
