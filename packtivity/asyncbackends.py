@@ -41,10 +41,11 @@ class PacktivityProxyBase(object):
 class ExternalAsyncProxy(PacktivityProxyBase):
     def __init__(self, jobproxy, spec, statedata, pardata):
         self.jobproxy  = jobproxy
+        self.result = None
         self.spec = spec
         self.statedata = statedata
         self.pardata   = pardata
-        self._details = None
+        self._details = jobproxy
 
 class ExternalAsyncBackend(object):
     def __init__(self, job_backend, deserialization_opts = None, config = None):
@@ -62,11 +63,16 @@ class ExternalAsyncBackend(object):
         return ExternalAsyncProxy(jobproxy, spec, state.json(), parameters.json())
 
     def result(self,resultproxy):
+        if resultproxy.result is not None:
+            return  resultproxy.result
+
         state = load_state(resultproxy.statedata, self.deserialization_opts)
         parameters = TypedLeafs(resultproxy.pardata, state.datamodel)
         pubdata = publish(resultproxy.spec['publisher'], parameters,state,self.config)
+        log.info('publishing data: %s',pubdata)
         pubdata = finalize_outputs(pubdata)
-        return pubdata
+        resultproxy.result = pubdata
+        return resultproxy.result
 
     def ready(self,resultproxy):
         return self.job_backend.ready(resultproxy.jobproxy)
@@ -82,7 +88,7 @@ class DefaultExternalJobBackend(object):
         self.pool = multiprocessing.Pool(1)
         self.config = packconfig(**config) if config else packconfig()
 
-    def submit(self, job, env,state, metadata):
+    def submit(self, job, env, state, metadata):
         nullary = functools.partial(run_in_env,
             job = job,
             environment = env,

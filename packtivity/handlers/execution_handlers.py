@@ -172,7 +172,7 @@ def docker_execution_cmdline(state,environment,log,metadata,stdin,cmd_argv):
         command = quoted_string
     )
 
-def run_docker_with_script(environment,job,log):
+def script_argv(environment,job,log):
     script = job['script']
     interpreter = job['interpreter']
 
@@ -184,7 +184,7 @@ def run_docker_with_script(environment,job,log):
     in_docker_cmd = envmod+indocker
     return ['sh', '-c', in_docker_cmd], script
 
-def run_docker_with_oneliner(environment,job,log):
+def command_argv(environment,job,log):
     log.debug('''\n\
 --------------
 running one liner in container.
@@ -282,10 +282,10 @@ def docker_enc_handler(environment,state,job,metadata):
     with logutils.setup_logging_topic(metadata,state,'step',return_logger = True) as log:
         if 'command' in job:
             stdin = False
-            container_argv, container_stdin = run_docker_with_oneliner(environment,job,log)
+            container_argv, container_stdin = command_argv(environment,job,log)
         elif 'script' in job:
             stdin = True
-            container_argv, container_stdin = run_docker_with_script(environment,job,log)
+            container_argv, container_stdin = script_argv(environment,job,log)
         else:
             raise RuntimeError('do not know yet how to run this...')
 
