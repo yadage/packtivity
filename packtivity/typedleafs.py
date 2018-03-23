@@ -24,14 +24,28 @@ class LeafModel(object):
             else:
                 raise RuntimeError('not sure how to interpret type def %s',class_def)
         self.keyword = self.datamodel['keyword']
-        self.leaf_magic = '___leaf___'
+        self.canonical_leaf_magic = 'b64json://'
+        lits = self.datamodel.get('literals')
+
+        self.magics = [self.canonical_leaf_magic]
+
+        if lits:
+            m, f = lits['parser'].split(':')
+            self.litparser = getattr(importlib.import_module(m),f)
+            self.magics += lits['magics']
 
     def leaf_encode(self,obj):
-        return self.leaf_magic + base64.b64encode(json.dumps(self.dumper(obj)).encode('utf-8')).decode('utf-8')
+        return self.canonical_leaf_magic + base64.b64encode(json.dumps(self.dumper(obj)).encode('utf-8')).decode('utf-8')
 
-    @staticmethod
-    def leaf_decode(str):
-        return json.loads(base64.b64decode(str).decode('utf-8'))
+    def leaf_decode(self,encoded):
+        for m in self.magics:
+            if encoded.startswith(m):
+                if m == self.canonical_leaf_magic:
+                    magic_replaced = encoded.replace(self.canonical_leaf_magic,'')
+                    return json.loads(base64.b64decode(magic_replaced).decode('utf-8'))
+                else:
+                    return self.litparser(encoded)
+        raise RuntimeError('cannot decode {} '.format(encoded))
 
     def loader(self, spec, idleafs):
         if not self.keyword: return spec
@@ -84,9 +98,10 @@ class TypedLeafs(collections.MutableMapping):
         #wrap in a simple dict, necessary for if data is just a leaf value
         data =  {'data': self._load_from_string(self._dump_to_string(self._jsonable), typed=False)}
         if idleafs:
-            ptrs = [jsonpointer.JsonPointer.from_parts(x) for x in jq.jq('paths(type=="string" and startswith("{}"))'.format(self._leafmodel.leaf_magic)).transform(data, multiple_output = True)]
+            magicexpr = ' or '.join(['startswith("{}")'.format(m) for m in self._leafmodel.magics])
+            ptrs = [jsonpointer.JsonPointer.from_parts(x) for x in jq.jq('paths(type=="string" and ({}))'.format(magicexpr)).transform(data, multiple_output = True)]
             for p in ptrs:
-                p.set(data,self._leafmodel.leaf_decode(p.get(data).replace('___leaf___','')))
+                p.set(data,self._leafmodel.leaf_decode(p.get(data)))
         self.__jsonable = data['data']
 
     @property
