@@ -1,7 +1,7 @@
 from packtivity.handlers.publisher_handlers import handlers
 from packtivity.typedleafs import TypedLeafs
 
-from packtivity.handlers.execution_handlers import run_docker_with_oneliner, docker_execution_cmdline
+from packtivity.handlers.execution_handlers import command_argv, docker_execution_cmdline
 import logging
 
 def test_docker_cvmfs(tmpdir,basic_localfs_state, docker_env_resources, monkeypatch):
@@ -9,7 +9,7 @@ def test_docker_cvmfs(tmpdir,basic_localfs_state, docker_env_resources, monkeypa
 	environment = docker_env_resources.spec['environment']
 	log = logging.getLogger('test')
 	job = {'command': 'echo hello world'}
-	container_argv, stdin = run_docker_with_oneliner(environment,job,log)
+	container_argv, stdin = command_argv(environment,job,log)
 
 	assert container_argv == ['sh','-c','echo hello world']
 	assert stdin == None
@@ -47,7 +47,7 @@ def test_docker_auth(tmpdir,basic_localfs_state, docker_env_resources, monkeypat
 	environment = docker_env_resources.spec['environment']
 	log = logging.getLogger('test')
 	job = {'command': 'echo hello world'}
-	container_argv, stdin = run_docker_with_oneliner(environment,job,log)
+	container_argv, stdin = command_argv(environment,job,log)
 
 	assert container_argv == ['sh','-c','echo hello world']
 	assert stdin == None
