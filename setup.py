@@ -25,7 +25,7 @@ if not 'READTHEDOCS' in os.environ:
 
 setup(
   name = 'packtivity',
-  version = '0.11.5',
+  version = '0.11.6',
   description = 'packtivity - general purpose schema + bindings for PROV activities',
   url = '',
   author = 'Lukas Heinrich',
