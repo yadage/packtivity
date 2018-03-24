@@ -30,6 +30,10 @@ def load_proxy(jsondata, deserialization_opts = None, best_effort_backend = True
         if best_effort_backend:
             _, backend = backend_from_string('fromenv')
 
+    if jsondata['proxyname'] == 'ExternalAsyncProxy':
+        from .asyncbackends import ExternalAsyncProxy
+        proxy = ExternalAsyncProxy.fromJSON(jsondata)
+
     if jsondata['proxyname'] == 'CeleryProxy':
         from .asyncbackends import CeleryProxy
         proxy = CeleryProxy.fromJSON(jsondata)
