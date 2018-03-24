@@ -3,6 +3,7 @@ import functools
 import sys
 import traceback
 import os
+import json
 import logging
 import yaml
 
@@ -39,13 +40,34 @@ class PacktivityProxyBase(object):
         }
 
 class ExternalAsyncProxy(PacktivityProxyBase):
-    def __init__(self, jobproxy, spec, statedata, pardata):
+    def __init__(self, jobproxy, spec, statedata, pardata, resultdata = None):
         self.jobproxy  = jobproxy
-        self.result = None
+        self.resultdata = resultdata
         self.spec = spec
         self.statedata = statedata
         self.pardata   = pardata
-        self._details = jobproxy
+
+    def details(self):
+        try:
+            dumped_prox = json.dumps(self.jobproxy)
+        except TypeError:
+            dumped_prox = None
+        return {
+            'resultdata': self.resultdata,
+            'jobproxy': dumped_prox,
+            'spec': self.spec,
+            'statedata': self.statedata,
+            'pardata': self.pardata,
+        }
+
+    def proxyname(self):
+        return 'ExternalAsyncProxy'
+
+    @classmethod
+    def fromJSON(cls, data):
+        if not data['jobproxy']:
+            raise RuntimeError('not external backend proxy saved during serialization')
+        return cls(**data['proxydetails'])
 
 class ExternalAsyncBackend(object):
     def __init__(self, job_backend, deserialization_opts = None, config = None):
@@ -63,16 +85,17 @@ class ExternalAsyncBackend(object):
         return ExternalAsyncProxy(jobproxy, spec, state.json(), parameters.json())
 
     def result(self,resultproxy):
-        if resultproxy.result is not None:
-            return  resultproxy.result
-
         state = load_state(resultproxy.statedata, self.deserialization_opts)
+
+        if resultproxy.resultdata is not None:
+            return  TypedLeafs(resultproxy.resultdata, state.datamodel)
+
         parameters = TypedLeafs(resultproxy.pardata, state.datamodel)
         pubdata = publish(resultproxy.spec['publisher'], parameters,state,self.config)
         log.info('publishing data: %s',pubdata)
         pubdata = finalize_outputs(pubdata)
-        resultproxy.result = pubdata
-        return resultproxy.result
+        resultproxy.resultdata = pubdata.json()
+        return pubdata
 
     def ready(self,resultproxy):
         return self.job_backend.ready(resultproxy.jobproxy)
