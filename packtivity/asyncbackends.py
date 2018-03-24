@@ -48,13 +48,15 @@ class ExternalAsyncProxy(PacktivityProxyBase):
         self.pardata   = pardata
 
     def details(self):
+        prox = None
         try:
-            dumped_prox = json.dumps(self.jobproxy)
+            json.dumps(self.jobproxy)
+            prox = self.jobproxy
         except TypeError:
-            dumped_prox = None
+            pass
         return {
             'resultdata': self.resultdata,
-            'jobproxy': dumped_prox,
+            'jobproxy': prox,
             'spec': self.spec,
             'statedata': self.statedata,
             'pardata': self.pardata,
@@ -65,7 +67,7 @@ class ExternalAsyncProxy(PacktivityProxyBase):
 
     @classmethod
     def fromJSON(cls, data):
-        if not data['jobproxy']:
+        if not data['proxydetails']['jobproxy']:
             raise RuntimeError('not external backend proxy saved during serialization')
         return cls(**data['proxydetails'])
 
