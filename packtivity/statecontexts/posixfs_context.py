@@ -18,7 +18,6 @@ class LocalFSState(object):
         except AssertionError:
             raise TypeError('readwrite and readonly must be None or a list {} {}'.format(type(readonly)))
         self._identifier = identifier
-        self.readwrite = list(map(os.path.realpath,readwrite) if readwrite else  [])
 
         readonlies = list(map(os.path.realpath,readonly) if readonly else  [])
         for d in dependencies or []:
@@ -26,7 +25,9 @@ class LocalFSState(object):
                 readonlies += d.readwrite # if dep has readwrite add those
             else:
                 readonlies += d.readonly # else add the readonlies
-        self.readonly = readonlies
+
+        self.readwrite = sorted(list(map(os.path.realpath,readwrite) if readwrite else  []))
+        self.readonly  = sorted(list(map(os.path.realpath,readonlies)))
         self.datamodel = None
 
     def __repr__(self):
@@ -66,7 +67,7 @@ class LocalFSState(object):
         return: SHA1 hash
         '''
         #hash the upstream / input state
-        dep_checksums = [checksumdir.dirhash(d) for d in self.readonly if os.path.isdir(d)] 
+        dep_checksums = [checksumdir.dirhash(d) for d in self.readonly if os.path.isdir(d)]
 
         #hash out writing state
         state_checksums = [checksumdir.dirhash(d) for d in self.readwrite if os.path.isdir(d)]
@@ -102,7 +103,7 @@ class LocalFSState(object):
     @classmethod
     def fromJSON(cls,jsondata):
         return cls(
-            readwrite    = jsondata['readwrite'],
-            readonly     = jsondata['readonly'],
             identifier   = jsondata['identifier'],
+            readwrite    = sorted(jsondata['readwrite']),
+            readonly     = sorted(jsondata['readonly']),
         )
