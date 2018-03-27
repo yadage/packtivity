@@ -18,23 +18,20 @@ class LocalFSState(object):
         except AssertionError:
             raise TypeError('readwrite and readonly must be None or a list {} {}'.format(type(readonly)))
         self._identifier = identifier
-        self.readwrite = list(map(os.path.realpath,readwrite) if readwrite else  [])
-        self.add_readonly = list(map(os.path.realpath,readonly) if readonly else  [])
-        self.dependencies = dependencies or []
-        self.datamodel = None
 
-    def __repr__(self):
-        return '<LocalFSState rw: {}, ro: {}>'.format(self.readwrite,self.readonly)
-
-    @property
-    def readonly(self):
-        readonlies = [x for x in self.add_readonly]
-        for d in self.dependencies or []:
+        readonlies = list(map(os.path.realpath,readonly) if readonly else  [])
+        for d in dependencies or []:
             if d.readwrite:
                 readonlies += d.readwrite # if dep has readwrite add those
             else:
                 readonlies += d.readonly # else add the readonlies
-        return list(map(os.path.realpath,readonlies))
+
+        self.readwrite = sorted(list(map(os.path.realpath,readwrite) if readwrite else  []))
+        self.readonly  = sorted(list(map(os.path.realpath,readonlies)))
+        self.datamodel = None
+
+    def __repr__(self):
+        return '<LocalFSState rw: {}, ro: {}>'.format(self.readwrite,self.readonly)
 
 
     @property
@@ -45,9 +42,6 @@ class LocalFSState(object):
 
     def identifier(self):
         return self._identifier
-
-    def add_dependency(self,depstate):
-        self.dependencies.append(depstate)
 
     def reset(self):
         '''
@@ -72,10 +66,8 @@ class LocalFSState(object):
         checks both readwrite directories and dependencies (assumed to be subtrees of readwrite directories)
         return: SHA1 hash
         '''
-
         #hash the upstream / input state
-        depwrites = [deprw for dep in self.dependencies for deprw in dep.readwrite]
-        dep_checksums = [checksumdir.dirhash(d) for d in depwrites if os.path.isdir(d)]
+        dep_checksums = [checksumdir.dirhash(d) for d in self.readonly if os.path.isdir(d)]
 
         #hash out writing state
         state_checksums = [checksumdir.dirhash(d) for d in self.readwrite if os.path.isdir(d)]
@@ -105,15 +97,13 @@ class LocalFSState(object):
             'state_type': 'localfs',
             'identifier': self.identifier(),
             'readwrite':  self.readwrite,
-            'add_readonly':   self.add_readonly,
-            'dependencies': [x.json() for x in self.dependencies]
+            'readonly':   self.readonly,
         }
 
     @classmethod
     def fromJSON(cls,jsondata):
         return cls(
-            readwrite    = jsondata['readwrite'],
-            readonly     = jsondata['add_readonly'],
             identifier   = jsondata['identifier'],
-            dependencies = [LocalFSState.fromJSON(x) for x in jsondata['dependencies']]
+            readwrite    = sorted(jsondata['readwrite']),
+            readonly     = sorted(jsondata['readonly']),
         )
