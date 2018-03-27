@@ -11,20 +11,31 @@ class LocalFSState(object):
     '''
     Local Filesyste State consisting of a number of readwrite and readonly directories
     '''
-    def __init__(self,readwrite = None,readonly = None, dependencies = None, identifier = 'unidentified_state'):
+    def __init__(self,readwrite = None, readonly = None, dependencies = None, identifier = 'unidentified_state'):
         try:
             assert type(readwrite) in [list, type(None)]
             assert type(readonly) in [list, type(None)]
         except AssertionError:
-            raise TypeError('readwrite and readonly must be None or a list {} {}'.format(type(readwrite), type(readonly)))
+            raise TypeError('readwrite and readonly must be None or a list {} {}'.format(type(readonly)))
         self._identifier = identifier
         self.readwrite = list(map(os.path.realpath,readwrite) if readwrite else  [])
-        self.readonly  = list(map(os.path.realpath,readonly) if readonly else  [])
+        self.add_readonly = list(map(os.path.realpath,readonly) if readonly else  [])
         self.dependencies = dependencies or []
         self.datamodel = None
 
     def __repr__(self):
         return '<LocalFSState rw: {}, ro: {}>'.format(self.readwrite,self.readonly)
+
+    @property
+    def readonly(self):
+        readonlies = [x for x in self.add_readonly]
+        for d in self.dependencies or []:
+            if d.readwrite:
+                readonlies += d.readwrite # if dep has readwrite add those
+            else:
+                readonlies += d.readonly # else add the readonlies
+        return list(map(os.path.realpath,readonlies))
+
 
     @property
     def metadir(self):
@@ -42,7 +53,7 @@ class LocalFSState(object):
         '''
         resets state by deleting readwrite directory contents (deletes tree and re-creates)
         '''
-        for rw in self.readwrite:
+        for rw in self.readwrite + [self.metadir]:
             if os.path.exists(rw):
                 shutil.rmtree(rw)
         self.ensure()
@@ -94,7 +105,7 @@ class LocalFSState(object):
             'state_type': 'localfs',
             'identifier': self.identifier(),
             'readwrite':  self.readwrite,
-            'readonly':   self.readonly,
+            'add_readonly':   self.add_readonly,
             'dependencies': [x.json() for x in self.dependencies]
         }
 
@@ -102,7 +113,7 @@ class LocalFSState(object):
     def fromJSON(cls,jsondata):
         return cls(
             readwrite    = jsondata['readwrite'],
-            readonly     = jsondata['readonly'],
+            readonly     = jsondata['add_readonly'],
             identifier   = jsondata['identifier'],
             dependencies = [LocalFSState.fromJSON(x) for x in jsondata['dependencies']]
         )
