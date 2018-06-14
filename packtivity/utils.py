@@ -31,12 +31,21 @@ def leaf_iterator(jsonable):
 def load_packtivity(spec,toplevel = os.getcwd() ,schemasource = yadageschemas.schemadir, validate = True):
     #in case that spec is a json reference string, we will treat it as such
     #if it's just a filename, this should not affect it...
-    spec   = yadageschemas.load(
-            {'$ref':spec},
-            toplevel,
-            'packtivity/packtivity-schema',
-            schemadir = schemasource,
-            validate = validate,
-            initialload = False
+    spec, specopts = spec, {
+        'toplevel': toplevel,
+        'schemadir': schemasource,
+        'schema_name': 'packtivity/packtivity-schema',
+        'load_as_ref': True
+    }
+
+    validopts = {
+        'schemadir': schemasource,
+        'schema_name': 'packtivity/packtivity-schema',
+    }
+
+    spec = yadageschemas.load(
+        spec, specopts,
+        validate = validate,
+        validopts = validopts
     )
     return spec
