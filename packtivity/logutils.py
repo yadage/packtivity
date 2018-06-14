@@ -15,7 +15,7 @@ def get_topic_loggername(metadata,topic):
 def default_logging_handlers(log,metadata,state,topic):
     if topic == 'step':
         sh  = logging.StreamHandler()
-        sh.setLevel(logging.INFO)
+        sh.setLevel(getattr(logging,os.environ.get('PACKTIVITY_LOGGING_STREAM_LEVEL','INFO')))
         sh.setFormatter(formatter)
         log.addHandler(sh)
 
