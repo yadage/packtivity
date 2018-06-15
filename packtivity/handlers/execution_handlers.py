@@ -8,6 +8,7 @@ import pipes
 
 import click
 import yaml
+import json
 
 import packtivity.utils as utils
 import packtivity.logutils as logutils
@@ -79,7 +80,7 @@ def cvmfs_from_volume_plugin(cvmfs_repos = None):
 
 def cvmfs_from_external_mount():
     return '', [{
-        'type': 'volume',
+        'type': 'bind',
         'source': os.environ.get('PACKTIVITY_CVMFS_LOCATION','/cvmfs'),
         'destination': '/cvmfs',
         'readonly': False
@@ -130,46 +131,38 @@ resources: {resources}
 
     return options, mounts
 
-def docker_execution_cmdline(state,environment,log,metadata,stdin,cmd_argv):
-    quoted_string = ' '.join(map(pipes.quote,cmd_argv))
+def docker_execution_cmdline(state,log,metadata, race_spec):
 
-    image = environment['image']
-    imagetag = environment['imagetag']
-
-    # generic non-volume mount flags
-    workdir_flag =  '-w {}'.format(environment['workdir']) if environment['workdir'] is not None else ''
-
+    #docker specific container id
     cidfile = '{}/{}.cid'.format(state.metadir,metadata['name'])
     if os.path.exists(cidfile):
         log.warning('cid file %s seems to exist, container execution will crash',cidfile)
     cid_file = '--cidfile {}'.format(cidfile)
 
+    #docker specific execution modifier
     custom_mod = ' {}'.format(os.environ.get('PACKTIVITY_DOCKER_CMD_MOD',''))
 
-    # volume mounts (resources, parameter mounts and state mounts)
-    state_mounts = state_context_to_mounts(state)
-    par_mounts   = prepare_par_mounts(environment['par_mounts'], state)
-    rsrcs_opts, rsrcs_mounts = resource_mounts(state,environment,log)
+    #for running in subprocess
+    quoted_string = ' '.join(map(pipes.quote,race_spec['argv']))
 
-
+    # generic non-volume mount flags
+    workdir_flag =  '-w {}'.format(race_spec['workdir']) if race_spec['workdir'] is not None else ''
     mount_args = ''
-    for s in state_mounts + par_mounts + rsrcs_mounts:
+    for s in race_spec['mounts']:
         mount_args += ' -v {source}:{destination}:{mode}'.format(
             source = s['source'],
             destination = s['destination'],
             mode = 'ro' if s['readonly'] else 'rw'
         )
 
-    return 'docker run --rm {stdin} {cid} {workdir} {custom} {mount_args} {rsrcs_opts} {img}:{tag} {command}'.format(
-        stdin = '-i' if stdin else '',
-        cid = cid_file,
-        workdir = workdir_flag,
-        custom = custom_mod,
+    return 'docker run --rm {stdin} {cid} {workdir} {custom} {mount_args} {image} {command}'.format(
+        stdin = '-i' if race_spec['stdin'] else '',
+        cid        = cid_file,
+        workdir    = workdir_flag,
+        custom     = custom_mod,
         mount_args = mount_args,
-        rsrcs_opts = rsrcs_opts,
-        img = image,
-        tag = imagetag,
-        command = quoted_string
+        image      = race_spec['image'],
+        command    = quoted_string
     )
 
 def script_argv(environment,job,log):
@@ -196,18 +189,18 @@ command: {command}
     in_docker_cmd = envmod + job['command']
     return ['sh', '-c', in_docker_cmd], None
 
-def execute_docker(metadata,state,log,docker_run_cmd_str,stdin_content = None):
-    log.debug('container execution command: \n%s',docker_run_cmd_str)
+def execute_and_tail_subprocess(metadata,state,log,command_string,stdin_content = None, logging_topic = 'execution'):
+    log.debug('command: \n%s',command_string)
     log.debug('stdin if any: %s', stdin_content)
     if 'PACKTIVITY_DRYRUN' in os.environ:
         return
     try:
-        with logutils.setup_logging_topic(metadata,state,'run', return_logger = True) as runlog:
+        with logutils.setup_logging_topic(metadata,state,logging_topic, return_logger = True) as subproclog:
 
             proc = None
             if stdin_content:
                 log.debug('stdin: \n%s',stdin_content)
-                proc = subprocess.Popen(shlex.split(docker_run_cmd_str),
+                proc = subprocess.Popen(shlex.split(command_string),
                                         stdin = subprocess.PIPE,
                                         stderr = subprocess.STDOUT,
                                         stdout = subprocess.PIPE,
@@ -216,93 +209,67 @@ def execute_docker(metadata,state,log,docker_run_cmd_str,stdin_content = None):
                 proc.stdin.write(stdin_content.encode('utf-8'))
                 proc.stdin.close()
             else:
-                proc = subprocess.Popen(shlex.split(docker_run_cmd_str), stderr = subprocess.STDOUT, stdout = subprocess.PIPE, bufsize=1, close_fds = True)
+                proc = subprocess.Popen(shlex.split(command_string), stderr = subprocess.STDOUT, stdout = subprocess.PIPE, bufsize=1, close_fds = True)
 
-            log.debug('started run subprocess with pid %s. now wait to finish',proc.pid)
+            log.debug('started subprocess with pid %s. now wait to finish',proc.pid)
             time.sleep(0.5)
             log.debug('process children: %s',[x for x in psutil.Process(proc.pid).children(recursive = True)])
 
             for line in iter(proc.stdout.readline, b''):
-                runlog.info(line.strip())
+                subproclog.info(line.strip())
             while proc.poll() is None:
                 pass
             proc.stdout.close()
         log.debug('container execution subprocess finished. return code: %s',proc.returncode)
         if proc.returncode:
             log.error('non-zero return code raising exception')
-            raise subprocess.CalledProcessError(returncode =  proc.returncode, cmd = docker_run_cmd_str)
-        log.debug('moving on from run')
+            raise subprocess.CalledProcessError(returncode =  proc.returncode, cmd = command_string)
+        log.debug('moving on from subprocess execution: {}'.format(command_string))
     except subprocess.CalledProcessError as exc:
         log.exception('subprocess failed. code: %s,  command %s',exc.returncode,exc.cmd)
-        raise RuntimeError('failed container execution subprocess.')
+        raise RuntimeError('failed container execution subprocess. %s',command_string)
     except:
         log.exception("Unexpected error: %s",sys.exc_info())
         raise
     finally:
-        log.debug('finally for run')
+        log.debug('finally for %s',command_string)
 
-def docker_pull(docker_pull_cmd,log,state,metadata):
-    log.debug('container image pull command: \n  %s',docker_pull_cmd)
-    if 'PACKTIVITY_DRYRUN' in os.environ:
-        return
-    try:
-        with logutils.setup_logging_topic(metadata,state,'pull', return_logger = True) as pulllog:
-            proc = subprocess.Popen(shlex.split(docker_pull_cmd), stderr = subprocess.STDOUT, stdout = subprocess.PIPE, bufsize=1, close_fds = True)
-            log.debug('started pull subprocess with pid %s. now wait to finish',proc.pid)
-            time.sleep(0.5)
-            log.debug('process children: %s',[x for x in psutil.Process(proc.pid).children(recursive = True)])
+def race_spec(state,environment,log,job):
+    if 'command' in job:
+        container_argv, container_stdin = command_argv(environment,job,log)
+    elif 'script' in job:
+        container_argv, container_stdin = script_argv(environment,job,log)
+    else:
+        raise RuntimeError('do not know yet how to run this...')
 
-            for line in iter(proc.stdout.readline, b''):
-                pulllog.info(line.strip())
-            while proc.poll() is None:
-                pass
+    # volume mounts (resources, parameter mounts and state mounts)
+    state_mounts = state_context_to_mounts(state)
+    par_mounts   = prepare_par_mounts(environment['par_mounts'], state)
+    rsrcs_opts, rsrcs_mounts = resource_mounts(state,environment,log)
 
-            proc.stdout.close()
+    return {
+        'mounts'  : state_mounts + par_mounts + rsrcs_mounts,
+        'image'   : ':'.join([environment['image'],environment['imagetag']]),
+        'workdir' : environment['workdir'],
+        'argv'    : container_argv,
+        'stdin'   : container_stdin
+    }
 
-        log.debug('pull subprocess finished. return code: %s',proc.returncode)
-        if proc.returncode:
-            log.error('non-zero return code raising exception')
-            raise subprocess.CalledProcessError(returncode =  proc.returncode, cmd = docker_pull_cmd)
-        log.debug('moving on from pull')
-    except RuntimeError as e:
-        log.exception('caught RuntimeError')
-        raise e
-    except subprocess.CalledProcessError as exc:
-        log.exception('subprocess failed. code: %s,  command %s',exc.returncode,exc.cmd)
-        raise RuntimeError('failed container image pull subprocess in docker_enc_handler.')
-    except:
-        log.exception("Unexpected error: %s",sys.exc_info())
-        raise
-    finally:
-        log.debug('finally for pull')
+def run_containers_in_docker_runtime(state,log,metadata,race_spec):
+    if 'PACKTIVITY_DOCKER_NOPULL' not in os.environ:
+        execute_and_tail_subprocess(metadata,state,log,'docker pull {}'.format(race_spec['image']), logging_topic = 'pull')
+
+    cmdline = docker_execution_cmdline(state,log,metadata,race_spec)
+    execute_and_tail_subprocess(metadata,state,log,cmdline, stdin_content = race_spec['stdin'], logging_topic = 'run')
 
 
 @executor('docker-encapsulated')
 def docker_enc_handler(environment,state,job,metadata):
     with logutils.setup_logging_topic(metadata,state,'step',return_logger = True) as log:
-        if 'command' in job:
-            stdin = False
-            container_argv, container_stdin = command_argv(environment,job,log)
-        elif 'script' in job:
-            stdin = True
-            container_argv, container_stdin = script_argv(environment,job,log)
-        else:
-            raise RuntimeError('do not know yet how to run this...')
+        rspec = race_spec(state,environment,log,job)
 
-        cmdline = docker_execution_cmdline(
-            state,environment,log,metadata,
-            stdin = stdin,
-            cmd_argv = container_argv
-        )
-
-        if 'PACKTIVITY_DOCKER_NOPULL' not in os.environ:
-            log.info('prepare pull')
-            docker_pull_cmd = 'docker pull {container}:{tag}'.format(
-                container = environment['image'],
-                tag = environment['imagetag']
-            )
-            docker_pull(docker_pull_cmd,log,state,metadata)
-        execute_docker(metadata,state,log,cmdline, stdin_content = container_stdin)
+        log.info('rspec is\n{}'.format(json.dumps(rspec, indent = 4)))
+        run_containers_in_docker_runtime(state,log,metadata,rspec)
 
 @executor('noop-env')
 def noop_env(environment,state,job,metadata):
