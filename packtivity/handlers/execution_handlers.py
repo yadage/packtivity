@@ -165,6 +165,19 @@ def docker_execution_cmdline(state,log,metadata, race_spec):
         command    = quoted_string
     )
 
+def singularity_execution_cmdline(state,log,metadata, race_spec):
+    #for running in subprocess
+    quoted_string = ' '.join(map(pipes.quote,race_spec['argv']))
+
+
+    from os.path import expanduser
+    home = expanduser("~")
+    return 'singularity exec -C -B {home}:{home} docker://{image} {command}'.format(
+        home       = home,
+        image	   = race_spec['image'],
+        command    = quoted_string
+    )
+
 def script_argv(environment,job,log):
     script = job['script']
     interpreter = job['interpreter']
@@ -200,7 +213,9 @@ def execute_and_tail_subprocess(metadata,state,log,command_string,stdin_content 
             proc = None
             if stdin_content:
                 log.debug('stdin: \n%s',stdin_content)
-                proc = subprocess.Popen(shlex.split(command_string),
+                argv = shlex.split(command_string)
+                log.debug('argv: %s', argv)
+                proc = subprocess.Popen(argv,
                                         stdin = subprocess.PIPE,
                                         stderr = subprocess.STDOUT,
                                         stdout = subprocess.PIPE,
@@ -213,7 +228,11 @@ def execute_and_tail_subprocess(metadata,state,log,command_string,stdin_content 
 
             log.debug('started subprocess with pid %s. now wait to finish',proc.pid)
             time.sleep(0.5)
-            log.debug('process children: %s',[x for x in psutil.Process(proc.pid).children(recursive = True)])
+
+            try: #some issues on some linux machines.. swallow exception
+                log.debug('process children: %s',[x for x in psutil.Process(proc.pid).children(recursive = True)])
+            except:
+                pass
 
             for line in iter(proc.stdout.readline, b''):
                 subproclog.info(line.strip())
@@ -262,14 +281,25 @@ def run_containers_in_docker_runtime(state,log,metadata,race_spec):
     cmdline = docker_execution_cmdline(state,log,metadata,race_spec)
     execute_and_tail_subprocess(metadata,state,log,cmdline, stdin_content = race_spec['stdin'], logging_topic = 'run')
 
+def run_containers_in_singularity_runtime(state,log,metadata,race_spec):
+    cmdline = singularity_execution_cmdline(state,log,metadata,race_spec)
+    execute_and_tail_subprocess(metadata,state,log,cmdline, stdin_content = race_spec['stdin'], logging_topic = 'run')
+
 
 @executor('docker-encapsulated')
 def docker_enc_handler(environment,state,job,metadata):
     with logutils.setup_logging_topic(metadata,state,'step',return_logger = True) as log:
         rspec = race_spec(state,environment,log,job)
 
-        log.info('rspec is\n{}'.format(json.dumps(rspec, indent = 4)))
-        run_containers_in_docker_runtime(state,log,metadata,rspec)
+        log.debug('rspec is\n{}'.format(json.dumps(rspec, indent = 4)))
+
+        runtimes = {
+            'docker'     : run_containers_in_docker_runtime,
+            'singularity': run_containers_in_singularity_runtime
+        }
+
+        run = runtimes[os.environ.get('PACKTIVITY_CONTAINER_RUNTIME','docker')]
+        run(state,log,metadata,rspec)
 
 @executor('noop-env')
 def noop_env(environment,state,job,metadata):
