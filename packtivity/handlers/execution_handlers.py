@@ -236,10 +236,8 @@ def execute_and_tail_subprocess(metadata,state,log,command_string,stdin_content 
 
 def race_spec(state,environment,log,job):
     if 'command' in job:
-        stdin = False
         container_argv, container_stdin = command_argv(environment,job,log)
     elif 'script' in job:
-        stdin = True
         container_argv, container_stdin = script_argv(environment,job,log)
     else:
         raise RuntimeError('do not know yet how to run this...')
