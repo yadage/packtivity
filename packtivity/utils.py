@@ -23,7 +23,7 @@ def mkdir_p(path):
             raise
 
 def leaf_iterator(jsonable):
-    if not isinstance(jsonable,(list,tuple)):
+    if not isinstance(jsonable,(list,dict)):
         yield jsonpointer.JsonPointer(''), jsonable
     else:
         allleafs = jq.jq('leaf_paths').transform(jsonable, multiple_output = True)

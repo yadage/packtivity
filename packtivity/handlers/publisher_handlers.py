@@ -36,7 +36,6 @@ def interpolated_pub_handler(publisher,parameters,state):
         else:
             log.warning((forinterp,'value'))
             resultval = value.format(workdir = state.readwrite[0],value = forinterp)
-
         globexpr = resultval
         if publisher['relative_paths'] and os.path.commonprefix([state.readwrite[0],globexpr]) == '':
             globexpr = os.path.join(state.readwrite[0],resultval)
@@ -48,7 +47,6 @@ def interpolated_pub_handler(publisher,parameters,state):
              #if it's a string and the full path exists replace relative path
              resultval = globexpr
         if path.path=='': #there can only ever be a single root leaf
-            print 'RETURNING ', result
             return resultval
         path.set(result,resultval)
     return result

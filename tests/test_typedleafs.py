@@ -100,6 +100,3 @@ def test_modify():
     tl['single_thing'] = tlnew.typed()
     assert type(tlnew.typed()) == MyClass
     assert tl['single_thing'].json() == tlnew.typed().json()
-
-    item = tl.pop('single_thing')
-    assert item.json() == tlnew.typed().json()

@@ -5,7 +5,6 @@ import jsonpath_rw
 import copy
 import base64
 import importlib
-import collections
 from six import string_types
 import logging
 

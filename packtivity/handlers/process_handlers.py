@@ -15,9 +15,7 @@ def stringinterp_handler(process_spec,parameters, state):
     else:
         command = process_spec['cmd'].format(value = parameters.typed())
 
-    return {
-        'command': command
-    }
+    return {'command': command}
 
 @process('interpolated-script-cmd')
 def interp_script(process_spec,parameters, state):
@@ -29,10 +27,7 @@ def interp_script(process_spec,parameters, state):
         script = process_spec['script'].format(*flattened_args)
     else:
         script = process_spec['script'].format(value = parameters.typed())
-    return {
-        'script':script,
-        'interpreter':process_spec['interpreter']
-    }
+    return {'script':script, 'interpreter':process_spec['interpreter']}
 
 @process('manual-instructions-proc')
 def manual_proc(process_spec,parameters, state):
