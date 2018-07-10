@@ -1,13 +1,13 @@
 import pytest
 import packtivity.syncbackends
-
+from packtivity.typedleafs import TypedLeafs
 
 def test_build_oneline_job(default_handler_config,basic_localfs_state):
     job = packtivity.syncbackends.build_job(
     {
         'process_type':'string-interpolated-cmd',
         'cmd': 'hello {one} {two}'},
-        {'one':'ONE', 'two':'TWO'},
+        TypedLeafs({'one':'ONE', 'two':'TWO'}),
         basic_localfs_state,
         default_handler_config
     )
@@ -20,7 +20,7 @@ def test_build_script_job(default_handler_config,basic_localfs_state):
         'process_type':'interpolated-script-cmd',
         'interpreter':'sh',
         'script': 'hello {one} {two}\n echo another line {two}'},
-        {'one':'ONE', 'two':'TWO'},
+        TypedLeafs({'one':'ONE', 'two':'TWO'}),
         basic_localfs_state,
         default_handler_config
     )

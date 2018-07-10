@@ -9,7 +9,9 @@ def docker(environment,parameters,state):
 
     jsonpars = parameters.json()
     for p,v in parameters.leafs():
-        p.set(jsonpars, v)
+        if p.path == '': #there is only one root object bail out of loop
+            jsonpars = v
+            break
 
     for i,x in enumerate(environment['par_mounts']):
         script = x.pop('jqscript')

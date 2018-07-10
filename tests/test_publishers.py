@@ -8,9 +8,9 @@ def test_parpub(tmpdir,basic_localfs_state):
 			'hello': 'mypar'
 		}
 	}
-	pars = {
+	pars = TypedLeafs({
 		'mypar': 'myvalue'
-	}
+	})
 	pubbed = handlers['frompar-pub']['default'](pub,pars,basic_localfs_state)
 	assert pubbed == {'hello':'myvalue'}
 
@@ -24,9 +24,9 @@ def test_interp_pub(tmpdir,basic_localfs_state):
 		'relative_paths': False,
 		'glob': False
 	}
-	pars = {
+	pars = TypedLeafs({
 		'mypar': 'myvalue'
-	}
+	})
 	pubbed = handlers['interpolated-pub']['default'](pub,pars,basic_localfs_state)
 	assert pubbed == {'hello': 'hello_myvalue_world'}
 
@@ -41,9 +41,9 @@ def test_interp_pub_glob(tmpdir,basic_localfs_state):
 		'relative_paths': False,
 		'glob': True
 	}
-	pars = {
+	pars = TypedLeafs({
 		'mypar': 'myvalue'
-	}
+	})
 	pubbed = handlers['interpolated-pub']['default'](pub,pars,basic_localfs_state)
 
 	filelist = map(str,[tmpdir.join('hello_myvalue_1.txt'),tmpdir.join('hello_myvalue_2.txt')])
@@ -60,9 +60,9 @@ def test_interp_pub_glob_relative(tmpdir,basic_localfs_state):
 		'relative_paths': True,
 		'glob': False
 	}
-	pars = {
+	pars = TypedLeafs({
 		'mypar': 'myvalue'
-	}
+	})
 	pubbed = handlers['interpolated-pub']['default'](pub,pars,basic_localfs_state)
 	filelist = map(str,[tmpdir.join('hello_myvalue_1.txt'),tmpdir.join('hello_myvalue_2.txt')])
 	assert set(pubbed['hello']) == set(filelist)
@@ -77,9 +77,9 @@ def test_fromparjq_pub(tmpdir,basic_localfs_state):
 		'tryExact': True,
 		'glob': False
 	}
-	pars = {
+	pars = TypedLeafs({
 		'mypar': 'myvalue'
-	}
+	})
 	pars = TypedLeafs(pars)
 	pubbed = handlers['fromparjq-pub']['default'](pub,pars,basic_localfs_state)
 	filelist = map(str,[tmpdir.join('hello_myvalue_1.txt'),tmpdir.join('hello_myvalue_2.txt')])
@@ -95,10 +95,9 @@ def test_fromparjq_pub_relative(tmpdir,basic_localfs_state):
 		'glob': True,
 		'tryExact': True
 	}
-	pars = {
+	pars = TypedLeafs({
 		'mypar': 'myvalue'
-	}
-	pars = TypedLeafs(pars)
+	})
 	pubbed = handlers['fromparjq-pub']['default'](pub,pars,basic_localfs_state)
 	filelist = map(str,[tmpdir.join('hello_myvalue_1.txt'),tmpdir.join('hello_myvalue_2.txt')])
 	assert set(pubbed['hello']) == set(filelist)
@@ -112,9 +111,9 @@ def test_glob_pub(tmpdir,basic_localfs_state):
 		'outputkey': 'hello',
 		'globexpression': 'hello_*.txt',
 	}
-	pars = {
+	pars = TypedLeafs({
 		'mypar': 'myvalue'
-	}
+	})
 	pubbed = handlers['fromglob-pub']['default'](pub,pars,basic_localfs_state)
 
 	filelist = map(str,[tmpdir.join('hello_1.txt'),tmpdir.join('hello_2.txt')])
@@ -126,8 +125,8 @@ def test_yml_pub(tmpdir,basic_localfs_state):
 		'publisher_type': 'fromyaml-pub',
 		'yamlfile': 'hello.yml',
 	}
-	pars = {
+	pars = TypedLeafs({
 		'mypar': 'myvalue'
-	}
+	})
 	pubbed = handlers['fromyaml-pub']['default'](pub,pars,basic_localfs_state)
 	assert pubbed == {'hello': 'world'}

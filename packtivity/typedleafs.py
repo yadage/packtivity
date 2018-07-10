@@ -68,7 +68,7 @@ class LeafModel(object):
             json[self.keyword] = self._types2str[type(obj)]
         return json
 
-class TypedLeafs(collections.MutableMapping):
+class TypedLeafs(object):
     def __init__(self,data, leafmodel = None, idleafs = False):
         self.leafmodel = leafmodel
         self._leafmodel = LeafModel(leafmodel)
@@ -130,7 +130,7 @@ class TypedLeafs(collections.MutableMapping):
         return json.dumps(data, default = self._leafmodel.dumper)
 
     def replace(self, path, value):
-        path.set(self.json(), value)
+        self._jsonable = TypedLeafs(path.set(self.json(), value, inplace=False), self.leafmodel).json()
 
     ### representation methods
     def json(self):
@@ -165,6 +165,9 @@ class TypedLeafs(collections.MutableMapping):
         return TypedLeafs(jq.jq(jq_program).transform(self.typed(idleafs = True), *args, **kwargs), self.leafmodel, idleafs = True)
 
     def leafs(self):
-        ptrs = [jsonpointer.JsonPointer.from_parts(parts) for parts in self.jq('leaf_paths', multiple_output = True).typed()]
-        for p in ptrs:
-            yield p, p.get(self.typed())
+        if not isinstance(self.typed(),(list,dict)):
+            yield jsonpointer.JsonPointer(''), self.typed()
+        else:
+            ptrs = [jsonpointer.JsonPointer.from_parts(parts) for parts in self.jq('leaf_paths', multiple_output = True).typed()]
+            for p in ptrs:
+                yield p, p.get(self.typed())
