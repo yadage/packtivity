@@ -23,10 +23,13 @@ def mkdir_p(path):
             raise
 
 def leaf_iterator(jsonable):
-    allleafs = jq.jq('leaf_paths').transform(jsonable, multiple_output = True)
-    leafpointers = [jsonpointer.JsonPointer.from_parts(x) for x in allleafs]
-    for x in leafpointers:
-        yield x,x.get(jsonable)
+    if not isinstance(jsonable,(list,tuple)):
+        yield jsonpointer.JsonPointer(''), jsonable
+    else:
+        allleafs = jq.jq('leaf_paths').transform(jsonable, multiple_output = True)
+        leafpointers = [jsonpointer.JsonPointer.from_parts(x) for x in allleafs]
+        for x in leafpointers:
+            yield x,x.get(jsonable)
 
 def load_packtivity(spec,toplevel = os.getcwd() ,schemasource = yadageschemas.schemadir, validate = True):
     #in case that spec is a json reference string, we will treat it as such

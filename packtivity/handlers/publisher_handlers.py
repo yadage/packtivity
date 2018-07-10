@@ -23,12 +23,20 @@ def process_attr_pub_handler(publisher,parameters,state):
 
 @publisher('interpolated-pub')
 def interpolated_pub_handler(publisher,parameters,state):
-    forinterp = parameters.copy()
-    forinterp.update(workdir = state.readwrite[0])
+    forinterp = parameters.copy().typed()
     result = copy.deepcopy(publisher['publish'])
     for path,value in utils.leaf_iterator(publisher['publish']):
         if not isinstance(value, string_types): continue
-        resultval = value.format(**forinterp)
+        if isinstance(forinterp, dict):
+            log.warning((forinterp,'dict'))
+            resultval = value.format(workdir = state.readwrite[0] ,**forinterp)
+        elif isinstance(forinterp, list):
+            log.warning((forinterp,'list'))
+            resultval = value.format(workdir = state.readwrite[0],*forinterp)
+        else:
+            log.warning((forinterp,'value'))
+            resultval = value.format(workdir = state.readwrite[0],value = forinterp)
+
         globexpr = resultval
         if publisher['relative_paths'] and os.path.commonprefix([state.readwrite[0],globexpr]) == '':
             globexpr = os.path.join(state.readwrite[0],resultval)
@@ -39,6 +47,9 @@ def interpolated_pub_handler(publisher,parameters,state):
         else:
              #if it's a string and the full path exists replace relative path
              resultval = globexpr
+        if path.path=='': #there can only ever be a single root leaf
+            print 'RETURNING ', result
+            return resultval
         path.set(result,resultval)
     return result
 

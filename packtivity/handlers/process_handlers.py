@@ -6,16 +6,31 @@ handlers,process = utils.handler_decorator()
 
 @process('string-interpolated-cmd')
 def stringinterp_handler(process_spec,parameters, state):
-    flattened = {k:v if not (type(v)==list) else ' '.join([str(x) for x in v]) for k,v in parameters.items()}
+    if isinstance(parameters.typed(),dict):
+        flattened_kwargs = {k:v if not (type(v)==list) else ' '.join([str(x) for x in v]) for k,v in parameters.typed().items()}
+        command = process_spec['cmd'].format(**flattened_kwargs)
+    elif isinstance(parameters.typed(),list):
+        flattened_args = [v if not (type(v)==list) else ' '.join([str(x) for x in v]) for v in parameters.typed()]
+        command = process_spec['cmd'].format(*flattened_args)
+    else:
+        command = process_spec['cmd'].format(value = parameters.typed())
+
     return {
-        'command':process_spec['cmd'].format(**flattened)
+        'command': command
     }
 
 @process('interpolated-script-cmd')
 def interp_script(process_spec,parameters, state):
-    flattened = {k:v if not (type(v)==list) else ' '.join([str(x) for x in v]) for k,v in parameters.items()}
+    if isinstance(parameters.typed(),dict):
+        flattened_kwargs = {k:v if not (type(v)==list) else ' '.join([str(x) for x in v]) for k,v in parameters.typed().items()}
+        script = process_spec['script'].format(**flattened_kwargs)
+    elif isinstance(parameters.typed(),list):
+        flattened_args = [v if not (type(v)==list) else ' '.join([str(x) for x in v]) for v in parameters.typed()]
+        script = process_spec['script'].format(*flattened_args)
+    else:
+        script = process_spec['script'].format(value = parameters.typed())
     return {
-        'script':process_spec['script'].format(**flattened),
+        'script':script,
         'interpreter':process_spec['interpreter']
     }
 
