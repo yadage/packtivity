@@ -116,7 +116,7 @@ def multiproc_backend(backendstring, backendopts):
     return is_async, backend
 
 @backend('externalasync')
-def multiproc_backend(backendstring, backendopts):
+def externalasync_backend(backendstring, backendopts):
     _,externalbackend = backendstring.split(':')
     if externalbackend == 'default':
         external = asyncbackends.DefaultExternalJobBackend()
@@ -140,7 +140,7 @@ def fromshellenv_backend(backendstring, backendopts):
     return is_async, backendclass(**backendopts)
 
 @backend('defaultsync')
-def fromshellenv_backend(backendstring, backendopts):
+def defaultsync_backend(backendstring, backendopts):
     return is_sync, syncbackends.defaultsyncbackend(**backendopts)
 
 def backend_from_string(backendstring,backendopts = None):
