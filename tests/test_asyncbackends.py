@@ -12,7 +12,7 @@ def test_multiproc(tmpdir,basic_localfs_state,localproc_packspec):
 	while not backend.ready(proxy):
 		pass
 	assert backend.successful(proxy)
-	assert backend.result(proxy) == {'output': str(tmpdir.join('helloworld.txt'))}
+	assert backend.result(proxy).json() == {'output': str(tmpdir.join('helloworld.txt'))}
 	assert tmpdir.join('helloworld.txt').check() == True
 
 
