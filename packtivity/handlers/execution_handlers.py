@@ -15,15 +15,16 @@ import packtivity.logutils as logutils
 
 handlers,executor = utils.handler_decorator()
 
-def sourcepath(path):
-    if 'PACKTIVITY_WORKDIR_LOCATION' in os.environ:
-        old,new = os.environ['PACKTIVITY_WORKDIR_LOCATION'].split(':')
+def sourcepath(config,path):
+    workdir_location = config.workdir_location()
+    if workdir_location:
+        old,new = workdir_location.split(':')
         dockerpath = new+path.rsplit(old,1)[1]
         return dockerpath
     else:
         return path
 
-def state_context_to_mounts(state):
+def state_context_to_mounts(config,state):
     readwrites  = state.readwrite
     readonlies = state.readonly
 
@@ -31,20 +32,20 @@ def state_context_to_mounts(state):
     for rw in readwrites:
         mounts.append({
             'type': 'bind',
-            'source': sourcepath(os.path.abspath(rw)),
+            'source': sourcepath(config,os.path.abspath(rw)),
             'destination': rw,
             'readonly': False
         })
     for ro in readonlies:
         mounts.append({
             'type': 'bind',
-            'source': sourcepath(os.path.abspath(ro)),
+            'source': sourcepath(config,os.path.abspath(ro)),
             'destination': ro,
             'readonly': False
         })
     return mounts
 
-def prepare_par_mounts(parmounts,state):
+def prepare_par_mounts(config,parmounts,state):
     mounts = []
     for i,x in enumerate(parmounts):
         parmountfile = os.path.join(state.readwrite[0],'_yadage_parmount_{}.txt'.format(i))
@@ -53,18 +54,15 @@ def prepare_par_mounts(parmounts,state):
 
         mounts.append({
             'type': 'bind',
-            'source': sourcepath(os.path.abspath(parmountfile)),
+            'source': sourcepath(config,os.path.abspath(parmountfile)),
             'destination': x['mountpath'],
             'readonly': False
         })
 
     return mounts
 
-def cvmfs_from_volume_plugin(cvmfs_repos = None):
-    if not cvmfs_repos:
-        cvmfs_repos = yaml.load(os.environ.get('PACKTIVITY_CVMFS_REPOS','null'))
-    if not cvmfs_repos:
-        cvmfs_repos  = ['atlas.cern.ch','atlas-condb.cern.ch','sft.cern.ch']
+def cvmfs_from_volume_plugin(config,cvmfs_repos = None):
+    cvmfs_repos = config.cvmfs_repos()
 
     options = '--security-opt label:disable'
     mounts = []
@@ -78,32 +76,32 @@ def cvmfs_from_volume_plugin(cvmfs_repos = None):
 
     return options, mounts
 
-def cvmfs_from_external_mount():
+def cvmfs_from_external_mount(config):
     return '', [{
         'type': 'bind',
-        'source': os.environ.get('PACKTIVITY_CVMFS_LOCATION','/cvmfs'),
+        'source': config.cvmfs_location(),
         'destination': '/cvmfs',
         'readonly': False
     }]
 
-def cvmfs_mount():
-    cvmfs_source = os.environ.get('PACKTIVITY_CVMFS_SOURCE','external')
+def cvmfs_mount(config):
+    cvmfs_source = config.cvmfs_source()
     if cvmfs_source == 'external':
-        return cvmfs_from_external_mount()
+        return cvmfs_from_external_mount(config)
     elif cvmfs_source == 'voldriver':
-        return cvmfs_from_volume_plugin()
+        return cvmfs_from_volume_plugin(config)
     else:
         raise RuntimeError('unknown CVMFS location requested')
 
-def auth_mount():
+def auth_mount(config):
     return [{
         'type': 'bind',
-        'source': os.environ.get('PACKTIVITY_AUTH_LOCATION','/home/recast/recast_auth'),
+        'source': config.auth_location(),
         'destination': '/recast_auth',
         'readonly': False
     }]
 
-def resource_mounts(state,environment,log):
+def resource_mounts(config,state,environment,log):
     report = '''\n\
 --------------
 run in docker container image: {image}
@@ -123,15 +121,15 @@ resources: {resources}
     options, mounts = '', []
 
     if do_cvmfs:
-        cvfms_options, cvmfs_mounts = cvmfs_mount()
+        cvfms_options, cvmfs_mounts = cvmfs_mount(config)
         options += cvfms_options
         mounts  += cvmfs_mounts
     if do_auth:
-        mounts  += auth_mount()
+        mounts  += auth_mount(config)
 
     return options, mounts
 
-def docker_execution_cmdline(state,log,metadata, race_spec):
+def docker_execution_cmdline(config,state,log,metadata, race_spec):
 
     #docker specific container id
     cidfile = '{}/{}.cid'.format(state.metadir,metadata['name'])
@@ -140,7 +138,7 @@ def docker_execution_cmdline(state,log,metadata, race_spec):
     cid_file = '--cidfile {}'.format(cidfile)
 
     #docker specific execution modifier
-    custom_mod = ' {}'.format(os.environ.get('PACKTIVITY_DOCKER_CMD_MOD',''))
+    custom_mod = ' {}'.format(config.container_runtime_modifier())
 
     #for running in subprocess
     quoted_string = ' '.join(map(pipes.quote,race_spec['argv']))
@@ -202,10 +200,10 @@ command: {command}
     in_docker_cmd = envmod + job['command']
     return ['sh', '-c', in_docker_cmd], None
 
-def execute_and_tail_subprocess(metadata,state,log,command_string,stdin_content = None, logging_topic = 'execution'):
+def execute_and_tail_subprocess(config,metadata,state,log,command_string,stdin_content = None, logging_topic = 'execution'):
     log.debug('command: \n%s',command_string)
     log.debug('stdin if any: %s', stdin_content)
-    if 'PACKTIVITY_DRYRUN' in os.environ:
+    if config.dry_run():
         return
     try:
         with logutils.setup_logging_topic(metadata,state,logging_topic, return_logger = True) as subproclog:
@@ -253,7 +251,7 @@ def execute_and_tail_subprocess(metadata,state,log,command_string,stdin_content 
     finally:
         log.debug('finally for %s',command_string)
 
-def race_spec(state,environment,log,job):
+def race_spec(config,state,environment,log,job):
     if 'command' in job:
         container_argv, container_stdin = command_argv(environment,job,log)
     elif 'script' in job:
@@ -262,9 +260,9 @@ def race_spec(state,environment,log,job):
         raise RuntimeError('do not know yet how to run this...')
 
     # volume mounts (resources, parameter mounts and state mounts)
-    state_mounts = state_context_to_mounts(state)
-    par_mounts   = prepare_par_mounts(environment['par_mounts'], state)
-    rsrcs_opts, rsrcs_mounts = resource_mounts(state,environment,log)
+    state_mounts = state_context_to_mounts(config,state)
+    par_mounts   = prepare_par_mounts(config,environment['par_mounts'], state)
+    rsrcs_opts, rsrcs_mounts = resource_mounts(config,state,environment,log)
 
     return {
         'mounts'  : state_mounts + par_mounts + rsrcs_mounts,
@@ -274,22 +272,23 @@ def race_spec(state,environment,log,job):
         'stdin'   : container_stdin
     }
 
-def run_containers_in_docker_runtime(state,log,metadata,race_spec):
-    if 'PACKTIVITY_DOCKER_NOPULL' not in os.environ:
-        execute_and_tail_subprocess(metadata,state,log,'docker pull {}'.format(race_spec['image']), logging_topic = 'pull')
+def run_containers_in_docker_runtime(config,state,log,metadata,race_spec):
+    if config.pull_software():
+        execute_and_tail_subprocess(config,metadata,state,log,'docker pull {}'.format(race_spec['image']), logging_topic = 'pull')
 
-    cmdline = docker_execution_cmdline(state,log,metadata,race_spec)
-    execute_and_tail_subprocess(metadata,state,log,cmdline, stdin_content = race_spec['stdin'], logging_topic = 'run')
+    cmdline = docker_execution_cmdline(config,state,log,metadata,race_spec)
+    execute_and_tail_subprocess(config,metadata,state,log,cmdline, stdin_content = race_spec['stdin'], logging_topic = 'run')
 
-def run_containers_in_singularity_runtime(state,log,metadata,race_spec):
+def run_containers_in_singularity_runtime(config,state,log,metadata,race_spec):
     cmdline = singularity_execution_cmdline(state,log,metadata,race_spec)
-    execute_and_tail_subprocess(metadata,state,log,cmdline, stdin_content = race_spec['stdin'], logging_topic = 'run')
+    execute_and_tail_subprocess(config,metadata,state,log,cmdline, stdin_content = race_spec['stdin'], logging_topic = 'run')
 
 
 @executor('docker-encapsulated')
-def docker_enc_handler(environment,state,job,metadata):
+def docker_enc_handler(config,environment,state,job,metadata):
+
     with logutils.setup_logging_topic(metadata,state,'step',return_logger = True) as log:
-        rspec = race_spec(state,environment,log,job)
+        rspec = race_spec(config.container_config,state,environment,log,job)
 
         log.debug('rspec is\n{}'.format(json.dumps(rspec, indent = 4)))
 
@@ -298,17 +297,17 @@ def docker_enc_handler(environment,state,job,metadata):
             'singularity': run_containers_in_singularity_runtime
         }
 
-        run = runtimes[os.environ.get('PACKTIVITY_CONTAINER_RUNTIME','docker')]
-        run(state,log,metadata,rspec)
+        run = runtimes[config.container_config.container_runtime()]
+        run(config.container_config,state,log,metadata,rspec)
 
 @executor('noop-env')
-def noop_env(environment,state,job,metadata):
+def noop_env(config,environment,state,job,metadata):
     with logutils.setup_logging_topic(metadata,state,'step',return_logger = True) as log:
         log.info('state is: %s',state)
         log.info('would be running this job: %s',job)
 
 @executor('localproc-env')
-def localproc_env(environment,state,job,metadata):
+def localproc_env(config,environment,state,job,metadata):
     with logutils.setup_logging_topic(metadata,state,'step',return_logger = True) as log:
         olddir = os.path.realpath(os.curdir)
         workdir = state.readwrite[0]
@@ -328,14 +327,14 @@ def localproc_env(environment,state,job,metadata):
             os.chdir(olddir)
 
 @executor('manual-env')
-def manual_env(environment,state,job,metadata):
+def manual_env(config,environment,state,job,metadata):
     instructions = environment['instructions']
     ctx = yaml.safe_dump(state,default_flow_style = False)
     click.secho(instructions, fg = 'blue')
     click.secho(ctx, fg = 'cyan')
 
 @executor('test-env')
-def test_process(environment,state,job,metadata):
+def test_process(config,environment,state,job,metadata):
     with logutils.setup_logging_topic(metadata,state,'step',return_logger = True) as log:
         log.info('a complicated test environment')
         log.info('job:  {}'.format(job))
