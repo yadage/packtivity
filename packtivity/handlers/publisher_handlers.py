@@ -28,13 +28,10 @@ def interpolated_pub_handler(publisher,parameters,state):
     for path,value in utils.leaf_iterator(publisher['publish']):
         if not isinstance(value, string_types): continue
         if isinstance(forinterp, dict):
-            log.warning((forinterp,'dict'))
             resultval = value.format(workdir = state.readwrite[0] ,**forinterp)
         elif isinstance(forinterp, list):
-            log.warning((forinterp,'list'))
             resultval = value.format(workdir = state.readwrite[0],*forinterp)
         else:
-            log.warning((forinterp,'value'))
             resultval = value.format(workdir = state.readwrite[0],value = forinterp)
         globexpr = resultval
         if publisher['relative_paths'] and os.path.commonprefix([state.readwrite[0],globexpr]) == '':
