@@ -16,7 +16,7 @@ import packtivity.logutils as logutils
 handlers,executor = utils.handler_decorator()
 
 def sourcepath(config,path):
-    workdir_location = config.workdir_location()
+    workdir_location = config.container_config.workdir_location()
     if workdir_location:
         old,new = workdir_location.split(':')
         dockerpath = new+path.rsplit(old,1)[1]
@@ -62,7 +62,7 @@ def prepare_par_mounts(config,parmounts,state):
     return mounts
 
 def cvmfs_from_volume_plugin(config,cvmfs_repos = None):
-    cvmfs_repos = config.cvmfs_repos()
+    cvmfs_repos = config.container_config.cvmfs_repos()
 
     options = '--security-opt label:disable'
     mounts = []
@@ -79,13 +79,13 @@ def cvmfs_from_volume_plugin(config,cvmfs_repos = None):
 def cvmfs_from_external_mount(config):
     return '', [{
         'type': 'bind',
-        'source': config.cvmfs_location(),
+        'source': config.container_config.cvmfs_location(),
         'destination': '/cvmfs',
         'readonly': False
     }]
 
 def cvmfs_mount(config):
-    cvmfs_source = config.cvmfs_source()
+    cvmfs_source = config.container_config.cvmfs_source()
     if cvmfs_source == 'external':
         return cvmfs_from_external_mount(config)
     elif cvmfs_source == 'voldriver':
@@ -96,7 +96,7 @@ def cvmfs_mount(config):
 def auth_mount(config):
     return [{
         'type': 'bind',
-        'source': config.auth_location(),
+        'source': config.container_config.auth_location(),
         'destination': '/recast_auth',
         'readonly': False
     }]
@@ -138,7 +138,7 @@ def docker_execution_cmdline(config,state,log,metadata, race_spec):
     cid_file = '--cidfile {}'.format(cidfile)
 
     #docker specific execution modifier
-    custom_mod = ' {}'.format(config.container_runtime_modifier())
+    custom_mod = ' {}'.format(config.container_config.container_runtime_modifier())
 
     #for running in subprocess
     quoted_string = ' '.join(map(pipes.quote,race_spec['argv']))
@@ -206,7 +206,7 @@ def execute_and_tail_subprocess(config,metadata,state,log,command_string,stdin_c
     if config.dry_run():
         return
     try:
-        with logutils.setup_logging_topic(metadata,state,logging_topic, return_logger = True) as subproclog:
+        with logutils.setup_logging_topic(config,metadata,state,logging_topic, return_logger = True) as subproclog:
 
             proc = None
             if stdin_content:
@@ -273,7 +273,7 @@ def race_spec(config,state,environment,log,job):
     }
 
 def run_containers_in_docker_runtime(config,state,log,metadata,race_spec):
-    if config.pull_software():
+    if config.container_config.pull_software():
         execute_and_tail_subprocess(config,metadata,state,log,'docker pull {}'.format(race_spec['image']), logging_topic = 'pull')
 
     cmdline = docker_execution_cmdline(config,state,log,metadata,race_spec)
@@ -287,8 +287,8 @@ def run_containers_in_singularity_runtime(config,state,log,metadata,race_spec):
 @executor('docker-encapsulated')
 def docker_enc_handler(config,environment,state,job,metadata):
 
-    with logutils.setup_logging_topic(metadata,state,'step',return_logger = True) as log:
-        rspec = race_spec(config.container_config,state,environment,log,job)
+    with logutils.setup_logging_topic(config,metadata,state,'step',return_logger = True) as log:
+        rspec = race_spec(config,state,environment,log,job)
 
         log.debug('rspec is\n{}'.format(json.dumps(rspec, indent = 4)))
 
@@ -298,17 +298,17 @@ def docker_enc_handler(config,environment,state,job,metadata):
         }
 
         run = runtimes[config.container_config.container_runtime()]
-        run(config.container_config,state,log,metadata,rspec)
+        run(config,state,log,metadata,rspec)
 
 @executor('noop-env')
 def noop_env(config,environment,state,job,metadata):
-    with logutils.setup_logging_topic(metadata,state,'step',return_logger = True) as log:
+    with logutils.setup_logging_topic(config,metadata,state,'step',return_logger = True) as log:
         log.info('state is: %s',state)
         log.info('would be running this job: %s',job)
 
 @executor('localproc-env')
 def localproc_env(config,environment,state,job,metadata):
-    with logutils.setup_logging_topic(metadata,state,'step',return_logger = True) as log:
+    with logutils.setup_logging_topic(config,metadata,state,'step',return_logger = True) as log:
         olddir = os.path.realpath(os.curdir)
         workdir = state.readwrite[0]
         try:
@@ -335,7 +335,7 @@ def manual_env(config,environment,state,job,metadata):
 
 @executor('test-env')
 def test_process(config,environment,state,job,metadata):
-    with logutils.setup_logging_topic(metadata,state,'step',return_logger = True) as log:
+    with logutils.setup_logging_topic(config,metadata,state,'step',return_logger = True) as log:
         log.info('a complicated test environment')
         log.info('job:  {}'.format(job))
         log.info('env:  {}'.format(environment))

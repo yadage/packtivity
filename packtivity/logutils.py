@@ -12,10 +12,10 @@ def get_base_loggername(metadata):
 def get_topic_loggername(metadata,topic):
     return 'packtivity_logger_{}.{}'.format(metadata['name'],topic)
 
-def default_logging_handlers(log,metadata,state,topic):
+def default_logging_handlers(exec_config,log,metadata,state,topic):
     if topic == 'step':
         sh  = logging.StreamHandler()
-        sh.setLevel(getattr(logging,os.environ.get('PACKTIVITY_LOGGING_STREAM_LEVEL','INFO')))
+        sh.setLevel(getattr(logging,exec_config.stream_loglevel()))
         sh.setFormatter(formatter)
         log.addHandler(sh)
 
@@ -30,7 +30,7 @@ def default_logging_handlers(log,metadata,state,topic):
         log.info("starting file loging for topic: %s", topic)
 
 @contextlib.contextmanager
-def setup_logging_topic(metadata,state,topic,return_logger = False):
+def setup_logging_topic(exec_config, metadata, state, topic, return_logger = False ):
     '''
     a context manager for logging
     it is a context in order to be able to clean up the logging after it's not needed
@@ -43,18 +43,18 @@ def setup_logging_topic(metadata,state,topic,return_logger = False):
     log.setLevel(logging.DEBUG)
     log.propagate = False
 
-    if yaml.load(os.environ.get('PACKTIVITY_LOGGING_DISABLE','false')):
+    if exec_config.disable_logging():
         pass
     else:
         if not log.handlers:
-            customhandlers = os.environ.get('PACKTIVITY_LOGGING_HANDLER')
+            customhandlers = exec_config.custom_logging_handler()
             if customhandlers:
                 module,func = customhandlers.split(':')
                 m = importlib.import_module(module)
                 f = getattr(m,func)
                 f(log,metadata,state,topic)
             else:
-                default_logging_handlers(log,metadata,state,topic)
+                default_logging_handlers(exec_config,log,metadata,state,topic)
 
     yield log if return_logger else None
 
