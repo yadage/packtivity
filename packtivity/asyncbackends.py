@@ -143,9 +143,11 @@ class PythonCallableAsyncBackend(object):
     into nullary python callables which then can be submitted
     into python
     '''
-    def __init__(self,packconfig_spec):
-        self.pack_config = packconfig(**packconfig_spec) if packconfig_spec else packconfig()
-        self.exec_config = ExecutionConfig()
+    def __init__(self,config):
+        config = config or {}
+        self.exec_config = ExecutionConfig(config.pop('exec',None))
+        self.pack_config = packconfig(**config) if config else packconfig()
+
     def submit_callable(self,callable):
         raise NotImplementedError('needs implementation')
 

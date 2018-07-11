@@ -19,13 +19,16 @@ class packconfig(object):
             return 'default'
 
 class container_config(object):
+    def __init__(self, config = None):
+        self.config = config or {}
+
     def workdir_location(self):
         return os.environ.get('PACKTIVITY_WORKDIR_LOCATION')
 
     def pull_software(self):
         if 'PACKTIVITY_DOCKER_NOPULL' in os.environ:
             return False
-        return True
+        return self.config.get('pull_images', True)
 
     def container_runtime(self):
         return os.environ.get('PACKTIVITY_CONTAINER_RUNTIME','docker')
@@ -49,20 +52,27 @@ class container_config(object):
         os.environ.get('PACKTIVITY_AUTH_LOCATION','/home/recast/recast_auth')
 
 class ExecutionConfig(object):
-    def __init__(self):
-        self.container_config = container_config()
+    def __init__(self,config = None):
+        self.config = config or {}
+        self.container_config = container_config(self.config.get('containers'))
 
     def disable_logging(self):
-        return yaml.load(os.environ.get('PACKTIVITY_LOGGING_DISABLE','false'))
+        if 'PACKTIVITY_LOGGING_DISABLE' in os.environ:
+            return yaml.load(os.environ.get('PACKTIVITY_LOGGING_DISABLE','false'))
+        return self.config.get('logging',False)
 
     def custom_logging_handler(self):
         return os.environ.get('PACKTIVITY_LOGGING_HANDLER')
 
     def stream_loglevel(self):
-        return os.environ.get('PACKTIVITY_LOGGING_STREAM_LEVEL','INFO')
+        if 'PACKTIVITY_LOGGING_STREAM_LEVEL' in os.environ:
+            return os.environ.get('PACKTIVITY_LOGGING_STREAM_LEVEL','INFO')
+        return self.config.get('logging_level','INFO')
 
     def dry_run(self):
-        return 'PACKTIVITY_DRYRUN' in os.environ
+        if 'PACKTIVITY_DRYRUN' in os.environ:
+            return os.environ['PACKTIVITY_DRYRUN']
+        return self.config.get('dry_run',False)
 
 def build_job(process,parameters,state,pack_config):
     '''
@@ -159,9 +169,10 @@ def run_packtivity(spec, parameters,state,metadata,pack_config, exec_config):
         return pubdata
 
 class defaultsyncbackend(object):
-    def __init__(self,packconfig_spec = None):
-        self.pack_config = packconfig(**packconfig_spec) if packconfig_spec else packconfig()
-        self.exec_config = ExecutionConfig()
+    def __init__(self,config = None):
+        config = config or {}
+        self.exec_config = ExecutionConfig(config.pop('exec',None))
+        self.pack_config = packconfig(**config) if config else packconfig()
 
     def prepublish(self,spec, parameters, state):
         return prepublish(spec, parameters, state, self.pack_config)
