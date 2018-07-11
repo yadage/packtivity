@@ -74,18 +74,6 @@ class ExecutionConfig(object):
             return os.environ['PACKTIVITY_DRYRUN']
         return self.config.get('dry_run',False)
 
-    def disable_logging(self):
-        return yaml.load(os.environ.get('PACKTIVITY_LOGGING_DISABLE','false'))
-
-    def custom_logging_handler(self):
-        return os.environ.get('PACKTIVITY_LOGGING_HANDLER')
-
-    def stream_loglevel(self):
-        return os.environ.get('PACKTIVITY_LOGGING_STREAM_LEVEL','INFO')
-
-    def dry_run(self):
-        return 'PACKTIVITY_DRYRUN' in os.environ
-
 def build_job(process,parameters,state,pack_config):
     '''
     takes a process template and builds a job out of it using a handler.
