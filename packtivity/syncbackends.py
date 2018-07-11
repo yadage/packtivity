@@ -48,12 +48,21 @@ class container_config(object):
     def auth_location(self):
         os.environ.get('PACKTIVITY_AUTH_LOCATION','/home/recast/recast_auth')
 
-    def dry_run(self):
-        return 'PACKTIVITY_DRYRUN' in os.environ
-
 class ExecutionConfig(object):
     def __init__(self):
         self.container_config = container_config()
+
+    def disable_logging(self):
+        return yaml.load(os.environ.get('PACKTIVITY_LOGGING_DISABLE','false'))
+
+    def custom_logging_handler(self):
+        return os.environ.get('PACKTIVITY_LOGGING_HANDLER')
+
+    def stream_loglevel(self):
+        return os.environ.get('PACKTIVITY_LOGGING_STREAM_LEVEL','INFO')
+
+    def dry_run(self):
+        return 'PACKTIVITY_DRYRUN' in os.environ
 
 def build_job(process,parameters,state,pack_config):
     '''
@@ -133,7 +142,7 @@ def acquire_job_env(spec, parameters,state,metadata,config):
     return None, None
 
 def run_packtivity(spec, parameters,state,metadata,pack_config, exec_config):
-    with logutils.setup_logging_topic(metadata,state,'step',return_logger = True) as log:
+    with logutils.setup_logging_topic(exec_config,metadata,state,'step',return_logger = True) as log:
         parameters, state = finalize_inputs(parameters, state)
         job, env = acquire_job_env(spec, parameters,state,metadata,pack_config)
 

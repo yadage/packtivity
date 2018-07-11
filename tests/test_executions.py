@@ -9,7 +9,7 @@ def test_docker_cvmfs(tmpdir,basic_localfs_state, docker_env_resources, monkeypa
 	state = basic_localfs_state
 	log = logging.getLogger('test')
 	cmdline = docker_execution_cmdline(
-		ExecutionConfig().container_config,
+		ExecutionConfig(),
 		state,log,{'name':'myname'},
 		race_spec = {
 			'workdir': None,
@@ -30,7 +30,7 @@ def test_docker_auth(tmpdir,basic_localfs_state):
 	state = basic_localfs_state
 	log = logging.getLogger('test')
 	cmdline = docker_execution_cmdline(
-		ExecutionConfig().container_config,
+		ExecutionConfig(),
 		state,log,{'name':'myname'},
 		race_spec = {
 			'workdir': None,
