@@ -2,12 +2,14 @@ from packtivity.handlers.publisher_handlers import handlers
 from packtivity.typedleafs import TypedLeafs
 
 from packtivity.handlers.execution_handlers import command_argv, docker_execution_cmdline
+from packtivity.syncbackends import ExecutionConfig
 import logging
 
 def test_docker_cvmfs(tmpdir,basic_localfs_state, docker_env_resources, monkeypatch):
 	state = basic_localfs_state
 	log = logging.getLogger('test')
 	cmdline = docker_execution_cmdline(
+		ExecutionConfig().container_config,
 		state,log,{'name':'myname'},
 		race_spec = {
 			'workdir': None,
@@ -28,6 +30,7 @@ def test_docker_auth(tmpdir,basic_localfs_state):
 	state = basic_localfs_state
 	log = logging.getLogger('test')
 	cmdline = docker_execution_cmdline(
+		ExecutionConfig().container_config,
 		state,log,{'name':'myname'},
 		race_spec = {
 			'workdir': None,

@@ -7,7 +7,7 @@ import json
 import logging
 import yaml
 
-from .syncbackends import prepublish, packconfig, run_packtivity, run_in_env, finalize_inputs, finalize_outputs, acquire_job_env, publish
+from .syncbackends import prepublish, packconfig, ExecutionConfig, run_packtivity, run_in_env, finalize_inputs, finalize_outputs, acquire_job_env, publish
 from packtivity.statecontexts import load_state
 from packtivity.typedleafs import TypedLeafs
 
@@ -144,13 +144,13 @@ class PythonCallableAsyncBackend(object):
     into python
     '''
     def __init__(self,packconfig_spec):
-        self.config = packconfig(**packconfig_spec) if packconfig_spec else packconfig()
-
+        self.pack_config = packconfig(**packconfig_spec) if packconfig_spec else packconfig()
+        self.exec_config = ExecutionConfig()
     def submit_callable(self,callable):
         raise NotImplementedError('needs implementation')
 
     def prepublish(self,spec, parameters, state):
-        return prepublish(spec, parameters, state, self.config)
+        return prepublish(spec, parameters, state, self.pack_config)
 
     def submit(self, spec, parameters, state, metadata = None):
         nullary = functools.partial(run_packtivity,
@@ -158,7 +158,8 @@ class PythonCallableAsyncBackend(object):
             parameters = parameters,
             state = state,
             metadata = metadata or {'name': 'packtivity'},
-            config = self.config
+            pack_config = self.pack_config,
+            exec_config = self.exec_config
         )
         return self.submit_callable(nullary)
 
@@ -227,7 +228,9 @@ class ForegroundBackend(PythonCallableAsyncBackend):
     def submit(self, spec, parameters, state, metadata = None):
         result = run_packtivity(
             spec,  parameters, state,
-            metadata = metadata or {'name': 'packtivity'}, config = self.config
+            metadata = metadata or {'name': 'packtivity'},
+            pack_config = self.pack_config,
+            exec_config = self.exec_config
         )
         return ForegroundProxy(result.json(), state.datamodel if state else None, success = True)
 

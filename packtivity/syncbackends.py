@@ -18,6 +18,43 @@ class packconfig(object):
         except KeyError:
             return 'default'
 
+class container_config(object):
+    def workdir_location(self):
+        return os.environ.get('PACKTIVITY_WORKDIR_LOCATION')
+
+    def pull_software(self):
+        if 'PACKTIVITY_DOCKER_NOPULL' in os.environ:
+            return False
+        return True
+
+    def container_runtime(self):
+        return os.environ.get('PACKTIVITY_CONTAINER_RUNTIME','docker')
+
+    def cvmfs_repos(self):
+        cvmfs_repos = yaml.load(os.environ.get('PACKTIVITY_CVMFS_REPOS','null'))
+        if not cvmfs_repos:
+            cvmfs_repos  = ['atlas.cern.ch','atlas-condb.cern.ch','sft.cern.ch']
+        return cvmfs_repos
+
+    def cvmfs_location(self):
+        return os.environ.get('PACKTIVITY_CVMFS_LOCATION','/cvmfs')
+
+    def cvmfs_source(self):
+        return os.environ.get('PACKTIVITY_CVMFS_SOURCE','external')
+
+    def container_runtime_modifier(self):
+        return os.environ.get('PACKTIVITY_DOCKER_CMD_MOD','')
+
+    def auth_location(self):
+        os.environ.get('PACKTIVITY_AUTH_LOCATION','/home/recast/recast_auth')
+
+    def dry_run(self):
+        return 'PACKTIVITY_DRYRUN' in os.environ
+
+class ExecutionConfig(object):
+    def __init__(self):
+        self.container_config = container_config()
+
 def build_job(process,parameters,state,pack_config):
     '''
     takes a process template and builds a job out of it using a handler.
@@ -43,7 +80,7 @@ def build_env(environment,parameters,state,pack_config):
         handler = env_handlers['default']['default']
     return handler(environment,parameters,state)
 
-def run_in_env(job,environment,state,metadata,pack_config):
+def run_in_env(job,environment,state,metadata,pack_config,exec_config):
     '''
     takes a job and an environment and executes with the state context attached
     '''
@@ -51,7 +88,7 @@ def run_in_env(job,environment,state,metadata,pack_config):
     impl = pack_config.get_impl('executor',env_type)
     from .handlers.execution_handlers import handlers as exec_handlers
     handler = exec_handlers[env_type][impl]
-    return handler(environment,state,job,metadata)
+    return handler(exec_config,environment,state,job,metadata)
 
 def publish(publisher,parameters,state, pack_config):
     pub_type   = publisher['publisher_type']
@@ -95,29 +132,30 @@ def acquire_job_env(spec, parameters,state,metadata,config):
         return job, env
     return None, None
 
-def run_packtivity(spec, parameters,state,metadata,config):
+def run_packtivity(spec, parameters,state,metadata,pack_config, exec_config):
     with logutils.setup_logging_topic(metadata,state,'step',return_logger = True) as log:
         parameters, state = finalize_inputs(parameters, state)
-        job, env = acquire_job_env(spec, parameters,state,metadata,config)
+        job, env = acquire_job_env(spec, parameters,state,metadata,pack_config)
 
         if job and env:
             try:
-                run_in_env(job, env,state,metadata,config)
+                run_in_env(job, env,state,metadata,pack_config,exec_config)
             except:
                 log.exception('job execution if job %s raise exception exception',metadata)
                 raise
 
-        pubdata = publish(spec['publisher'], parameters,state, config)
+        pubdata = publish(spec['publisher'], parameters,state, pack_config)
         pubdata = finalize_outputs(pubdata)
         log.info('publishing data: %s',pubdata)
         return pubdata
 
 class defaultsyncbackend(object):
     def __init__(self,packconfig_spec = None):
-        self.config = packconfig(**packconfig_spec) if packconfig_spec else packconfig()
+        self.pack_config = packconfig(**packconfig_spec) if packconfig_spec else packconfig()
+        self.exec_config = ExecutionConfig()
 
     def prepublish(self,spec, parameters, state):
-        return prepublish(spec, parameters, state, self.config)
+        return prepublish(spec, parameters, state, self.pack_config)
 
     def run(self,spec,parameters,state, metadata = {'name': 'packtivity_syncbackend'}):
-        return run_packtivity(spec,parameters,state,metadata,self.config)
+        return run_packtivity(spec,parameters,state,metadata,self.pack_config,self.exec_config)
