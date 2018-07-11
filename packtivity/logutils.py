@@ -1,8 +1,6 @@
-import os
 import logging
 import importlib
 import contextlib
-import yaml
 
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
