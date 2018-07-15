@@ -78,6 +78,9 @@ def load_proxy(jsondata, deserialization_opts = None, best_effort_backend = True
             proxy, backend = proxy
 
     if jsondata['proxyname'] in proxyhandlers.keys():
+        if jsondata['proxyname'] == 'PacktivityProxyBase':
+            return None # by definition unserializable
+
         proxy = proxyhandlers[jsondata['proxyname']]['default'](jsondata, best_effort_backend)
         if best_effort_backend:
             proxy, backend = proxy

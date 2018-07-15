@@ -33,9 +33,9 @@ def load_state(jsondata,deserialization_opts = None):
     if 'state' in deserialization_opts:
         statestring = deserialization_opts.get('state','')
         if statestring.startswith('py:'):
-            return statehandlers['frompython']['default'](jsondata, opts = {
-                'statestring': statestring
-            })
+            return statehandlers['frompython']['default'](jsondata,
+                statestring = statestring
+            )
 
     if 'PACKTIVITY_STATEPROVIDER' in os.environ:
         return statehandlers['fromenv']['default'](jsondata)
