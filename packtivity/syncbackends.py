@@ -59,7 +59,7 @@ class ExecutionConfig(object):
     def disable_logging(self):
         if 'PACKTIVITY_LOGGING_DISABLE' in os.environ:
             return yaml.load(os.environ.get('PACKTIVITY_LOGGING_DISABLE','false'))
-        return self.config.get('logging',False)
+        return not self.config.get('logging',True)
 
     def custom_logging_handler(self):
         return os.environ.get('PACKTIVITY_LOGGING_HANDLER')

@@ -283,6 +283,10 @@ def run_containers_in_singularity_runtime(config,state,log,metadata,race_spec):
     cmdline = singularity_execution_cmdline(state,log,metadata,race_spec)
     execute_and_tail_subprocess(config,metadata,state,log,cmdline, stdin_content = race_spec['stdin'], logging_topic = 'run')
 
+def run_containers_in_singularity_runtime(state,log,metadata,race_spec):
+    cmdline = singularity_execution_cmdline(state,log,metadata,race_spec)
+    execute_and_tail_subprocess(metadata,state,log,cmdline, stdin_content = race_spec['stdin'], logging_topic = 'run')
+
 
 @executor('docker-encapsulated')
 def docker_enc_handler(config,environment,state,job,metadata):
@@ -296,7 +300,6 @@ def docker_enc_handler(config,environment,state,job,metadata):
             'docker'     : run_containers_in_docker_runtime,
             'singularity': run_containers_in_singularity_runtime
         }
-
         run = runtimes[config.container_config.container_runtime()]
         run(config,state,log,metadata,rspec)
 

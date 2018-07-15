@@ -258,10 +258,11 @@ class ForegroundProxy(PacktivityProxyBase):
         )
 
 class ForegroundBackend(PythonCallableAsyncBackend):
-    def __init__(self, packconfig_spec = None):
-        super(ForegroundBackend,self).__init__(packconfig_spec)
+    def __init__(self, config = None):
+        super(ForegroundBackend,self).__init__(config)
 
     def submit(self, spec, parameters, state, metadata = None):
+
         result = run_packtivity(
             spec,  parameters, state,
             metadata = metadata or {'name': 'packtivity'},
