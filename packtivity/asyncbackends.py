@@ -74,7 +74,7 @@ class ExternalAsyncProxy(PacktivityProxyBase):
 class ExternalAsyncMixin(object):
     def __init__(self, **kwargs):
         self.job_backend = kwargs['job_backend']
-        self.deserialization_opts = kwargs['deserialization_opts']
+        self.deserialization_opts = kwargs.get('deserialization_opts',{})
 
     def make_external_job(self,spec,parameters,state,metadata):
         raise NotImplementedError
