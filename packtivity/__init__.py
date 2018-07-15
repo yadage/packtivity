@@ -17,11 +17,12 @@ class pack_object(object):
         return cls(load_packtivity(*args,**kwargs))
 
     def __call__(self, parameters, state,
-                 syncbackend = defaultsyncbackend(),
+                 syncbackend = None,
                  asyncbackend = None, asyncwait = False,
                  waitperiod = 0.01, timeout = 43200 ):   #default timeout is 12h
 
         parameters = TypedLeafs(parameters, state.datamodel)
+        syncbackend = defaultsyncbackend()
         if syncbackend and not asyncbackend:
             return syncbackend.run(self.spec,parameters,state)
         elif asyncbackend:
