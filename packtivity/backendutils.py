@@ -12,7 +12,7 @@ log = logging.getLogger(__name__)
 proxyhandlers, proxyloader = utils.handler_decorator()
 
 @proxyloader('ForegroundProxy')
-def foreground_loader(jsondata, best_effort_backend):
+def foreground_loader(jsondata, deserialization_opts = None, best_effort_backend = False):
     from .asyncbackends import ForegroundProxy
     proxy = ForegroundProxy.fromJSON(jsondata)
     if best_effort_backend:
@@ -21,7 +21,7 @@ def foreground_loader(jsondata, best_effort_backend):
     return proxy
 
 @proxyloader('ExternalAsyncProxy')
-def external_loader(jsondata, best_effort_backend):
+def external_loader(jsondata, deserialization_opts = None, best_effort_backend = False):
     from .asyncbackends import ExternalAsyncProxy
     proxy = ExternalAsyncProxy.fromJSON(jsondata)
     if best_effort_backend:
@@ -30,7 +30,7 @@ def external_loader(jsondata, best_effort_backend):
     return proxy
 
 @proxyloader('CeleryProxy')
-def celery_loader(jsondata, best_effort_backend):
+def celery_loader(jsondata, deserialization_opts = None, best_effort_backend = False):
     from .asyncbackends import CeleryProxy
     proxy = CeleryProxy.fromJSON(jsondata)
     if best_effort_backend:
@@ -39,7 +39,7 @@ def celery_loader(jsondata, best_effort_backend):
     return proxy
 
 @proxyloader('fromenv')
-def fromenv_loader(jsondata, best_effort_backend):
+def fromenv_loader(jsondata, deserialization_opts = None, best_effort_backend = False):
     module, _, proxyclass = os.environ['PACKTIVITY_ASYNCBACKEND'].split(':')
     module = importlib.import_module(module)
     proxyclass = getattr(module,proxyclass)
@@ -50,8 +50,8 @@ def fromenv_loader(jsondata, best_effort_backend):
     return proxy
 
 @proxyloader('frompython')
-def python_loader(jsondata, best_effort_backend, opts):
-    _, module, proxyclass = opts['proxystring'].split(':')
+def python_loader(jsondata, deserialization_opts = None, best_effort_backend = False):
+    _, module, proxyclass = deserialization_opts['proxystring'].split(':')
     module = importlib.import_module(module)
     proxyclass = getattr(module,proxyclass)
     proxyopts = {}
@@ -69,16 +69,20 @@ def load_proxy(jsondata, deserialization_opts = None, best_effort_backend = True
         proxystring = deserialization_opts.get('proxy','')
         if proxystring.startswith('py:'):
             proxy = proxyhandlers['frompython']['default'](jsondata,
-                best_effort_backend, opts = {'proxystring': proxystring}
+                {'proxystring': proxystring},
+                best_effort_backend
             )
 
     if 'PACKTIVITY_ASYNCBACKEND' in os.environ:
-        proxy = proxyhandlers['fromenv']['default'](jsondata, best_effort_backend)
+        proxy = proxyhandlers['fromenv']['default'](jsondata, deserialization_opts, best_effort_backend)
         if best_effort_backend:
             proxy, backend = proxy
 
     if jsondata['proxyname'] in proxyhandlers.keys():
-        proxy = proxyhandlers[jsondata['proxyname']]['default'](jsondata, best_effort_backend)
+        if jsondata['proxyname'] == 'PacktivityProxyBase':
+            return None # by definition unserializable
+
+        proxy = proxyhandlers[jsondata['proxyname']]['default'](jsondata, deserialization_opts, best_effort_backend)
         if best_effort_backend:
             proxy, backend = proxy
 
@@ -120,7 +124,7 @@ def externalasync_backend(backendstring, backendopts):
     _,externalbackend = backendstring.split(':')
     if externalbackend == 'default':
         external = asyncbackends.DefaultExternalJobBackend()
-        backend  = asyncbackends.ExternalAsyncBackend(external)
+        backend  = asyncbackends.ExternalAsyncBackend(job_backend = external)
         return is_async, backend
     else:
         raise NotImplementedError('...')

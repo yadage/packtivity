@@ -71,20 +71,62 @@ class ExternalAsyncProxy(PacktivityProxyBase):
             raise RuntimeError('not external backend proxy saved during serialization')
         return cls(**data['proxydetails'])
 
-class ExternalAsyncBackend(object):
-    def __init__(self, job_backend, deserialization_opts = None, config = None):
-        self.deserialization_opts = deserialization_opts
-        self.job_backend = job_backend
-        self.config = packconfig(**config) if config else packconfig()
+class ExternalAsyncMixin(object):
+    def __init__(self, **kwargs):
+        self.job_backend = kwargs['job_backend']
+        self.deserialization_opts = kwargs.get('deserialization_opts',{})
+
+    def make_external_job(self,spec,parameters,state,metadata):
+        raise NotImplementedError
+
+    def prepublish(self,spec, parameters, state):
+        raise NotImplementedError
+
+    def submit(self, spec, parameters, state, metadata = None):
+        job = self.make_external_job(spec,parameters,state,metadata)
+        jobproxy = self.job_backend.submit(job)
+        return ExternalAsyncProxy(jobproxy, spec, state.json(), parameters.json())
+
+    def ready(self,resultproxy):
+        return self.job_backend.ready(resultproxy.jobproxy)
+
+    def successful(self,resultproxy):
+        return self.job_backend.successful(resultproxy.jobproxy)
+
+    def fail_info(self,resultproxy):
+        return self.job_backend.fail_info(resultproxy.jobproxy)
+
+class RemoteResultMixin(object):
+    def __init__(self,**kwargs):
+        self.resultbackend  = kwargs['resultbackend']
+
+    def result(self,resultproxy):
+        state = load_state(resultproxy.statedata, self.deserialization_opts)
+        if resultproxy.resultdata is not None:
+            return  TypedLeafs(resultproxy.resultdata, state.datamodel)
+        log.debug('retrieving result for jobid: %s at %s', resultproxy.jobproxy['job_id'], resultproxy.jobproxy['resultjson'])
+        return TypedLeafs(
+            self.resultbackend.get(resultproxy.jobproxy['resultjson']),
+            state.datamodel
+        )
+
+class ExternalAsyncBackend(ExternalAsyncMixin):
+    def __init__(self, **kwargs):
+        ExternalAsyncMixin.__init__(self, **kwargs)
+        self.config = packconfig(**kwargs.get('config',{}))
 
     def prepublish(self,spec, parameters, state):
         return prepublish(spec, parameters, state, self.config)
 
-    def submit(self, spec, parameters, state, metadata = None):
+    def make_external_job(self,spec,parameters,state,metadata):
         parameters, state = finalize_inputs(parameters, state)
         job, env   = acquire_job_env(spec, parameters,state,metadata,self.config)
-        jobproxy = self.job_backend.submit(job, env, state, metadata)
-        return ExternalAsyncProxy(jobproxy, spec, state.json(), parameters.json())
+        return {
+            'job': job,
+            'env': env,
+            'state': state,
+            'metadata': metadata
+        }
 
     def result(self,resultproxy):
         state = load_state(resultproxy.statedata, self.deserialization_opts)
@@ -99,26 +141,18 @@ class ExternalAsyncBackend(object):
         resultproxy.resultdata = pubdata.json()
         return pubdata
 
-    def ready(self,resultproxy):
-        return self.job_backend.ready(resultproxy.jobproxy)
-
-    def successful(self,resultproxy):
-        return self.job_backend.successful(resultproxy.jobproxy)
-
-    def fail_info(self,resultproxy):
-        return self.job_backend.fail_info(resultproxy.jobproxy)
 
 class DefaultExternalJobBackend(object):
     def __init__(self, config = None):
         self.pool = multiprocessing.Pool(1)
         self.config = packconfig(**config) if config else packconfig()
 
-    def submit(self, job, env, state, metadata):
+    def submit(self, job):
         nullary = functools.partial(run_in_env,
-            job = job,
-            environment = env,
-            state = state,
-            metadata = metadata,
+            job = job['job'],
+            environment = job['env'],
+            state = job['state'],
+            metadata = job['metadata'],
             pack_config = self.config
         )
         return self.pool.apply_async(nullary)
