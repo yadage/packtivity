@@ -40,9 +40,10 @@ def getinit_data(initfiles,parameters):
 @click.option('--asyncwait/--async', default = True)
 @click.option('-b','--backend',default = 'defaultsync')
 @click.option('-x','--proxyfile',default = 'proxy.json')
+@click.option('-o','--outfile',default = None)
 @click.argument('spec')
 @click.argument('parfiles', nargs = -1)
-def runcli(spec,parfiles,state,parameter,read,write,toplevel,schemasource,asyncwait,validate,verbosity,backend,proxyfile):
+def runcli(spec,parfiles,state,parameter,read,write,toplevel,schemasource,asyncwait,validate,verbosity,backend,proxyfile,outfile):
     logging.basicConfig(level = getattr(logging,verbosity))
 
     spec = utils.load_packtivity(spec,toplevel,schemasource,validate)
@@ -78,6 +79,9 @@ def runcli(spec,parfiles,state,parameter,read,write,toplevel,schemasource,asyncw
             json.dump(result.json(),p)
     else:
         click.echo(str(result)+(' (post-run)' if prepub else ''))
+        if outfile:
+            with open(outfile,'w') as out:
+                out.write(json.dumps(result.json()))
 
 @click.command()
 @click.argument('spec')
