@@ -51,8 +51,9 @@ def runcli(spec,parfiles,state,parameter,read,write,toplevel,schemasource,asyncw
     parameters = getinit_data(parfiles,parameter)
 
     state    = yaml.load(open(state)) if state else {}
-    state.setdefault('readwrite',[]).extend(map(os.path.realpath,write))
-    state.setdefault('readonly',[]).extend(map(os.path.realpath,read))
+    if not state:
+        state.setdefault('readwrite',[]).extend(map(os.path.realpath,write))
+        state.setdefault('readonly',[]).extend(map(os.path.realpath,read))
     state = LocalFSState(state['readwrite'],state['readonly'])
     state.ensure()
 
