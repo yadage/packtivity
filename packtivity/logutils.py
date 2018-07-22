@@ -2,13 +2,14 @@ import logging
 import importlib
 import contextlib
 
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+LOGFORMAT = '%(asctime)s | %(name)20.20s | %(levelname)6s | %(message)s'
+formatter = logging.Formatter(LOGFORMAT)
 
 def get_base_loggername(metadata):
-    return 'packtivity_logger_{}'.format(metadata['name'])
+    return 'pack.{}'.format(metadata['name'])
 
 def get_topic_loggername(metadata,topic):
-    return 'packtivity_logger_{}.{}'.format(metadata['name'],topic)
+    return 'pack.{}.{}'.format(metadata['name'],topic)
 
 def default_logging_handlers(exec_config,log,metadata,state,topic):
     if topic == 'step':
