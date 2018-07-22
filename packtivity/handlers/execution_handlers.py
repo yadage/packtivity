@@ -163,15 +163,13 @@ def docker_execution_cmdline(config,state,log,metadata, race_spec):
         command    = quoted_string
     )
 
-def singularity_execution_cmdline(state,log,metadata, race_spec):
+def singularity_execution_cmdline(state,log,metadata, race_spec, dirs):
     #for running in subprocess
     quoted_string = ' '.join(map(pipes.quote,race_spec['argv']))
-
-
-    from os.path import expanduser
-    home = expanduser("~")
-    return 'singularity exec -C -B {home}:{home} docker://{image} {command}'.format(
-        home       = home,
+    return 'singularity exec -C -B {datamount}:{datamount} --pwd {work} -H {home} docker://{image} {command}'.format(
+        datamount  = dirs['datamount'],
+        work = dirs['work'],
+        home = dirs['home'],
         image	   = race_spec['image'],
         command    = quoted_string
     )
@@ -280,8 +278,19 @@ def run_containers_in_docker_runtime(config,state,log,metadata,race_spec):
     execute_and_tail_subprocess(config,metadata,state,log,cmdline, stdin_content = race_spec['stdin'], logging_topic = 'run')
 
 def run_containers_in_singularity_runtime(config,state,log,metadata,race_spec):
-    cmdline = singularity_execution_cmdline(state,log,metadata,race_spec)
+    import tempfile
+    import shutil
+
+    tmpdir_home = tempfile.mkdtemp(prefix = '_sing_home_')
+    tmpdir_work = tempfile.mkdtemp(prefix = '{}/'.format(tmpdir_home))
+    homemount = '/'.join(os.path.expanduser('~').split('/')[:2])
+
+    cmdline = singularity_execution_cmdline(state,log,metadata,race_spec, dirs = {
+        'work': tmpdir_work, 'home': tmpdir_home, 'datamount': homemount
+    })
     execute_and_tail_subprocess(config,metadata,state,log,cmdline, stdin_content = race_spec['stdin'], logging_topic = 'run')
+    shutil.rmtree(tmpdir_home)
+
 
 @executor('docker-encapsulated')
 def docker_enc_handler(config,environment,state,job,metadata):
