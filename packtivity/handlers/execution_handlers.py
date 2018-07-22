@@ -166,10 +166,6 @@ def docker_execution_cmdline(config,state,log,metadata, race_spec):
 def singularity_execution_cmdline(state,log,metadata, race_spec, dirs):
     #for running in subprocess
     quoted_string = ' '.join(map(pipes.quote,race_spec['argv']))
-
-
-    from os.path import expanduser
-    home = expanduser("~")
     return 'singularity exec -C -B {datamount}:{datamount} --pwd {work} -H {home} docker://{image} {command}'.format(
         datamount  = dirs['datamount'],
         work = dirs['work'],
@@ -290,7 +286,7 @@ def run_containers_in_singularity_runtime(config,state,log,metadata,race_spec):
     homemount = '/'.join(os.path.expanduser('~').split('/')[:2])
 
     cmdline = singularity_execution_cmdline(state,log,metadata,race_spec, dirs = {
-        'work': tmpdir_home, 'home': tmpdir_home, 'datamount': homemount
+        'work': tmpdir_work, 'home': tmpdir_home, 'datamount': homemount
     })
     execute_and_tail_subprocess(config,metadata,state,log,cmdline, stdin_content = race_spec['stdin'], logging_topic = 'run')
     shutil.rmtree(tmpdir_home)
