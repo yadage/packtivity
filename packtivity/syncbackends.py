@@ -49,7 +49,8 @@ class container_config(object):
         return os.environ.get('PACKTIVITY_DOCKER_CMD_MOD','')
 
     def auth_location(self):
-        os.environ.get('PACKTIVITY_AUTH_LOCATION','/home/recast/recast_auth')
+        env_or_default = os.environ.get('PACKTIVITY_AUTH_LOCATION','/home/recast/recast_auth')
+        return self.config.get('auth_location',env_or_default)
 
 class ExecutionConfig(object):
     def __init__(self,config = None):
