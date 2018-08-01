@@ -26,7 +26,7 @@ def default_logging_handlers(exec_config,log,metadata,state,topic):
         fh.setLevel(logging.DEBUG)
         fh.setFormatter(formatter)
         log.addHandler(fh)
-        log.info("starting file loging for topic: %s", topic)
+        log.info("starting file logging for topic: %s", topic)
 
 @contextlib.contextmanager
 def setup_logging_topic(exec_config, metadata, state, topic, return_logger = False ):
