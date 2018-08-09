@@ -129,12 +129,6 @@ def pubtest(spec,parfiles,state,parameter,read,write,toplevel,schemasource,valid
     parameters = getinit_data(parfiles,parameter)
 
     is_sync, backend = bkutils.backend_from_string(backend)
-    backend_kwargs = {
-        'syncbackend': backend
-    } if is_sync else {
-        'asyncbackend':backend,
-        'asyncwait': asyncwait
-    }
     publish = backend.prepublish(spec,parameters,state)
     click.echo(str(publish))
 
