@@ -101,6 +101,37 @@ def validatecli(spec,toplevel,schemasource,schemaname,show):
         click.echo(e)
         raise click.ClickException(click.style('packtivity definition not valid',fg = 'red'))
 
+@click.group()
+def utilcli():
+    pass
+
+@utilcli.command()
+@click.option('-r', '--read', multiple=True, default = [])
+@click.option('-w', '--write', multiple=True, default = [os.curdir])
+@click.option('-s','--state', default = '')
+@click.option('--parameter', '-p', multiple=True)
+@click.option('-t','--toplevel', default = os.getcwd())
+@click.option('-c','--schemasource', default = yadageschemas.schemadir)
+@click.option('-v','--verbosity', default = 'ERROR')
+@click.option('--validate/--no-validate', default = True)
+@click.option('-b','--backend',default = 'defaultsync')
+@click.argument('spec')
+@click.argument('parfiles', nargs = -1)
+def pubtest(spec,parfiles,state,parameter,read,write,toplevel,schemasource,validate,verbosity,backend):
+    logging.basicConfig(level = getattr(logging,verbosity))
+    spec = utils.load_packtivity(spec,toplevel,schemasource,validate)
+    state    = yaml.load(open(state)) if state else {}
+    if not state:
+        state.setdefault('readwrite',[]).extend(map(os.path.realpath,write))
+        state.setdefault('readonly',[]).extend(map(os.path.realpath,read))
+    state = LocalFSState(state['readwrite'],state['readonly'])
+
+    parameters = getinit_data(parfiles,parameter)
+
+    is_sync, backend = bkutils.backend_from_string(backend)
+    publish = backend.prepublish(spec,parameters,state)
+    click.echo(str(publish))
+
 @click.command()
 @click.argument('jsonfile')
 def checkproxy(jsonfile):

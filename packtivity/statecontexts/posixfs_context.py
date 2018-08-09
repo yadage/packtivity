@@ -28,6 +28,11 @@ class LocalFSState(object):
 
         self.readwrite = sorted(list(map(os.path.realpath,readwrite) if readwrite else  []))
         self.readonly  = sorted(list(map(os.path.realpath,readonlies)))
+
+        # self.aliases = {
+        #     'workdir': self.readonly[0]
+        # }
+
         self.datamodel = None
 
     def __repr__(self):

@@ -41,6 +41,7 @@ setup(
   entry_points = {
       'console_scripts': [
           'packtivity-run=packtivity.cli:runcli',
+          'packtivity-util=packtivity.cli:utilcli',
           'packtivity-validate=packtivity.cli:validatecli',
           'packtivity-checkproxy=packtivity.cli:checkproxy'
       ],
