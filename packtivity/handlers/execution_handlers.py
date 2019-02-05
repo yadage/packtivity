@@ -166,8 +166,18 @@ def docker_execution_cmdline(config,state,log,metadata, race_spec):
 def singularity_execution_cmdline(state,log,metadata, race_spec, dirs):
     #for running in subprocess
     quoted_string = ' '.join(map(pipes.quote,race_spec['argv']))
-    return 'singularity exec -C -B {datamount}:{datamount} --pwd {work} -H {home} docker://{image} {command}'.format(
-        datamount  = dirs['datamount'],
+    honor_mounts = [x for x in race_spec['mounts'] if x['destination'] == '/recast_auth'] + [{'source': dirs['datamount'], 'destination': dirs['datamount'], 'type': 'bind'}] 
+ 
+    mount_args = ''
+    for s in honor_mounts:
+        mount_args += ' -B {source}:{destination}'.format(
+            source = s['source'],
+            destination = s['destination']
+        )
+
+    
+    return 'singularity exec -C {mount_args} --pwd {work} -H {home} docker://{image} {command}'.format(
+        mount_args  = mount_args,
         work = dirs['work'],
         home = dirs['home'],
         image	   = race_spec['image'],
