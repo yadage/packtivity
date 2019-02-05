@@ -7,7 +7,7 @@ python:
 - '2.7'
 - '3.5'
 install:
-- pip install pyflakes pytest pytest-cov python-coveralls
+- pip install -U pyflakes pytest>=3.6 pytest-cov python-coveralls
 - pip install --process-dependency-links -e '.[celery]'
 script:
 - pyflakes packtivity
