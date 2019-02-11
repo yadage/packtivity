@@ -4,7 +4,8 @@ from datetime import datetime
 
 from packtivity.utils import load_packtivity
 from packtivity.syncbackends import defaultsyncbackend
-from packtivity.typedleafs import TypedLeafs
+
+import packtivity.datamodel as datamodel
 
 log = logging.getLogger(__name__)
 
@@ -21,7 +22,7 @@ class pack_object(object):
                  asyncbackend = None, asyncwait = False,
                  waitperiod = 0.01, timeout = 43200 ):   #default timeout is 12h
 
-        parameters = TypedLeafs(parameters, state.datamodel)
+        parameters = datamodel.create(parameters, state.datamodel)
         syncbackend = defaultsyncbackend()
         if syncbackend and not asyncbackend:
             return syncbackend.run(self.spec,parameters,state)

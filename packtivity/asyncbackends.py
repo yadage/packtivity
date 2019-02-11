@@ -9,7 +9,7 @@ import yaml
 
 from .syncbackends import prepublish, packconfig, ExecutionConfig, run_packtivity, run_in_env, finalize_inputs, finalize_outputs, acquire_job_env, publish
 from packtivity.statecontexts import load_state
-from packtivity.typedleafs import TypedLeafs
+from . import datamodel
 
 log = logging.getLogger(__name__)
 
@@ -103,9 +103,9 @@ class RemoteResultMixin(object):
     def result(self,resultproxy):
         state = load_state(resultproxy.statedata, self.deserialization_opts)
         if resultproxy.resultdata is not None:
-            return  TypedLeafs(resultproxy.resultdata, state.datamodel)
+            return  datamodel.create(resultproxy.resultdata, state.datamodel)
         log.debug('retrieving result for jobid: %s at %s', resultproxy.jobproxy['job_id'], resultproxy.jobproxy['resultjson'])
-        return TypedLeafs(
+        return datamodel.create(
             self.resultbackend.get(resultproxy.jobproxy['resultjson']),
             state.datamodel
         )
@@ -132,9 +132,9 @@ class ExternalAsyncBackend(ExternalAsyncMixin):
         state = load_state(resultproxy.statedata, self.deserialization_opts)
 
         if resultproxy.resultdata is not None:
-            return  TypedLeafs(resultproxy.resultdata, state.datamodel)
+            return  datamodel.create(resultproxy.resultdata, state.datamodel)
 
-        parameters = TypedLeafs(resultproxy.pardata, state.datamodel)
+        parameters = datamodel.create(resultproxy.pardata, state.datamodel)
         pubdata = publish(resultproxy.spec['publisher'], parameters,state,self.config)
         log.info('publishing data: %s',pubdata)
         pubdata = finalize_outputs(pubdata)
@@ -272,7 +272,7 @@ class ForegroundBackend(PythonCallableAsyncBackend):
         return ForegroundProxy(result.json(), state.datamodel if state else None, success = True)
 
     def result(self,resultproxy):
-        return TypedLeafs(resultproxy.resultdata, resultproxy.datamodel)
+        return datamodel.create(resultproxy.resultdata, resultproxy.datamodel)
 
     def ready(self,resultproxy):
         return True
