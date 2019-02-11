@@ -2,7 +2,7 @@ import yaml
 import os
 
 import packtivity.logutils as logutils
-from packtivity.typedleafs import TypedLeafs
+from . import datamodel
 
 class packconfig(object):
     def __init__(self,**kwargs):
@@ -116,10 +116,10 @@ def publish(publisher,parameters,state, pack_config):
     from .handlers.publisher_handlers import handlers as pub_handlers
     handler = pub_handlers[pub_type][impl]
     pubdata = handler(publisher,parameters,state)
-    return TypedLeafs(pubdata, state.datamodel if state else None)
+    return datamodel.create(pubdata, state.datamodel if state else None)
 
 def finalize_inputs(parameters, state):
-    parameters = TypedLeafs(parameters,state.datamodel if state else None)
+    parameters = datamodel.create(parameters,state.datamodel if state else None)
     if not state: return parameters, state
     return state.model(parameters), state
 
