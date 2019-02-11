@@ -1,5 +1,5 @@
 from packtivity.handlers.publisher_handlers import handlers
-from packtivity.typedleafs import TypedLeafs
+from packtivity import datamodel as pdm
 
 from packtivity.handlers.execution_handlers import command_argv, docker_execution_cmdline
 from packtivity.syncbackends import ExecutionConfig

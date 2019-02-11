@@ -1,46 +1,47 @@
 import os
 import pytest
-from packtivity.typedleafs import TypedLeafs
+from packtivity import datamodel as pdm
+
 def test_pack_call_local(tmpdir,basic_localfs_state,localproc_pack):
 	basic_localfs_state.ensure()
-	pars =  TypedLeafs({'outputfile': '{workdir}/helloworld.txt'})
+	pars =  pdm.create({'outputfile': '{workdir}/helloworld.txt'})
 	localproc_pack(parameters = pars, state = basic_localfs_state)
 	assert tmpdir.join('helloworld.txt').check()
 
 def test_pack_call_docker(tmpdir,basic_localfs_state,dockeproc_pack):
 	basic_localfs_state.ensure()
-	pars =  TypedLeafs({'outputfile': '{workdir}/helloworld.txt'})
+	pars =  pdm.create({'outputfile': '{workdir}/helloworld.txt'})
 	dockeproc_pack(parameters = pars, state = basic_localfs_state)
 	assert tmpdir.join('helloworld.txt').check()
 
 def test_pack_call_local_fail(tmpdir,basic_localfs_state,localproc_pack_fail,default_async):
 	basic_localfs_state.ensure()
-	pars =  TypedLeafs({'outputfile': '{workdir}/helloworld.txt'})
+	pars =  pdm.create({'outputfile': '{workdir}/helloworld.txt'})
 	with pytest.raises(RuntimeError):
 		localproc_pack_fail(parameters = pars, state = basic_localfs_state)
 	assert tmpdir.join('helloworld.txt').check()
 
 def test_pack_call_docker_fail(tmpdir,basic_localfs_state,docker_pack_fail,default_async):
 	basic_localfs_state.ensure()
-	pars =  TypedLeafs({'outputfile': '{workdir}/helloworld.txt'})
+	pars =  pdm.create({'outputfile': '{workdir}/helloworld.txt'})
 	with pytest.raises(RuntimeError):
 		docker_pack_fail(parameters = pars, state = basic_localfs_state)
 
 def test_pack_call_docker_script_fail(tmpdir,basic_localfs_state,docker_script_pack_fail,default_async):
 	basic_localfs_state.ensure()
-	pars =  TypedLeafs({'outputfile': '{workdir}/helloworld.txt'})
+	pars =  pdm.create({'outputfile': '{workdir}/helloworld.txt'})
 	with pytest.raises(RuntimeError):
 		docker_script_pack_fail(parameters = pars, state = basic_localfs_state)
 
 def test_pack_workdir(tmpdir,basic_localfs_state,docker_touchfile_workdir,default_async):
 	basic_localfs_state.ensure()
-	pars =  TypedLeafs({'outputfile': '{workdir}/helloworld.txt'})
+	pars =  pdm.create({'outputfile': '{workdir}/helloworld.txt'})
 	with pytest.raises(RuntimeError):
 		docker_touchfile_workdir(parameters = pars, state = basic_localfs_state)
 
 def test_pack_call_docker_script(tmpdir,basic_localfs_state,dockeproc_script_pack):
 	basic_localfs_state.ensure()
-	pars =  TypedLeafs({'outputfile': '{workdir}/helloworld.txt'})
+	pars =  pdm.create({'outputfile': '{workdir}/helloworld.txt'})
 	dockeproc_script_pack(parameters = pars, state = basic_localfs_state)
 	assert tmpdir.join('helloworld.txt').check()
 
