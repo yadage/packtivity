@@ -1,5 +1,5 @@
 from packtivity.handlers.publisher_handlers import handlers
-from packtivity.typedleafs import TypedLeafs
+from packtivity import datamodel as pdm
 
 def test_parpub(tmpdir,basic_localfs_state):
 	pub = {
@@ -8,7 +8,7 @@ def test_parpub(tmpdir,basic_localfs_state):
 			'hello': 'mypar'
 		}
 	}
-	pars = TypedLeafs({
+	pars = pdm.create({
 		'mypar': 'myvalue'
 	})
 	pubbed = handlers['frompar-pub']['default'](pub,pars,basic_localfs_state)
@@ -24,7 +24,7 @@ def test_interp_pub(tmpdir,basic_localfs_state):
 		'relative_paths': False,
 		'glob': False
 	}
-	pars = TypedLeafs({
+	pars = pdm.create({
 		'mypar': 'myvalue'
 	})
 	pubbed = handlers['interpolated-pub']['default'](pub,pars,basic_localfs_state)
@@ -41,7 +41,7 @@ def test_interp_pub_glob(tmpdir,basic_localfs_state):
 		'relative_paths': False,
 		'glob': True
 	}
-	pars = TypedLeafs({
+	pars = pdm.create({
 		'mypar': 'myvalue'
 	})
 	pubbed = handlers['interpolated-pub']['default'](pub,pars,basic_localfs_state)
@@ -60,7 +60,7 @@ def test_interp_pub_glob_relative(tmpdir,basic_localfs_state):
 		'relative_paths': True,
 		'glob': False
 	}
-	pars = TypedLeafs({
+	pars = pdm.create({
 		'mypar': 'myvalue'
 	})
 	pubbed = handlers['interpolated-pub']['default'](pub,pars,basic_localfs_state)
@@ -77,10 +77,10 @@ def test_fromparjq_pub(tmpdir,basic_localfs_state):
 		'tryExact': True,
 		'glob': False
 	}
-	pars = TypedLeafs({
+	pars = pdm.create({
 		'mypar': 'myvalue'
 	})
-	pars = TypedLeafs(pars)
+	pars = pdm.create(pars)
 	pubbed = handlers['fromparjq-pub']['default'](pub,pars,basic_localfs_state)
 	filelist = map(str,[tmpdir.join('hello_myvalue_1.txt'),tmpdir.join('hello_myvalue_2.txt')])
 	assert set(pubbed['hello']) == set(filelist)
@@ -95,7 +95,7 @@ def test_fromparjq_pub_relative(tmpdir,basic_localfs_state):
 		'glob': True,
 		'tryExact': True
 	}
-	pars = TypedLeafs({
+	pars = pdm.create({
 		'mypar': 'myvalue'
 	})
 	pubbed = handlers['fromparjq-pub']['default'](pub,pars,basic_localfs_state)
@@ -111,7 +111,7 @@ def test_glob_pub(tmpdir,basic_localfs_state):
 		'outputkey': 'hello',
 		'globexpression': 'hello_*.txt',
 	}
-	pars = TypedLeafs({
+	pars = pdm.create({
 		'mypar': 'myvalue'
 	})
 	pubbed = handlers['fromglob-pub']['default'](pub,pars,basic_localfs_state)
@@ -125,7 +125,7 @@ def test_yml_pub(tmpdir,basic_localfs_state):
 		'publisher_type': 'fromyaml-pub',
 		'yamlfile': 'hello.yml',
 	}
-	pars = TypedLeafs({
+	pars = pdm.create({
 		'mypar': 'myvalue'
 	})
 	pubbed = handlers['fromyaml-pub']['default'](pub,pars,basic_localfs_state)
