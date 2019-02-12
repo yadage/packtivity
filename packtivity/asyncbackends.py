@@ -9,7 +9,7 @@ import yaml
 
 from .syncbackends import prepublish, packconfig, ExecutionConfig, run_packtivity, run_in_env, finalize_inputs, finalize_outputs, acquire_job_env, publish
 from packtivity.statecontexts import load_state
-from . import datamodel
+from . import datamodel as _datamodel
 
 log = logging.getLogger(__name__)
 
@@ -99,13 +99,14 @@ class ExternalAsyncMixin(object):
 class RemoteResultMixin(object):
     def __init__(self,**kwargs):
         self.resultbackend  = kwargs['resultbackend']
+        self.datamodel = _datamodel
 
     def result(self,resultproxy):
         state = load_state(resultproxy.statedata, self.deserialization_opts)
         if resultproxy.resultdata is not None:
-            return  datamodel.create(resultproxy.resultdata, state.datamodel)
+            return  self.datamodel.create(resultproxy.resultdata, state.datamodel)
         log.debug('retrieving result for jobid: %s at %s', resultproxy.jobproxy['job_id'], resultproxy.jobproxy['resultjson'])
-        return datamodel.create(
+        return self.datamodel.create(
             self.resultbackend.get(resultproxy.jobproxy['resultjson']),
             state.datamodel
         )
@@ -114,6 +115,7 @@ class ExternalAsyncBackend(ExternalAsyncMixin):
     def __init__(self, **kwargs):
         ExternalAsyncMixin.__init__(self, **kwargs)
         self.config = packconfig(**kwargs.get('config',{}))
+        self.datamodel = _datamodel
 
     def prepublish(self,spec, parameters, state):
         return prepublish(spec, parameters, state, self.config)
@@ -132,9 +134,9 @@ class ExternalAsyncBackend(ExternalAsyncMixin):
         state = load_state(resultproxy.statedata, self.deserialization_opts)
 
         if resultproxy.resultdata is not None:
-            return  datamodel.create(resultproxy.resultdata, state.datamodel)
+            return  self.datamodel.create(resultproxy.resultdata, state.datamodel)
 
-        parameters = datamodel.create(resultproxy.pardata, state.datamodel)
+        parameters = self.datamodel.create(resultproxy.pardata, state.datamodel)
         pubdata = publish(resultproxy.spec['publisher'], parameters,state,self.config)
         log.info('publishing data: %s',pubdata)
         pubdata = finalize_outputs(pubdata)
@@ -260,6 +262,7 @@ class ForegroundProxy(PacktivityProxyBase):
 class ForegroundBackend(PythonCallableAsyncBackend):
     def __init__(self, config = None):
         super(ForegroundBackend,self).__init__(config)
+        self.datamodel = _datamodel
 
     def submit(self, spec, parameters, state, metadata = None):
 
@@ -272,7 +275,7 @@ class ForegroundBackend(PythonCallableAsyncBackend):
         return ForegroundProxy(result.json(), state.datamodel if state else None, success = True)
 
     def result(self,resultproxy):
-        return datamodel.create(resultproxy.resultdata, resultproxy.datamodel)
+        return self.datamodel.create(resultproxy.resultdata, resultproxy.datamodel)
 
     def ready(self,resultproxy):
         return True
