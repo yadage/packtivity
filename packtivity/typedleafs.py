@@ -148,10 +148,11 @@ class TypedLeafs(object):
     def copy(self):
         return TypedLeafs(copy.deepcopy(self.typed()), self.leafmodel)
 
-    def asrefs(self):
-        data = copy.deepcopy(self.json())
+    def asrefs(self, callback = None):
+        data = self.copy().json()
         for p, v in self.leafs():
-            p.set(data, p)
+            if p.path == '': return p if not callback else callback(p)
+            p.set(data, p if not callback else callback(p))
         return data
 
     ### QUERY methods

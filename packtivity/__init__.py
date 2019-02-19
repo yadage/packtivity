@@ -5,7 +5,7 @@ from datetime import datetime
 from packtivity.utils import load_packtivity
 from packtivity.syncbackends import defaultsyncbackend
 
-import packtivity.datamodel as datamodel
+import packtivity.datamodel as _datamodel
 
 log = logging.getLogger(__name__)
 
@@ -20,7 +20,9 @@ class pack_object(object):
     def __call__(self, parameters, state,
                  syncbackend = None,
                  asyncbackend = None, asyncwait = False,
-                 waitperiod = 0.01, timeout = 43200 ):   #default timeout is 12h
+                 waitperiod = 0.01, timeout = 43200,
+                 datamodel = _datamodel
+                 ):   #default timeout is 12h
 
         parameters = datamodel.create(parameters, state.datamodel)
         syncbackend = defaultsyncbackend()

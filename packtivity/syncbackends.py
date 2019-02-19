@@ -2,7 +2,7 @@ import yaml
 import os
 
 import packtivity.logutils as logutils
-from . import datamodel
+from . import datamodel as _datamodel
 
 class packconfig(object):
     def __init__(self,**kwargs):
@@ -110,7 +110,7 @@ def run_in_env(job,environment,state,metadata,pack_config,exec_config):
     handler = exec_handlers[env_type][impl]
     return handler(exec_config,environment,state,job,metadata)
 
-def publish(publisher,parameters,state, pack_config):
+def publish(publisher,parameters,state, pack_config, datamodel = _datamodel):
     pub_type   = publisher['publisher_type']
     impl = pack_config.get_impl('publisher',pub_type)
     from .handlers.publisher_handlers import handlers as pub_handlers
@@ -118,7 +118,7 @@ def publish(publisher,parameters,state, pack_config):
     pubdata = handler(publisher,parameters,state)
     return datamodel.create(pubdata, state.datamodel if state else None)
 
-def finalize_inputs(parameters, state):
+def finalize_inputs(parameters, state, datamodel = _datamodel):
     parameters = datamodel.create(parameters,state.datamodel if state else None)
     if not state: return parameters, state
     return state.model(parameters), state
