@@ -75,6 +75,7 @@ class ExternalAsyncMixin(object):
     def __init__(self, **kwargs):
         self.job_backend = kwargs['job_backend']
         self.deserialization_opts = kwargs.get('deserialization_opts',{})
+        self.datamodel = _datamodel
 
     def make_external_job(self,spec,parameters,state,metadata):
         raise NotImplementedError
@@ -115,7 +116,6 @@ class ExternalAsyncBackend(ExternalAsyncMixin):
     def __init__(self, **kwargs):
         ExternalAsyncMixin.__init__(self, **kwargs)
         self.config = packconfig(**kwargs.get('config',{}))
-        self.datamodel = _datamodel
 
     def prepublish(self,spec, parameters, state):
         return prepublish(spec, parameters, state, self.config)

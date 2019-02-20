@@ -166,3 +166,9 @@ def backend_from_string(backendstring,backendopts = None):
             return backends[k]['default'](backendstring, backendopts)
 
     raise RuntimeError('Unknown Backend %s', backendstring)
+
+@backend('kubedirectjob')
+def k8s_direct_backend(backendstring, backendopts):
+    from .kubernetes import DirectExternalKubernetesBackend
+    backend = DirectExternalKubernetesBackend(**backendopts)
+    return False, backend
