@@ -10,7 +10,10 @@ class KubernetesDirectJobBackend(SubmitToKubeMixin,KubeSpecMixin):
         SubmitToKubeMixin.__init__(self, **kwargs)
         KubeSpecMixin.__init__(self,**kwargs)
 
-        self.base = kwargs.get('path_base',os.getcwd()+'/')
+        self.base = os.path.realpath(kwargs.get(
+            'path_base',
+            os.environ.get('YADAGE_K8S_PATHBASE',os.getcwd())
+        ))+'/'
         self.claim_name =  kwargs.get('claim_name','yadagedata')
 
     def state_mounts_and_vols(self, jobspec):
