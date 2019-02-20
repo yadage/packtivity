@@ -15,7 +15,7 @@ class KubeSpecMixin(object):
                 'cpu': "100m"
             }
         })
-        self.resource_prefix = "wflow"
+        self.resource_prefix = kwargs.get('resource_prefix', 'wflow')
 
     def auth_binds(self,authmount = None):
         container_mounts = []
@@ -202,7 +202,7 @@ class KubeSpecMixin(object):
         volumes += vols
         kube_resources += resources
 
-        jobname = "wflow-job-{}".format(job_uuid)
+        jobname = "{}-job-{}".format(self.resource_prefix,job_uuid)
 
         config_resources, config_vols, config_mounts = self.config(job_uuid, jobspec)
         kube_resources += config_resources

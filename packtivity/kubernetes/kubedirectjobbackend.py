@@ -1,5 +1,5 @@
+import os
 import logging
-
 from .kubesubmitmixin import SubmitToKubeMixin
 from .kubespecmixin import KubeSpecMixin
 
@@ -10,7 +10,7 @@ class KubernetesDirectJobBackend(SubmitToKubeMixin,KubeSpecMixin):
         SubmitToKubeMixin.__init__(self, **kwargs)
         KubeSpecMixin.__init__(self,**kwargs)
 
-        self.base = kwargs.get('path_base','')
+        self.base = kwargs.get('path_base',os.getcwd()+'/')
         self.claim_name =  kwargs.get('claim_name','yadagedata')
 
     def state_mounts_and_vols(self, jobspec):

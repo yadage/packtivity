@@ -35,7 +35,5 @@ class DirectExternalKubernetesBackend(
         log.info('publishing data: %s',pubdata)
         pubdata = finalize_outputs(pubdata)
         resultproxy.resultdata = pubdata.json()
-
-        print(state)
         return pubdata
 
