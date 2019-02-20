@@ -1,3 +1,4 @@
+import os
 import logging
 import uuid
 
@@ -46,7 +47,7 @@ class KubeSpecMixin(object):
         container_mounts = []
         volumes = []
         log.debug('binding CVMFS')
-        repos = respos or self.cvmfs_repos
+        repos = repos or self.cvmfs_repos
         for repo in repos:
             reponame = repo.replace('.','').replace('-','')
             volumes.append({
@@ -100,7 +101,7 @@ class KubeSpecMixin(object):
             })
         return parmount_configmap_contmount, vols_by_dir_name.values(), configmapspec
 
-    def get_job_mounts(self, jobspec_environment):
+    def get_job_mounts(self, job_uuid, jobspec_environment):
         cvmfs         = 'CVMFS' in jobspec_environment['resources']
         parmounts     = jobspec_environment['par_mounts']
         auth          = 'GRIDProxy' in jobspec_environment['resources']
@@ -197,7 +198,7 @@ class KubeSpecMixin(object):
         container_mounts += container_mounts_state
         volumes          += volumes_state
 
-        resources, mounts, vols = self.get_job_mounts(jobspec['spec']['environment'])
+        resources, mounts, vols = self.get_job_mounts(job_uuid,jobspec['spec']['environment'])
         container_mounts += mounts
         volumes += vols
         kube_resources += resources

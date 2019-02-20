@@ -1,4 +1,3 @@
-import os
 from kubernetes import client, config
 import logging
 
@@ -48,7 +47,7 @@ class SubmitToKubeMixin(object):
         podname = pods[0]['metadata']['name']
         
         try:
-            logs = client.CoreV1Api().read_namespaced_pod_log(pods[0]['metadata']['name'],self.namespace) 
+            logs = client.CoreV1Api().read_namespaced_pod_log(podname,self.namespace) 
         except client.rest.ApiException:
             pass
         return logs
@@ -101,18 +100,6 @@ class SubmitToKubeMixin(object):
 
     def check_k8s_job_status(self, name):
         return client.BatchV1Api().read_namespaced_job(name,self.namespace).status
-
-    def sequence_from_spec(self, mainmounts, configmounts = None):
-        configmounts = configmounts or []
-        mainmounts = mainmounts or []
-        return [{
-          "name": seqname,
-          "image": sequence_spec[seqname]['image'],
-          "command": sequence_spec[seqname]['cmd'],
-          "env": sequence_spec['config_env'] if sequence_spec[seqname]['iscfg'] else [],
-          "volumeMounts":  mainmounts + (configmounts if sequence_spec[seqname]['iscfg'] else [])
-        } for seqname in sequence_spec["sequence"]]
-
     
     def determine_readiness(self, job_proxy):
         ready = job_proxy.get('ready',False)

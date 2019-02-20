@@ -1,13 +1,6 @@
 import logging
 import copy
-import json
-import os
-import json
-import logging
-import uuid
-import copy
 
-from ..syncbackends import build_job, packconfig, build_env
 from ..syncbackends import finalize_inputs, acquire_job_env, packconfig
 
 log = logging.getLogger(__name__)
@@ -20,7 +13,7 @@ class DirectJobMakerMixin(object):
 
         #hacky until we handle logs in more principled way (backend should have log awareness?)
         logpath =  '{}/{}.{}.log'.format(state.metadir,metadata['name'],'run')
-        
+
         command = '({command}) 2>&1 | tee {logpath}'
         script = '''cat << 'RECASTJOB' | {} 2>&1 | tee {logpath} \n{}\nRECASTJOB\n'''
         return {
@@ -36,12 +29,7 @@ class DirectJobMakerMixin(object):
         }
 
     def make_external_job(self, spec,parameters, state, metadata):
-        pack_config = packconfig()
-
         spec      = copy.deepcopy(spec)
-        parcopy   = copy.deepcopy(parameters)
-        jsonpars  = copy.deepcopy(parcopy.json())
-
 
         parameters, state = finalize_inputs(parameters, state)
         rendered_process = self.render_process(spec, state, metadata, parameters)

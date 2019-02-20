@@ -3,7 +3,6 @@ import logging
 
 from ..asyncbackends import ExternalAsyncMixin
 from ..syncbackends import publish, packconfig, finalize_outputs, finalize_inputs
-from ..backendutils import backend
 from ..statecontexts import load_state
 
 from .kubedirectjobbackend import KubernetesDirectJobBackend
