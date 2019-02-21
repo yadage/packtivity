@@ -7,7 +7,7 @@ log = logging.getLogger(__name__)
 class KubeSpecMixin(object):
     def __init__(self, **kwargs):
         self.cvmfs_repos = ['atlas.cern.ch','sft.cern.ch','atlas-condb.cern.ch']
-        self.secrets = kwargs.get('secrets', {'hepauth': 'hepauth', 'hepimgcred': 'hepimgcred'})
+        self.secrets = kwargs.get('secrets', {'hepauth': 'hepauth', 'hepimgcred': []})
         self.authmount = '/recast_auth'
         self.resource_labels = kwargs.get('resource_labels',{'component': 'yadage'})
         self.resource_opts = kwargs.get('resource_opts',{
