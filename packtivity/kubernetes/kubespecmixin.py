@@ -53,7 +53,7 @@ class KubeSpecMixin(object):
             volumes.append({
                 'name': reponame,
                 'persistentVolumeClaim': {
-                    'name': reponame,
+                    'claimName': reponame,
                     'readOnly': True
                 }
             })
