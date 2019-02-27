@@ -10,7 +10,7 @@ class KubeSpecMixin(object):
         self.secrets = kwargs.get('secrets', {'hepauth': 'hepauth', 'hepimgcred': []})
         self.authmount = '/recast_auth'
         self.resource_labels = kwargs.get('resource_labels',{'component': 'yadage'})
-        self.resource_opts = kwargs.get('resource_opts',{
+        self.resource_opts = kwargs.get('resource_opts',{   
             'requests': {
                 'memory': "0.1Gi",
                 'cpu': "100m"
@@ -52,11 +52,9 @@ class KubeSpecMixin(object):
             reponame = repo.replace('.','').replace('-','')
             volumes.append({
                 'name': reponame,
-                'flexVolume': {
-                'driver': "cern/cvmfs",
-                    'options': {
-                        'repository': repo
-                    }
+                'persistentVolumeClaim': {
+                    'name': reponame,
+                    'readOnly': True
                 }
             })
             container_mounts.append({
