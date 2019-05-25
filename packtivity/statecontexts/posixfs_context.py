@@ -25,11 +25,11 @@ class LocalFSState(object):
 
         readonly  = readonly or []
         for d in dependencies or []:
-            if d.readwrite:
-                readonly += d.readwrite # if dep has readwrite add those
-            else:
-                readonly += d.readonly # else add the readonlies
-            
+            if d.readwrite: # if dep has readwrite add those
+                readonly += d.readwrite 
+            else:           # else add the readonlies
+                readonly += d.readonly 
+
         self._readonly = []
         for i,ro in enumerate(readonly):
             if isinstance(ro,str):
