@@ -16,45 +16,47 @@ class LocalFSState(object):
             assert type(readwrite) in [list, type(None)]
             assert type(readonly) in [list, type(None)]
         except AssertionError:
-            raise TypeError('readwrite and readonly must be None or a list {} {}'.format(type(readonly)))
+            raise TypeError('readwrite and readonly must be None or a list {} {}'.format(type(readonly), type(readwrite)))
         self._identifier = identifier
 
+
+        readwrite = readwrite or []
+
+
+        readonly  = readonly or []
         for d in dependencies or []:
             if d.readwrite:
-                readonlies += d.readwrite # if dep has readwrite add those
+                readonly += d.readwrite # if dep has readwrite add those
             else:
-                readonlies += d.readonly # else add the readonlies
+                readonly += d.readonly # else add the readonlies
             
         self._readonly = []
         for i,ro in enumerate(readonly):
             if isinstance(ro,str):
-                alias = 'readdir{}'.format(i)
-                self._readonly.append({'dir': os.path.realpath(ro), 'alias': alias})
+                name = 'readdir{}'.format(i)
+                self._readonly.append({'path': os.path.realpath(ro), 'name': name})
             if isinstance(ro,dict):
-                ro['dir'] = os.path.realpath(ro['dir'])
+                ro['path'] = os.path.realpath(ro['path'])
                 self._readonly.append(ro)
 
-        assert len(readwrite) <= 1
         self._readwrite = []
         for i,rw in enumerate(readwrite):
-            if isinstance(ro,str):
-                alias = 'workdir'
-                self._readwrite.append({'dir': os.path.realpath(rw), 'alias': alias})
+            if isinstance(rw,str):
+                self._readwrite.append({'path': os.path.realpath(rw)})
             if isinstance(rw,dict):
-                rw['dir'] = os.path.realpath(rw['dir'])
+                rw['path'] = os.path.realpath(rw['path'])
                 self._readwrite.append(rw)
+        if self._readwrite:
+            self._readwrite[0]['name'] = 'workdir'
 
+        self._readonly  = sorted(self._readonly, key = lambda x: x['path'])
+        self._readwrite = sorted(self._readwrite, key = lambda x: x['path'])
 
-
-        self._readonly  = sorted(self._readonly, key = lambda x: x['dir'])
-        self._readwrite = sorted(self._readwrite, key = lambda x: x['dir'])
-
-        self.aliases = {}
+        self.dirnames = {}
         for x in self._readwrite + self._readonly:
-            if 'alias' in x:
-                self.aliases[x['alias']] = x['dir']
+            if 'name' in x:
+                self.dirnames[x['name']] = x['path']
 
-        
         self.datamodel = None
 
     def __repr__(self):
@@ -62,11 +64,11 @@ class LocalFSState(object):
 
     @property
     def readonly(self):
-        return [x['dir'] for x in self._readonly]
+        return [x['path'] for x in self._readonly]
 
     @property
     def readwrite(self):
-        return [x['dir'] for x in self._readwrite]
+        return [x['path'] for x in self._readwrite]
 
     @property
     def metadir(self):
@@ -113,7 +115,7 @@ class LocalFSState(object):
         replaces '{workdir}' placeholder with first readwrite directory
         '''
         try:
-            return value.format(**self.aliases)
+            return value.format(**self.dirnames)
         except AttributeError:
             return value
         except IndexError:
