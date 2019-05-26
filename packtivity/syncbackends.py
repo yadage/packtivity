@@ -9,7 +9,7 @@ class packconfig(object):
         self.handler_selection = kwargs
         fromenv = os.environ.get('PACKTIVITY_SYNCCONFIGFILE',None)
         if fromenv:
-            override = yaml.load(open(fromenv))
+            override = yaml.safe_load(open(fromenv))
             self.handler_selection.update(**override)
 
     def get_impl(self,category,handler):
@@ -34,7 +34,7 @@ class container_config(object):
         return os.environ.get('PACKTIVITY_CONTAINER_RUNTIME','docker')
 
     def cvmfs_repos(self):
-        cvmfs_repos = yaml.load(os.environ.get('PACKTIVITY_CVMFS_REPOS','null'))
+        cvmfs_repos = yaml.safe_load(os.environ.get('PACKTIVITY_CVMFS_REPOS','null'))
         if not cvmfs_repos:
             cvmfs_repos  = ['atlas.cern.ch','atlas-condb.cern.ch','sft.cern.ch']
         return cvmfs_repos
@@ -59,7 +59,7 @@ class ExecutionConfig(object):
 
     def disable_logging(self):
         if 'PACKTIVITY_LOGGING_DISABLE' in os.environ:
-            return yaml.load(os.environ.get('PACKTIVITY_LOGGING_DISABLE','false'))
+            return yaml.safe_load(os.environ.get('PACKTIVITY_LOGGING_DISABLE','false'))
         return not self.config.get('logging',True)
 
     def custom_logging_handler(self):

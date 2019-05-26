@@ -157,7 +157,7 @@ def backend_from_string(backendstring,backendopts = None):
     backendopts = backendopts or {}
     ctor_kwargs = os.environ.get('PACKTIVITY_ASYNCBACKEND_OPTS',{})
     if ctor_kwargs:
-        ctor_kwargs = yaml.load(open(ctor_kwargs))
+        ctor_kwargs = yaml.safe_load(open(ctor_kwargs))
         log.info('overriding using envvar opts %s', ctor_kwargs)
         backendopts.update(**ctor_kwargs)
 

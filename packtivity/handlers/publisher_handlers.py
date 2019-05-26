@@ -52,7 +52,7 @@ def interpolated_pub_handler(publisher,parameters,state):
 def fromyaml_pub_handler(publisher,parameters,state):
     workdir  = state.readwrite[0]
     yamlfile =  publisher['yamlfile']
-    pubdata = yaml.load(open('{}/{}'.format(workdir,yamlfile)))
+    pubdata = yaml.safe_load(open('{}/{}'.format(workdir,yamlfile)))
 
     return pubdata
 

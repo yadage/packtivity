@@ -21,11 +21,11 @@ def getinit_data(initfiles,parameters):
     '''
     initdata = {}
     for initfile in initfiles:
-        initdata.update(**yaml.load(open(initfile)))
+        initdata.update(**yaml.safe_load(open(initfile)))
 
     for x in parameters:
         key,value = x.split('=')
-        initdata[key]=yaml.load(value)
+        initdata[key]=yaml.safe_load(value)
     return initdata
 
 @click.command()
@@ -50,7 +50,7 @@ def runcli(spec,parfiles,state,parameter,read,write,toplevel,schemasource,asyncw
 
     parameters = getinit_data(parfiles,parameter)
 
-    state    = yaml.load(open(state)) if state else {}
+    state    = yaml.safe_load(open(state)) if state else {}
     if not state:
         state.setdefault('readwrite',[]).extend(map(os.path.realpath,write))
         state.setdefault('readonly',[]).extend(map(os.path.realpath,read))
@@ -120,7 +120,7 @@ def utilcli():
 def pubtest(spec,parfiles,state,parameter,read,write,toplevel,schemasource,validate,verbosity,backend):
     logging.basicConfig(level = getattr(logging,verbosity))
     spec = utils.load_packtivity(spec,toplevel,schemasource,validate)
-    state    = yaml.load(open(state)) if state else {}
+    state    = yaml.safe_load(open(state)) if state else {}
     if not state:
         state.setdefault('readwrite',[]).extend(map(os.path.realpath,write))
         state.setdefault('readonly',[]).extend(map(os.path.realpath,read))

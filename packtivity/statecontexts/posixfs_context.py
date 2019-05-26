@@ -4,6 +4,7 @@ import shutil
 import json
 import logging
 import checksumdir
+import six
 import packtivity.utils as utils
 log = logging.getLogger(__name__)
 
@@ -16,28 +17,60 @@ class LocalFSState(object):
             assert type(readwrite) in [list, type(None)]
             assert type(readonly) in [list, type(None)]
         except AssertionError:
-            raise TypeError('readwrite and readonly must be None or a list {} {}'.format(type(readonly)))
+            raise TypeError('readwrite and readonly must be None or a list {} {}'.format(type(readonly), type(readwrite)))
         self._identifier = identifier
 
-        readonlies = list(map(os.path.realpath,readonly) if readonly else  [])
+
+
+        readwrite = readwrite or []
+
+
+        readonly  = readonly or []
         for d in dependencies or []:
-            if d.readwrite:
-                readonlies += d.readwrite # if dep has readwrite add those
-            else:
-                readonlies += d.readonly # else add the readonlies
+            if d.readwrite: # if dep has readwrite add those
+                readonly += d.readwrite 
+            else:           # else add the readonlies
+                readonly += d.readonly 
 
-        self.readwrite = sorted(list(map(os.path.realpath,readwrite) if readwrite else  []))
-        self.readonly  = sorted(list(map(os.path.realpath,readonlies)))
+        self._readonly = []
+        for i,ro in enumerate(readonly):
+            if isinstance(ro,six.string_types):
+                name = 'readdir{}'.format(i)
+                self._readonly.append({'path': os.path.realpath(ro), 'name': name})
+            if isinstance(ro,dict):
+                ro['path'] = os.path.realpath(ro['path'])
+                self._readonly.append(ro)
 
-        # self.aliases = {
-        #     'workdir': self.readonly[0]
-        # }
+        self._readwrite = []
+        for i,rw in enumerate(readwrite):
+            if isinstance(rw,six.string_types):
+                self._readwrite.append({'path': os.path.realpath(rw)})
+            if isinstance(rw,dict):
+                rw['path'] = os.path.realpath(rw['path'])
+                self._readwrite.append(rw)
+        if self._readwrite:
+            self._readwrite[0]['name'] = 'workdir'
+
+        self._readonly  = sorted(self._readonly, key = lambda x: x['path'])
+        self._readwrite = sorted(self._readwrite, key = lambda x: x['path'])
+
+        self.dirnames = {}
+        for x in self._readwrite + self._readonly:
+            if 'name' in x:
+                self.dirnames[x['name']] = x['path']
 
         self.datamodel = None
 
     def __repr__(self):
         return '<LocalFSState rw: {}, ro: {}>'.format(self.readwrite,self.readonly)
 
+    @property
+    def readonly(self):
+        return [x['path'] for x in self._readonly]
+
+    @property
+    def readwrite(self):
+        return [x['path'] for x in self._readwrite]
 
     @property
     def metadir(self):
@@ -84,8 +117,7 @@ class LocalFSState(object):
         replaces '{workdir}' placeholder with first readwrite directory
         '''
         try:
-            workdir = self.readwrite[0]
-            return value.format(workdir = workdir)
+            return value.format(**self.dirnames)
         except AttributeError:
             return value
         except IndexError:
@@ -101,14 +133,14 @@ class LocalFSState(object):
         return {
             'state_type': 'localfs',
             'identifier': self.identifier(),
-            'readwrite':  self.readwrite,
-            'readonly':   self.readonly,
+            'readwrite':  self._readwrite,
+            'readonly':   self._readonly,
         }
 
     @classmethod
     def fromJSON(cls,jsondata):
         return cls(
             identifier   = jsondata['identifier'],
-            readwrite    = sorted(jsondata['readwrite']),
-            readonly     = sorted(jsondata['readonly']),
+            readwrite    = jsondata['readwrite'],
+            readonly     = jsondata['readonly'],
         )
