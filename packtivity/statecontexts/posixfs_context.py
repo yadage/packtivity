@@ -4,6 +4,7 @@ import shutil
 import json
 import logging
 import checksumdir
+import six
 import packtivity.utils as utils
 log = logging.getLogger(__name__)
 
@@ -20,6 +21,7 @@ class LocalFSState(object):
         self._identifier = identifier
 
 
+
         readwrite = readwrite or []
 
 
@@ -32,7 +34,7 @@ class LocalFSState(object):
 
         self._readonly = []
         for i,ro in enumerate(readonly):
-            if isinstance(ro,str):
+            if isinstance(ro,six.string_types):
                 name = 'readdir{}'.format(i)
                 self._readonly.append({'path': os.path.realpath(ro), 'name': name})
             if isinstance(ro,dict):
@@ -41,7 +43,7 @@ class LocalFSState(object):
 
         self._readwrite = []
         for i,rw in enumerate(readwrite):
-            if isinstance(rw,str):
+            if isinstance(rw,six.string_types):
                 self._readwrite.append({'path': os.path.realpath(rw)})
             if isinstance(rw,dict):
                 rw['path'] = os.path.realpath(rw['path'])
