@@ -135,7 +135,7 @@ def pubtest(spec,parfiles,state,parameter,read,write,toplevel,schemasource,valid
 @click.command()
 @click.argument('jsonfile')
 def checkproxy(jsonfile):
-    proxydata = json.safe_load(open(jsonfile))
+    proxydata = json.load(open(jsonfile))
     proxy, backend = bkutils.load_proxy(proxydata, best_effort_backend = True)
 
     ready = backend.ready(proxy)
