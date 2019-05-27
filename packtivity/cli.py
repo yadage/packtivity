@@ -70,9 +70,10 @@ def runcli(spec,parfiles,state,parameter,read,write,toplevel,schemasource,asyncw
     if prepub:
         click.echo(str(prepub)+(' (prepublished)'))
 
+
     pack = packtivity.pack_object(spec)
 
-    result = pack(parameters,state,**backend_kwargs)
+    result = pack(parameters,state, **backend_kwargs)
 
     if not is_sync and not asyncwait:
         click.secho('proxy-json {}'.format(json.dumps(result.json())))

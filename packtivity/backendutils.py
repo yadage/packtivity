@@ -165,7 +165,7 @@ def backend_from_string(backendstring,backendopts = None):
         if backendstring.startswith(k):
             return backends[k]['default'](backendstring, backendopts)
 
-    raise RuntimeError('Unknown Backend %s', backendstring)
+    raise RuntimeError('Unknown Backend %s', backendstring, backends.keys())
 
 @backend('kubedirectjob')
 def k8s_direct_backend(backendstring, backendopts):
