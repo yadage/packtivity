@@ -1,7 +1,8 @@
 class KubeKrbMixin(object):
 
     def __init__(self, **kwargs):
-        pass
+        self.ticket_vol = 'kerberos-data'
+        self.secret_name = 'statesecret'
 
     def inject_kerberos(self, kube_resources):
         for r in kube_resources:
@@ -15,13 +16,13 @@ class KubeKrbMixin(object):
                 )
         
                 r['spec']['template']['spec']['volumes'].extend([
-                    {'emptyDir': {}, 'name': 'kerberos-data'}
+                    {'emptyDir': {}, 'name': self.ticket_vol}
                 ])
         return kube_resources
 
     def addKrbContainer(self,data):
         data.setdefault('volumeMounts',[]).extend([
-            {'mountPath': '/tmp/kerberos', 'name': 'kerberos-data'}
+            {'mountPath': '/tmp/kerberos', 'name': self.ticket_vol}
         ])
         data.setdefault('env',[]).extend([
             {
@@ -31,12 +32,12 @@ class KubeKrbMixin(object):
             {
                 'name': 'KRBUSERNAME',
                 'valueFrom': {
-                    'secretKeyRef': {'key': 'username','name': 'statesecret'}
+                    'secretKeyRef': {'key': 'username','name': self.secret_name}
                 }
             },
             {
                 'name': 'KRBPASSWORD',
-                'valueFrom': {'secretKeyRef': {'key': 'password','name': 'statesecret'}}
+                'valueFrom': {'secretKeyRef': {'key': 'password','name': self.secret_name}}
             }
         ])
 
@@ -50,7 +51,7 @@ class KubeKrbMixin(object):
                 'valueFrom': {
                     'secretKeyRef': {
                         'key': 'username',
-                        'name': 'statesecret'
+                        'name': self.secret_name
                     }
                 }
             },
@@ -59,13 +60,13 @@ class KubeKrbMixin(object):
                 'valueFrom': {
                     'secretKeyRef': {
                         'key': 'password',
-                        'name': 'statesecret'
+                        'name': self.secret_name
                 }
             }}
         ],
         'image': 'cern/cc7-base',
         'name': 'makecc',
         'volumeMounts': [
-            {'mountPath': '/tmp/kerberos', 'name': 'kerberos-data'}
+            {'mountPath': '/tmp/kerberos', 'name': self.ticket_vol}
         ]}
         return init
