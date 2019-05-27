@@ -20,7 +20,8 @@ class DirectJobMakerMixin(object):
         return {
             'command': command.format(
                 command = job['command'],
-                logpath = logpath
+                logpath = logpath,
+                logdir  = logdir,                
                 ) if 'command' in job else script.format(
                 job['interpreter'],
                 job['script'],
