@@ -21,6 +21,7 @@ class KubeSpecMixin(KubeKrbMixin):
             }
         }))
         self.resource_prefix = kwargs.get('resource_prefix', 'wflow')
+        KubeKrbMixin.__init__(self,**kwargs)
 
     def auth_binds(self,authmount = None):
         container_mounts = []
