@@ -16,7 +16,7 @@ class DirectJobMakerMixin(object):
         logpath =  '{}/{}.{}.log'.format(logdir,metadata['name'],'run')
 
         command = 'mkdir -p {logdir}; ({command}) 2>&1 | tee {logpath}'
-        script = '''cat << 'RECASTJOB' | {} 2>&1 | tee {logpath} \n{}\nRECASTJOB\n'''
+        script = '''mkdir -p {logdir}; cat << 'RECASTJOB' | {} 2>&1 | tee {logpath} \n{}\nRECASTJOB\n'''
         return {
             'command': command.format(
                 command = job['command'],
