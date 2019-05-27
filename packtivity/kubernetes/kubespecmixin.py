@@ -12,8 +12,8 @@ class KubeSpecMixin(object):
         self.resource_labels = kwargs.get('resource_labels',{'component': 'yadage'})
         self.resource_opts = kwargs.get('resource_opts',{   
             'requests': {
-                'memory': "0.1Gi",
-                'cpu': "100m"
+                'memory': "2Gi",
+                'cpu': "1000m"
             }
         })
         self.resource_prefix = kwargs.get('resource_prefix', 'wflow')
