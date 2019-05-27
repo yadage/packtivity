@@ -57,7 +57,6 @@ class SubmitToKubeMixin(object):
             if r['kind'] == 'Job':
                 resource_name = r['metadata']['name']
                 try:
-                    j = client.BatchV1Api().read_namespaced_job(resource_name,self.namespace)
                     client.BatchV1Api().delete_namespaced_job(resource_name,self.namespace)
                 except client.rest.ApiException:
                     pass
