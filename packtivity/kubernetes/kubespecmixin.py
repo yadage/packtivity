@@ -3,9 +3,10 @@ import logging
 import uuid
 import json
 
+from .kubekrbmixin import KubeKrbMixin
 log = logging.getLogger(__name__)
 
-class KubeSpecMixin(object):
+class KubeSpecMixin(KubeKrbMixin):
     def __init__(self, **kwargs):
         self.cvmfs_repos = ['atlas.cern.ch','sft.cern.ch','atlas-condb.cern.ch']
         self.secrets = kwargs.get('secrets', {'hepauth': 'hepauth', 'hepimgcred': []})
@@ -192,6 +193,7 @@ class KubeSpecMixin(object):
         job['spec']['template']['spec']
         return job
 
+
     def plan_kube_resources(self, jobspec):
         job_uuid = str(uuid.uuid4())
         kube_resources, container_mounts, volumes = [], [], []
@@ -222,4 +224,6 @@ class KubeSpecMixin(object):
         )
         proxy_data = self.proxy_data(job_uuid, kube_resources)
         kube_resources.append(jobspec)
+        
+        kube_resources = self.inject_kerberos(kube_resources)
         return proxy_data, kube_resources
