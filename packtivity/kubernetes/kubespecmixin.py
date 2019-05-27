@@ -1,6 +1,7 @@
 import os
 import logging
 import uuid
+import json
 
 log = logging.getLogger(__name__)
 
@@ -10,12 +11,14 @@ class KubeSpecMixin(object):
         self.secrets = kwargs.get('secrets', {'hepauth': 'hepauth', 'hepimgcred': []})
         self.authmount = '/recast_auth'
         self.resource_labels = kwargs.get('resource_labels',{'component': 'yadage'})
-        self.resource_opts = kwargs.get('resource_opts',{   
+
+        opts = os.environ.get('PACKTIVITY_KUBE_RESOURCE_OPTS')
+        self.resource_opts = json.loads(opts) if opts else kwargs.get('resource_opts',os.environ.get('PACKTIVITY_KUBE_RESOURCE_OPTS',{   
             'requests': {
                 'memory': "2Gi",
-                'cpu': "1000m"
+                'cpu': "1"
             }
-        })
+        }))
         self.resource_prefix = kwargs.get('resource_prefix', 'wflow')
 
     def auth_binds(self,authmount = None):
