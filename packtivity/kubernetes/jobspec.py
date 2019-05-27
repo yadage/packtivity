@@ -12,9 +12,10 @@ class DirectJobMakerMixin(object):
         job, env = acquire_job_env(spec, local_pars,state,metadata,packconfig())
 
         #hacky until we handle logs in more principled way (backend should have log awareness?)
-        logpath =  '{}/{}.{}.log'.format(state.metadir,metadata['name'],'run')
+        logdir =  state.metadir
+        logpath =  '{}/{}.{}.log'.format(logdir,metadata['name'],'run')
 
-        command = '({command}) 2>&1 | tee {logpath}'
+        command = 'mkdir -p {logdir}; ({command}) 2>&1 | tee {logpath}'
         script = '''cat << 'RECASTJOB' | {} 2>&1 | tee {logpath} \n{}\nRECASTJOB\n'''
         return {
             'command': command.format(
@@ -23,6 +24,7 @@ class DirectJobMakerMixin(object):
                 ) if 'command' in job else script.format(
                 job['interpreter'],
                 job['script'],
+                logdir  = logdir,
                 logpath = logpath
                 ),
             'env': env
