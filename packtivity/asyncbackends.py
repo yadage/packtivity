@@ -81,7 +81,7 @@ class ExternalAsyncMixin(object):
         raise NotImplementedError
 
     def prepublish(self,spec, parameters, state):
-        raise NotImplementedError
+        return None
 
     def submit(self, spec, parameters, state, metadata = None):
         job = self.make_external_job(spec,parameters,state,metadata)

@@ -30,7 +30,7 @@ class pack_object(object):
             return syncbackend.run(self.spec,parameters,state)
         elif asyncbackend:
             submit_time = datetime.fromtimestamp(time.time())
-            proxy = asyncbackend.submit(self.spec, parameters, state)
+            proxy = asyncbackend.submit(self.spec, parameters, state, metadata = {'name': 'packtivity'})
             if not asyncwait:
                 return proxy
             while True:

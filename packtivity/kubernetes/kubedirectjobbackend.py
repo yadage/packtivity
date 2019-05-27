@@ -19,13 +19,13 @@ class KubernetesDirectJobBackend(SubmitToKubeMixin,KubeSpecMixin):
     def state_mounts_and_vols(self, jobspec):
         container_mounts_state, volumes_state = [],[]
         for i,ro in enumerate(jobspec['state']['readonly']):
-            subpath = ro.replace(self.base,'')   
-            ctrmnt = {"name": "state", "mountPath": ro, "subPath": subpath}
+            subpath = ro['path'].replace(self.base,'')   
+            ctrmnt = {"name": "state", "mountPath": ro['path'], "subPath": subpath}
             container_mounts_state.append(ctrmnt)
 
         for i,rw in enumerate(jobspec['state']['readwrite']):
-            subpath = rw.replace(self.base,'')   
-            ctrmnt = {"name": "state", "mountPath": rw, "subPath": subpath}
+            subpath = rw['path'].replace(self.base,'')   
+            ctrmnt = {"name": "state", "mountPath": rw['path'], "subPath": subpath}
             container_mounts_state.append(ctrmnt)
 
         volumes_state.append({
