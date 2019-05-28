@@ -11,7 +11,8 @@ class KubeSpecMixin(KubeKrbMixin):
         self.cvmfs_repos = ['atlas.cern.ch','sft.cern.ch','atlas-condb.cern.ch']
         self.secrets = kwargs.get('secrets', {'hepauth': 'hepauth', 'hepimgcred': []})
         self.authmount = '/recast_auth'
-        self.resource_labels = kwargs.get('resource_labels',{'component': 'yadage'})
+        self.resource_labels = {'component': 'yadage'}
+        self.resource_labels.update(**kwargs.get('resource_labels',{}))
 
         self.inject_krb = kwargs.get('inject_krb',False)
         opts = os.environ.get('PACKTIVITY_KUBE_RESOURCE_OPTS')
@@ -187,7 +188,7 @@ class KubeSpecMixin(KubeKrbMixin):
                 "containers": containers,
                 "volumes": volumes
               },
-              "metadata": { "name": jobname }
+              "metadata": { "name": jobname, "labels": self.resource_labels}
             }
           },
           "metadata": { "name": jobname,  "labels": self.resource_labels}
