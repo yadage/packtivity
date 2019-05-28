@@ -13,6 +13,7 @@ class KubeSpecMixin(KubeKrbMixin):
         self.authmount = '/recast_auth'
         self.resource_labels = kwargs.get('resource_labels',{'component': 'yadage'})
 
+        self.inject_krb = kwargs.get('inject_krb',False)
         opts = os.environ.get('PACKTIVITY_KUBE_RESOURCE_OPTS')
         self.resource_opts = json.loads(opts) if opts else kwargs.get('resource_opts',os.environ.get('PACKTIVITY_KUBE_RESOURCE_OPTS',{   
             'requests': {
@@ -226,5 +227,6 @@ class KubeSpecMixin(KubeKrbMixin):
         proxy_data = self.proxy_data(job_uuid, kube_resources)
         kube_resources.append(jobspec)
         
-        kube_resources = self.inject_kerberos(kube_resources)
+        if self.inject_krb:
+            kube_resources = self.inject_kerberos(kube_resources)
         return proxy_data, kube_resources
