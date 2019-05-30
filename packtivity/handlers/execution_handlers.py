@@ -71,7 +71,8 @@ def cvmfs_from_volume_plugin(config,cvmfs_repos = None):
             'type': 'volume',
             'source': repo,
             'destination': '/cvmfs/{}'.format(repo),
-            'readonly': False
+            'readonly': True,
+            'propagation': None
         })
 
     return options, mounts
@@ -81,7 +82,8 @@ def cvmfs_from_external_mount(config):
         'type': 'bind',
         'source': config.container_config.cvmfs_location(),
         'destination': '/cvmfs',
-        'readonly': False
+        'readonly': True,
+        'propagation': config.container_config.cvmfs_propagation()
     }]
 
 def cvmfs_mount(config):
@@ -147,10 +149,14 @@ def docker_execution_cmdline(config,state,log,metadata, race_spec):
     workdir_flag =  '-w {}'.format(race_spec['workdir']) if race_spec['workdir'] is not None else ''
     mount_args = ''
     for s in race_spec['mounts']:
-        mount_args += ' -v {source}:{destination}:{mode}'.format(
+        suffix = 'ro' if s['readonly'] else 'rw'
+        if s.get('propagation'):
+            suffix += ',' + s['propagation']
+
+        mount_args += ' -v {source}:{destination}:{suffix}'.format(
             source = s['source'],
             destination = s['destination'],
-            mode = 'ro' if s['readonly'] else 'rw'
+            suffix = suffix
         )
 
     return 'docker run --rm {stdin} {cid} {workdir} {custom} {mount_args} {image} {command}'.format(

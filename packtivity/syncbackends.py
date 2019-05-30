@@ -42,6 +42,9 @@ class container_config(object):
     def cvmfs_location(self):
         return os.environ.get('PACKTIVITY_CVMFS_LOCATION','/cvmfs')
 
+    def cvmfs_propagation(self):
+        return os.environ.get('PACKTIVITY_CVMFS_PROPAGATION')
+
     def cvmfs_source(self):
         return os.environ.get('PACKTIVITY_CVMFS_SOURCE','external')
 
