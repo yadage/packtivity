@@ -1,6 +1,9 @@
 process:
   process_type: 'interpolated-script-cmd'
-  script: 'echo Hello World > {outputfile}'
+  script: |
+    echo HELLO WORLD
+    echo Hello World > {outputfile}
+    echo WE ARE DONE!!
 publisher:
   publisher_type: 'frompar-pub'
   outputmap:

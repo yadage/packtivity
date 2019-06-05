@@ -159,8 +159,9 @@ def docker_execution_cmdline(config,state,log,metadata, race_spec):
             suffix = suffix
         )
 
-    return 'docker run --rm {stdin} {cid} {workdir} {custom} {mount_args} {image} {command}'.format(
-        stdin = '-i' if race_spec['stdin'] else '',
+    return 'docker run --rm {stdin} {tty} {cid} {workdir} {custom} {mount_args} {image} {command}'.format(
+        stdin = '-i' if race_spec['stdin'] or race_spec['tty'] else '',
+        tty = '-t' if race_spec['tty'] else '',
         cid        = cid_file,
         workdir    = workdir_flag,
         custom     = custom_mod,
@@ -200,7 +201,7 @@ def script_argv(environment,job,log):
     indocker = interpreter
     envmod = 'source {} && '.format(environment['envscript']) if environment['envscript'] else ''
     in_docker_cmd = envmod+indocker
-    return ['sh', '-c', in_docker_cmd], script
+    return ['sh', '-c', in_docker_cmd], script, False
 
 def command_argv(environment,job,log):
     log.debug('''\n\
@@ -212,7 +213,7 @@ command: {command}
 
     envmod = 'source {} && '.format(environment['envscript']) if environment['envscript'] else ''
     in_docker_cmd = envmod + job['command']
-    return ['sh', '-c', in_docker_cmd], None
+    return ['sh', '-c', in_docker_cmd], None, False
 
 def execute_and_tail_subprocess(config,metadata,state,log,command_string,stdin_content = None, logging_topic = 'execution'):
     log.debug('command: \n%s',command_string)
@@ -267,9 +268,11 @@ def execute_and_tail_subprocess(config,metadata,state,log,command_string,stdin_c
 
 def race_spec(config,state,environment,log,job):
     if 'command' in job:
-        container_argv, container_stdin = command_argv(environment,job,log)
+        container_argv, container_stdin, container_tty = command_argv(environment,job,log)
     elif 'script' in job:
-        container_argv, container_stdin = script_argv(environment,job,log)
+        container_argv, container_stdin, container_tty = script_argv(environment,job,log)
+    elif 'interactive' in job:
+        container_argv, container_stdin, container_tty = shlex.split(job['interactive']), None, True
     else:
         raise RuntimeError('do not know yet how to run this...')
 
@@ -283,15 +286,20 @@ def race_spec(config,state,environment,log,job):
         'image'   : ':'.join([environment['image'],environment['imagetag']]),
         'workdir' : environment['workdir'],
         'argv'    : container_argv,
-        'stdin'   : container_stdin
+        'stdin'   : container_stdin,
+        'tty'     : container_tty
     }
 
 def run_containers_in_docker_runtime(config,state,log,metadata,race_spec):
     if config.container_config.pull_software():
         execute_and_tail_subprocess(config,metadata,state,log,'docker pull {}'.format(race_spec['image']), logging_topic = 'pull')
 
-    cmdline = docker_execution_cmdline(config,state,log,metadata,race_spec)
-    execute_and_tail_subprocess(config,metadata,state,log,cmdline, stdin_content = race_spec['stdin'], logging_topic = 'run')
+    if not race_spec['tty']:
+        cmdline = docker_execution_cmdline(config,state,log,metadata,race_spec)
+        execute_and_tail_subprocess(config,metadata,state,log,cmdline, stdin_content = race_spec['stdin'], logging_topic = 'run')
+    else:
+        cmdline = docker_execution_cmdline(config,state,log,metadata,race_spec)
+        return cmdline
 
 def run_containers_in_singularity_runtime(config,state,log,metadata,race_spec):
     import tempfile
@@ -321,7 +329,8 @@ def docker_enc_handler(config,environment,state,job,metadata):
             'singularity': run_containers_in_singularity_runtime
         }
         run = runtimes[config.container_config.container_runtime()]
-        run(config,state,log,metadata,rspec)
+        result = run(config,state,log,metadata,rspec)
+        return result
 
 @executor('noop-env')
 def noop_env(config,environment,state,job,metadata):
