@@ -133,6 +133,44 @@ def pubtest(spec,parfiles,state,parameter,read,write,toplevel,schemasource,valid
     publish = backend.prepublish(spec,parameters,state)
     click.echo(str(publish))
 
+@utilcli.command()
+@click.option('-r', '--read', multiple=True, default = [])
+@click.option('-w', '--write', multiple=True, default = [os.curdir])
+@click.option('-s','--state', default = '')
+@click.option('--parameter', '-p', multiple=True)
+@click.option('-t','--toplevel', default = os.getcwd())
+@click.option('-c','--schemasource', default = yadageschemas.schemadir)
+@click.option('-v','--verbosity', default = 'ERROR')
+@click.option('--validate/--no-validate', default = True)
+@click.option('-b','--backend',default = 'defaultsync')
+@click.argument('spec')
+@click.argument('parfiles', nargs = -1)
+def shell(spec,parfiles,state,parameter,read,write,toplevel,schemasource,validate,verbosity,backend):
+    logging.basicConfig(level = getattr(logging,verbosity))
+
+    from .datamodel import create
+    parameters = create(getinit_data(parfiles,parameter))
+
+    spec = utils.load_packtivity(spec,toplevel,schemasource,validate)
+    state    = yaml.safe_load(open(state)) if state else {}
+    if not state:
+        state.setdefault('readwrite',[]).extend(map(os.path.realpath,write))
+        state.setdefault('readonly',[]).extend(map(os.path.realpath,read))
+    state = LocalFSState(state['readwrite'],state['readonly'])
+
+    state.ensure()
+
+    _, backend = packtivity.backendutils.backend_from_string('foregroundasync')
+
+    env = packtivity.syncbackends.build_env(spec['environment'],parameters,state,backend.pack_config)
+
+    job = {'interactive': 'sh'}
+    metadata = {'name': 'test'}
+
+    result  = packtivity.syncbackends.run_in_env(job,env,state,metadata,backend.pack_config,backend.exec_config)
+
+    print(result)
+
 @click.command()
 @click.argument('jsonfile')
 def checkproxy(jsonfile):

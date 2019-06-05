@@ -14,6 +14,7 @@ def test_docker_cvmfs(tmpdir,basic_localfs_state, docker_env_resources, monkeypa
 		race_spec = {
 			'workdir': None,
 			'stdin': None,
+			'tty': False,
 			'argv': ['echo','hello','world'],
 			'image': 'lukasheinrich/testimage',
 			'mounts': [{
@@ -35,6 +36,7 @@ def test_docker_auth(tmpdir,basic_localfs_state):
 		race_spec = {
 			'workdir': None,
 			'stdin': None,
+			'tty': False,
 			'argv': ['echo','hello','world'],
 			'image': 'lukasheinrich/testimage',
 			'mounts': [{
