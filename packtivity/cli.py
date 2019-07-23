@@ -211,8 +211,11 @@ def shell(
         spec["environment"], parameters, state, backend.pack_config
     )
 
-    job = {"interactive": "sh"}
-    metadata = {"name": "test"}
+    if spec['process']['process_type'] == 'interpolated-script-cmd':
+        job = {'interactive': spec['process']['interpreter']}
+    else:
+        job = {'interactive': 'sh'}
+    metadata = {'name': 'test'}
 
     result = packtivity.syncbackends.run_in_env(
         job, env, state, metadata, backend.pack_config, backend.exec_config
