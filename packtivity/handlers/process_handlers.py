@@ -11,7 +11,7 @@ def stringinterp_handler(process_spec, parameters, state):
     if isinstance(parameters.typed(), dict):
         flattened_kwargs = {
             k: v if not (type(v) == list) else " ".join([str(x) for x in v])
-            for k, v in parameters.typed().items()
+            for k, v in list(parameters.typed().items())
         }
         command = process_spec["cmd"].format(**flattened_kwargs)
     elif isinstance(parameters.typed(), list):
@@ -31,7 +31,7 @@ def interp_script(process_spec, parameters, state):
     if isinstance(parameters.typed(), dict):
         flattened_kwargs = {
             k: v if not (type(v) == list) else " ".join([str(x) for x in v])
-            for k, v in parameters.typed().items()
+            for k, v in list(parameters.typed().items())
         }
         script = process_spec["script"].format(**flattened_kwargs)
     elif isinstance(parameters.typed(), list):

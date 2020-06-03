@@ -15,7 +15,7 @@ class LeafModel(object):
     def __init__(self, spec):
         self.datamodel = spec or {"keyword": None, "types": {}}
         self._types2str, self._str2types = {}, {}
-        for name, class_def in self.datamodel["types"].items():
+        for name, class_def in list(self.datamodel["types"].items()):
             if type(class_def) == type:
                 self._types2str[class_def] = name
                 self._str2types[name] = class_def
@@ -61,7 +61,7 @@ class LeafModel(object):
         if not found_identifiers:
             return spec
 
-        for k in found_identifiers.keys():
+        for k in list(found_identifiers.keys()):
             spec.pop(k)
         cl = self._str2types[found_identifiers[self.keyword]]
         obj = cl.fromJSON(spec)

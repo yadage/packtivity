@@ -93,7 +93,7 @@ def load_proxy(
         if best_effort_backend:
             proxy, backend = proxy
 
-    if jsondata["proxyname"] in proxyhandlers.keys():
+    if jsondata["proxyname"] in list(proxyhandlers.keys()):
         if jsondata["proxyname"] == "PacktivityProxyBase":
             return None  # by definition unserializable
 
@@ -187,11 +187,11 @@ def backend_from_string(backendstring, backendopts=None):
         log.info("overriding using envvar opts %s", ctor_kwargs)
         backendopts.update(**ctor_kwargs)
 
-    for k in backends.keys():
+    for k in list(backends.keys()):
         if backendstring.startswith(k):
             return backends[k]["default"](backendstring, backendopts)
 
-    raise RuntimeError("Unknown Backend %s", backendstring, backends.keys())
+    raise RuntimeError("Unknown Backend %s", backendstring, list(backends.keys()))
 
 
 @backend("kubedirectjob")

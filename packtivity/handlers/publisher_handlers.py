@@ -115,9 +115,9 @@ def manual_pub(publisher, parameters, state):
     click.secho(instructions, fg="magenta")
     while True:
         try:
-            published_json = raw_input("Enter JSON data to publish: ")
-        except NameError:
             published_json = input("Enter JSON data to publish: ")
+        except NameError:
+            published_json = eval(input("Enter JSON data to publish: "))
         try:
             data = json.loads(published_json)
         except:
@@ -125,7 +125,7 @@ def manual_pub(publisher, parameters, state):
             continue
         try:
             shall = (
-                raw_input(
+                input(
                     "got: \n {} \npublish? (y/N) ".format(
                         yaml.safe_dump(data, default_flow_style=False)
                     )
