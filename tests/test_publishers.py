@@ -46,7 +46,7 @@ def test_interp_pub_glob(tmpdir,basic_localfs_state):
 	})
 	pubbed = handlers['interpolated-pub']['default'](pub,pars,basic_localfs_state)
 
-	filelist = map(str,[tmpdir.join('hello_myvalue_1.txt'),tmpdir.join('hello_myvalue_2.txt')])
+	filelist = list(map(str,[tmpdir.join('hello_myvalue_1.txt'),tmpdir.join('hello_myvalue_2.txt')]))
 	assert set(pubbed['hello']) == set(filelist)
 
 def test_interp_pub_glob_relative(tmpdir,basic_localfs_state):
@@ -64,7 +64,7 @@ def test_interp_pub_glob_relative(tmpdir,basic_localfs_state):
 		'mypar': 'myvalue'
 	})
 	pubbed = handlers['interpolated-pub']['default'](pub,pars,basic_localfs_state)
-	filelist = map(str,[tmpdir.join('hello_myvalue_1.txt'),tmpdir.join('hello_myvalue_2.txt')])
+	filelist = list(map(str,[tmpdir.join('hello_myvalue_1.txt'),tmpdir.join('hello_myvalue_2.txt')]))
 	assert set(pubbed['hello']) == set(filelist)
 
 def test_fromparjq_pub(tmpdir,basic_localfs_state):
@@ -82,7 +82,7 @@ def test_fromparjq_pub(tmpdir,basic_localfs_state):
 	})
 	pars = pdm.create(pars)
 	pubbed = handlers['fromparjq-pub']['default'](pub,pars,basic_localfs_state)
-	filelist = map(str,[tmpdir.join('hello_myvalue_1.txt'),tmpdir.join('hello_myvalue_2.txt')])
+	filelist = list(map(str,[tmpdir.join('hello_myvalue_1.txt'),tmpdir.join('hello_myvalue_2.txt')]))
 	assert set(pubbed['hello']) == set(filelist)
 
 def test_fromparjq_pub_relative(tmpdir,basic_localfs_state):
@@ -99,7 +99,7 @@ def test_fromparjq_pub_relative(tmpdir,basic_localfs_state):
 		'mypar': 'myvalue'
 	})
 	pubbed = handlers['fromparjq-pub']['default'](pub,pars,basic_localfs_state)
-	filelist = map(str,[tmpdir.join('hello_myvalue_1.txt'),tmpdir.join('hello_myvalue_2.txt')])
+	filelist = list(map(str,[tmpdir.join('hello_myvalue_1.txt'),tmpdir.join('hello_myvalue_2.txt')]))
 	assert set(pubbed['hello']) == set(filelist)
 
 
@@ -116,7 +116,7 @@ def test_glob_pub(tmpdir,basic_localfs_state):
 	})
 	pubbed = handlers['fromglob-pub']['default'](pub,pars,basic_localfs_state)
 
-	filelist = map(str,[tmpdir.join('hello_1.txt'),tmpdir.join('hello_2.txt')])
+	filelist = list(map(str,[tmpdir.join('hello_1.txt'),tmpdir.join('hello_2.txt')]))
 	assert set(pubbed['hello']) == set(filelist)
 
 def test_yml_pub(tmpdir,basic_localfs_state):
