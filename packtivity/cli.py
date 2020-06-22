@@ -69,8 +69,8 @@ def runcli(
 
     state = yaml.safe_load(open(state)) if state else {}
     if not state:
-        state.setdefault("readwrite", []).extend(map(os.path.realpath, write))
-        state.setdefault("readonly", []).extend(map(os.path.realpath, read))
+        state.setdefault("readwrite", []).extend(list(map(os.path.realpath, write)))
+        state.setdefault("readonly", []).extend(list(map(os.path.realpath, read)))
     state = LocalFSState(state["readwrite"], state["readonly"])
     state.ensure()
 
@@ -154,8 +154,8 @@ def pubtest(
     spec = utils.load_packtivity(spec, toplevel, schemasource, validate)
     state = yaml.safe_load(open(state)) if state else {}
     if not state:
-        state.setdefault("readwrite", []).extend(map(os.path.realpath, write))
-        state.setdefault("readonly", []).extend(map(os.path.realpath, read))
+        state.setdefault("readwrite", []).extend(list(map(os.path.realpath, write)))
+        state.setdefault("readonly", []).extend(list(map(os.path.realpath, read)))
     state = LocalFSState(state["readwrite"], state["readonly"])
 
     parameters = getinit_data(parfiles, parameter)
@@ -199,8 +199,8 @@ def shell(
     spec = utils.load_packtivity(spec, toplevel, schemasource, validate)
     state = yaml.safe_load(open(state)) if state else {}
     if not state:
-        state.setdefault("readwrite", []).extend(map(os.path.realpath, write))
-        state.setdefault("readonly", []).extend(map(os.path.realpath, read))
+        state.setdefault("readwrite", []).extend(list(map(os.path.realpath, write)))
+        state.setdefault("readonly", []).extend(list(map(os.path.realpath, read)))
     state = LocalFSState(state["readwrite"], state["readonly"])
 
     state.ensure()

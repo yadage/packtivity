@@ -98,11 +98,11 @@ class KubeSpecMixin(KubeKrbMixin):
 
         log.debug(vols_by_dir_name)
 
-        for dirname, volspec in vols_by_dir_name.items():
+        for dirname, volspec in list(vols_by_dir_name.items()):
             parmount_configmap_contmount.append(
                 {"name": volspec["name"], "mountPath": dirname}
             )
-        return parmount_configmap_contmount, vols_by_dir_name.values(), configmapspec
+        return parmount_configmap_contmount, list(vols_by_dir_name.values()), configmapspec
 
     def get_job_mounts(self, job_uuid, jobspec_environment):
         cvmfs = "CVMFS" in jobspec_environment["resources"]
