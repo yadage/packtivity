@@ -1,9 +1,7 @@
-FROM cern/cc7-base
-RUN yum install -y gcc gcc-c++ graphviz-devel ImageMagick python-devel libffi-devel openssl openssl-devel autoconf automake libtool
+FROM centos:8
+RUN dnf install -y python3 python3-devel gcc autoconf make
 COPY . /packtivity
 WORKDIR /packtivity
-RUN curl https://bootstrap.pypa.io/get-pip.py | python -
+RUN curl https://bootstrap.pypa.io/get-pip.py | python3 -
 RUN curl https://get.docker.com/builds/Linux/x86_64/docker-1.9.1  -o /usr/bin/docker && chmod +x /usr/bin/docker
-RUN curl -L https://download.getcarina.com/carina/latest/$(uname -s)/$(uname -m)/carina -o /usr/local/bin/carina && \
-    chmod +x /usr/local/bin/carina 
-RUN pip install -e . --process-dependency-links
+RUN pip install -e . 
