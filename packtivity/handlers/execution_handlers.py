@@ -2,7 +2,6 @@ import os
 import subprocess
 import sys
 import time
-import psutil
 import shlex
 import pipes
 
@@ -308,14 +307,6 @@ def execute_and_tail_subprocess(
 
             log.debug("started subprocess with pid %s. now wait to finish", proc.pid)
             time.sleep(0.5)
-
-            try:  # some issues on some linux machines.. swallow exception
-                log.debug(
-                    "process children: %s",
-                    [x for x in psutil.Process(proc.pid).children(recursive=True)],
-                )
-            except:
-                pass
 
             for line in iter(proc.stdout.readline, b""):
                 subproclog.info(line.strip())
