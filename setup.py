@@ -11,7 +11,6 @@ deps = [
     "jsonpointer",
     "jsonpath-rw",
     "jq",
-    "psutil",
     "yadage-schemas",
     "mock",
     "checksumdir",
