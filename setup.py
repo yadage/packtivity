@@ -22,7 +22,7 @@ if not "READTHEDOCS" in os.environ:
 
 setup(
     name="packtivity",
-    version="0.14.22",
+    version="0.14.23",
     description="packtivity - general purpose schema + bindings for PROV activities",
     url="https://github.com/yadage/packtivity",
     author="Lukas Heinrich",
