@@ -121,11 +121,20 @@ def auth_mount(config):
         {
             "type": "bind",
             "source": config.container_config.auth_location(),
-            "destination": "/recast_auth",
+            "destination": config.container_config.auth_targetdir(),
             "readonly": False,
         }
     ]
 
+
+def determine_auth(environment):
+    do_auth = ("GRIDProxy" in environment["resources"]) or (
+        "KRB5Auth" in environment["resources"]
+    ) or ({"kerberos": True} in environment["resources"])
+    return do_auth
+
+def determine_cvmfs(environment):
+    return "CVMFS" in environment["resources"]
 
 def resource_mounts(config, state, environment, log):
     report = """\n\
@@ -141,12 +150,10 @@ resources: {resources}
     )
     log.debug(report)
 
-    do_cvmfs = "CVMFS" in environment["resources"]
-    do_auth = ("GRIDProxy" in environment["resources"]) or (
-        "KRB5Auth" in environment["resources"]
-    )
-    log.debug("do_auth: %s do_cvmfs: %s", do_auth, do_cvmfs)
+    do_cvmfs = determine_cvmfs(environment)
+    do_auth  = determine_auth(environment)
 
+    log.debug("do_auth: %s do_cvmfs: %s", do_auth, do_cvmfs)
     options, mounts = "", []
 
     if do_cvmfs:
@@ -169,6 +176,9 @@ def docker_execution_cmdline(config, state, log, metadata, race_spec):
         )
     cid_file = "--cidfile {}".format(cidfile)
 
+
+    env_vars = ' '.join([f"-e {env_entry['name']}='{env_entry['value']}'" for env_entry in race_spec['env']])
+
     # docker specific execution modifier
     custom_mod = " {}".format(config.container_config.container_runtime_modifier())
 
@@ -189,13 +199,14 @@ def docker_execution_cmdline(config, state, log, metadata, race_spec):
             source=s["source"], destination=s["destination"], suffix=suffix
         )
 
-    return "docker run --rm {stdin} {tty} {cid} {workdir} {custom} {mount_args} {image} {command}".format(
+    return "docker run --rm {stdin} {tty} {cid} {workdir} {env_vars} {custom} {mount_args} {image} {command}".format(
         stdin="-i" if race_spec["stdin"] or race_spec["tty"] else "",
         tty="-t" if race_spec["tty"] else "",
         cid=cid_file,
         workdir=workdir_flag,
         custom=custom_mod,
         mount_args=mount_args,
+        env_vars = env_vars,
         image=race_spec["image"],
         command=quoted_string,
     )
@@ -334,6 +345,14 @@ def execute_and_tail_subprocess(
         log.debug("finally for %s", command_string)
 
 
+def environment_spec(config, environment):
+    envvar_spec = []
+    if determine_auth(environment):
+        envvar_spec.append(
+            {'name': 'KRB_SETUP_SCRIPT', 'value': os.path.join(config.container_config.auth_targetdir(),'getkrb.sh')}
+        )
+    return envvar_spec
+
 def race_spec(config, state, environment, log, job):
     if "command" in job:
         container_argv, container_stdin, container_tty = command_argv(
@@ -356,6 +375,7 @@ def race_spec(config, state, environment, log, job):
     state_mounts = state_context_to_mounts(config, state)
     par_mounts = prepare_par_mounts(config, environment["par_mounts"], state)
     rsrcs_opts, rsrcs_mounts = resource_mounts(config, state, environment, log)
+    envvar_spec = environment_spec(config,environment)
 
     return {
         "mounts": state_mounts + par_mounts + rsrcs_mounts,
@@ -364,6 +384,7 @@ def race_spec(config, state, environment, log, job):
         "argv": container_argv,
         "stdin": container_stdin,
         "tty": container_tty,
+        "env": envvar_spec
     }
 
 
