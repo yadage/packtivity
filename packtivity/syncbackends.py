@@ -59,6 +59,11 @@ class container_config(object):
         )
         return self.config.get("auth_location", env_or_default)
 
+    def auth_targetdir(self):
+        env_or_default = os.environ.get(
+            "PACKTIVITY_AUTH_TARGETDIR", "/recast_auth"
+        )
+        return self.config.get("auth_targetdir", env_or_default)
 
 class ExecutionConfig(object):
     def __init__(self, config=None):
