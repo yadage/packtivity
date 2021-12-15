@@ -1,0 +1,10 @@
+prune **
+graft packtivity
+graft tests
+
+include setup.py
+include LICENSE
+include README.md
+include MANIFEST.in
+
+global-exclude __pycache__ *.py[cod]
