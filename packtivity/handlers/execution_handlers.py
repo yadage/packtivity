@@ -310,7 +310,6 @@ def execute_and_tail_subprocess(
                     stdin=subprocess.PIPE,
                     stderr=subprocess.STDOUT,
                     stdout=subprocess.PIPE,
-                    bufsize=1,
                     close_fds=True,
                 )
                 proc.stdin.write(stdin_content.encode("utf-8"))
@@ -320,7 +319,6 @@ def execute_and_tail_subprocess(
                     shlex.split(command_string),
                     stderr=subprocess.STDOUT,
                     stdout=subprocess.PIPE,
-                    bufsize=1,
                     close_fds=True,
                 )
 
