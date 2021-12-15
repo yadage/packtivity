@@ -177,7 +177,15 @@ def docker_execution_cmdline(config, state, log, metadata, race_spec):
     cid_file = "--cidfile {}".format(cidfile)
 
 
-    env_vars = ' '.join([f"-e {env_entry['name']}='{env_entry['value']}'" for env_entry in race_spec['env']])
+    if "env" in race_spec:
+        env_vars = " ".join(
+            [
+                f"-e {env_entry['name']}='{env_entry['value']}'"
+                for env_entry in race_spec["env"]
+            ]
+        )
+    else:
+        env_vars = ""
 
     # docker specific execution modifier
     custom_mod = " {}".format(config.container_config.container_runtime_modifier())
