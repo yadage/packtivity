@@ -5,7 +5,6 @@ import traceback
 import os
 import json
 import logging
-import yaml
 
 from .syncbackends import (
     prepublish,
@@ -389,9 +388,7 @@ try:
         def __init__(self, app=None, packconfig_spec=None):
             super(CeleryBackend, self).__init__(packconfig_spec)
             self.app = app or default_celeryapp
-            self.disable_sync = yaml.load(
-                os.environ.get("PACKTIVITY_CELERY_DISABLE_SYNC", "true")
-            )
+            self.disable_sync = os.environ.get("PACKTIVITY_CELERY_DISABLE_SYNC", "true")
 
         def submit_callable(self, callable):
             self.app.set_current()
