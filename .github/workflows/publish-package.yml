@@ -9,6 +9,9 @@ on:
     branches:
     - master
   workflow_dispatch:
+  release:
+    types: [published]
+  workflow_dispatch:
 
 jobs:
   build-and-publish:
