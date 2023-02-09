@@ -37,9 +37,9 @@ setup(
     install_requires=deps,
     extras_require={
         "celery": [
-            "celery",
+            "celery>=4.0.0; python_version >= '3.8'",
+            "celery<=4.2.2; python_version < '3.8'",  # FIXME: c.f. https://github.com/celery/celery/issues/7783
             "redis",
-            "importlib-metadata<5.0.0; python_version < '3.8'",  # FIXME: c.f. https://github.com/celery/celery/issues/7783
         ]
     },
     entry_points={
