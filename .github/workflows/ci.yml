@@ -17,7 +17,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        python-version: ['3.7', '3.8', '3.9', '3.10']
+        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11']
 
     steps:
     - uses: actions/checkout@v3
@@ -34,7 +34,7 @@ jobs:
         python -m pip list
 
     - name: Lint with Pyflakes
-      if: matrix.python-version == '3.10'
+      if: matrix.python-version == '3.11'
       run: |
         python -m pyflakes packtivity
 
@@ -47,7 +47,6 @@ jobs:
         packtivity-run tests/testspecs/noop-test.yml -p a_parameter=hello
 
     - name: Report coverage with Codecov
-      if: github.event_name == 'push' && matrix.python-version == '3.10'
       uses: codecov/codecov-action@v3
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
@@ -63,10 +62,10 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Set up Python 3.10
+    - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.10'
+        python-version: '3.11'
 
     - name: Install dependencies
       run: |
