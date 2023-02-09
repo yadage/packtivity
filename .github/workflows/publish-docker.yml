@@ -14,22 +14,59 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    - name: Build and Publish to Registry
-      if: "!(startsWith(github.ref, 'refs/tags/'))"
-      uses: docker/build-push-action@v1
+
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v2
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+
+    - name: Login to DockerHub
+      if: github.event_name != 'pull_request'
+      uses: docker/login-action@v2
       with:
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
-        repository: yadage/packtivity
-        dockerfile: Dockerfile
-        tags: latest
-    - name: Build and Publish to Registry with Release Tag
-      if: startsWith(github.ref, 'refs/tags/')
-      uses: docker/build-push-action@v1
+
+    - name: Login to GitHub Container Registry
+      if: github.event_name != 'pull_request'
+      uses: docker/login-action@v2
       with:
-        username: ${{ secrets.DOCKER_USERNAME }}
-        password: ${{ secrets.DOCKER_PASSWORD }}
-        repository: yadage/packtivity
-        dockerfile: Dockerfile
-        tags: latest,latest-stable
-        tag_with_ref: true
+        registry: ghcr.io
+        username: ${{ github.repository_owner }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and publish to registry
+        # every PR will trigger a push event on main, so check the push event is actually coming from main
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'yadage/packtivity'
+        id: docker_build_latest
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: Dockerfile
+          tags: |
+            ${{ github.repository }}:latest
+            ghcr.io/${{ github.repository }}:latest
+          labels: |
+            org.opencontainers.image.source=${{ github.event.repository.html_url }}
+            org.opencontainers.image.revision=${{ github.sha }}
+          push: true
+          platforms: linux/amd64,linux/arm64
+
+      - name: Build and publish to registry with release tag
+        if: github.event_name == 'release' && github.event.action == 'published' && github.repository == 'yadage/packtivity'
+        id: docker_build_release
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: Dockerfile
+          tags: |
+            ${{ github.repository }}:latest
+            ${{ github.repository }}:latest-stable
+            ghcr.io/${{ github.repository }}:latest
+            ghcr.io/${{ github.repository }}:latest-stable
+          labels: |
+            org.opencontainers.image.source=${{ github.event.repository.html_url }}
+            org.opencontainers.image.revision=${{ github.sha }}
+          push: true
+          platforms: linux/amd64,linux/arm64
