@@ -3,7 +3,7 @@ name: CI/CD
 on:
   push:
     branches:
-    - master
+    - main
   pull_request:
   # Run daily at 0:01 UTC
   schedule:
@@ -84,7 +84,7 @@ jobs:
         touch docs/_build/html/.nojekyll
 
     - name: Deploy docs to GitHub Pages
-      if: success() && github.event_name == 'push' && github.ref == 'refs/heads/master'
+      if: success() && github.event_name == 'push' && github.ref == 'refs/heads/main'
       uses: peaceiris/actions-gh-pages@v3
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
