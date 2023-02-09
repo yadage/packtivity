@@ -17,12 +17,12 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        python-version: ['3.6', '3.7', '3.8', '3.9', '3.10']
+        python-version: ['3.7', '3.8', '3.9', '3.10']
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
 
@@ -48,7 +48,7 @@ jobs:
 
     - name: Report coverage with Codecov
       if: github.event_name == 'push' && matrix.python-version == '3.10'
-      uses: codecov/codecov-action@v2.1.0
+      uses: codecov/codecov-action@v3
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         file: ./coverage.xml
@@ -59,12 +59,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         fetch-depth: 0
 
     - name: Set up Python 3.10
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: '3.10'
 
@@ -100,15 +100,23 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
-    - name: Build Docker image
-      if: "!(startsWith(github.ref, 'refs/tags/'))"
-      uses: docker/build-push-action@v1
+    - uses: actions/checkout@v3
+
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v2
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+
+    - name: Test build
+      id: docker_build_test
+      uses: docker/build-push-action@v4
       with:
-        repository: yadage/packtivity
-        dockerfile: Dockerfile
-        tag_with_sha: true
-        tag_with_ref: true
+        context: .
+        file: Dockerfile
+        tags: ${{ github.sha }}
+        load: true
         push: false
+
     - name: List built images
       run: docker images
