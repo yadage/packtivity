@@ -1,5 +1,6 @@
 import os
 from setuptools import setup, find_packages
+from pathlib import Path
 
 deps = [
     "requests[security]",
@@ -19,11 +20,14 @@ deps = [
 if not "READTHEDOCS" in os.environ:
     deps += ["jq"]
 
+this_directory = Path(__file__).parent
 
 setup(
     name="packtivity",
     version="0.14.24",
     description="packtivity - general purpose schema + bindings for PROV activities",
+    long_description=(this_directory / "README.md").read_text(),
+    long_description_content_type="text/markdown",
     url="https://github.com/yadage/packtivity",
     author="Lukas Heinrich",
     author_email="lukas.heinrich@cern.ch",
