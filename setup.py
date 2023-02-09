@@ -35,7 +35,13 @@ setup(
     python_requires=">=3.7",
     include_package_data=True,
     install_requires=deps,
-    extras_require={"celery": ["celery", "redis"]},
+    extras_require={
+        "celery": [
+            "celery>=5.0.0",
+            "redis",
+            "importlib-metadata<5.0.0; python_version < '3.8'",  # FIXME: c.f. https://github.com/celery/celery/issues/7783
+        ]
+    },
     entry_points={
         "console_scripts": [
             "packtivity-run=packtivity.cli:runcli",
