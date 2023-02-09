@@ -1,4 +1,5 @@
 name: publish distributions
+
 on:
   push:
     branches:
@@ -11,6 +12,13 @@ on:
   release:
     types: [published]
   workflow_dispatch:
+    inputs:
+      publish:
+        type: choice
+        description: 'Publish to TestPyPI?'
+        options:
+        - false
+        - true
 
 jobs:
   build-and-publish:
@@ -53,8 +61,11 @@ jobs:
       run: python -m zipfile --list dist/packtivity-*.whl
 
     - name: Publish distribution 📦 to Test PyPI
-      # publish to TestPyPI on tag events
-      if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') && github.repository == 'yadage/packtivity'
+      # Publish to TestPyPI on tag events of if manually triggered
+      # Compare to 'true' string as booleans get turned into strings in the console
+      if: >-
+        (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') && github.repository == 'yadage/packtivity')
+        || (github.event_name == 'workflow_dispatch' && github.event.inputs.publish == 'true' && github.repository == 'yadage/packtivity')
       uses: pypa/gh-action-pypi-publish@v1.6.4
       with:
         password: ${{ secrets.test_pypi_password }}
