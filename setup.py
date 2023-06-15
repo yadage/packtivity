@@ -32,14 +32,13 @@ setup(
     author="Lukas Heinrich",
     author_email="lukas.heinrich@cern.ch",
     packages=find_packages(),
-    python_requires=">=3.7",
+    python_requires=">=3.8",
     include_package_data=True,
     install_requires=deps,
     extras_require={
         "celery": [
             "celery>=5.0.0",
             "redis",
-            "importlib-metadata<5.0.0; python_version < '3.8'",  # FIXME: c.f. https://github.com/celery/celery/issues/7783
         ]
     },
     entry_points={
@@ -57,7 +56,6 @@ setup(
         "License :: OSI Approved :: MIT License",
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3 :: Only",
-        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
