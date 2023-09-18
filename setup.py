@@ -11,7 +11,7 @@ deps = [
     "glob2",
     "jsonpointer",
     "jsonpath-rw",
-    "jq>=1.0.0,<1.6.0",  # FIXME c.f. https://github.com/yadage/packtivity/issues/96
+    "jq>=1.0.0",
     "yadage-schemas",
     "mock",
     "checksumdir",
