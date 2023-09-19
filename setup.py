@@ -11,7 +11,7 @@ deps = [
     "glob2",
     "jsonpointer",
     "jsonpath-rw",
-    "jq",
+    "jq>=1.0.0",
     "yadage-schemas",
     "mock",
     "checksumdir",

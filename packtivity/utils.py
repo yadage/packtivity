@@ -32,7 +32,7 @@ def leaf_iterator(jsonable):
     if not isinstance(jsonable, (list, dict)):
         yield jsonpointer.JsonPointer(""), jsonable
     else:
-        allleafs = jq.jq("leaf_paths").transform(jsonable, multiple_output=True)
+        allleafs = jq.jq("paths(scalars)").transform(jsonable, multiple_output=True)
         leafpointers = [jsonpointer.JsonPointer.from_parts(x) for x in allleafs]
         for x in leafpointers:
             yield x, x.get(jsonable)
