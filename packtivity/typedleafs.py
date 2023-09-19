@@ -215,7 +215,7 @@ class TypedLeafs(object):
         else:
             ptrs = [
                 jsonpointer.JsonPointer.from_parts(parts)
-                for parts in self.jq("leaf_paths", multiple_output=True).typed()
+                for parts in self.jq("paths(scalars)", multiple_output=True).typed()
             ]
             for p in ptrs:
                 yield p, p.get(self.typed())
