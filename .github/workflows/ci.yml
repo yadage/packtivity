@@ -47,7 +47,7 @@ jobs:
         packtivity-run tests/testspecs/noop-test.yml -p a_parameter=hello
 
     - name: Report coverage with Codecov
-      uses: codecov/codecov-action@v3
+      uses: codecov/codecov-action@v4
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         file: ./coverage.xml
