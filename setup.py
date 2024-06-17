@@ -17,9 +17,6 @@ deps = [
     "dirhash>=0.4.0",
 ]
 
-if not "READTHEDOCS" in os.environ:
-    deps += ["jq"]
-
 this_directory = Path(__file__).parent
 
 setup(
