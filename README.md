@@ -7,7 +7,7 @@
 
 This package aims to collect implementations of both synchronous and asynchronous execution of preserved, but parametrized scientific computational tasks that come with batteries included, i.e. with a full specification of their software dependencies. In that sense they are *packaged activities* -- packtivities.
 
-This package provides tools to validate and execute data processing tasks that are written according to the "packtivity" JSON schemas defined in https://github.com/diana-hep/yadage-schemas.
+This package provides tools to validate and execute data processing tasks that are written according to the "packtivity" JSON schemas defined in [`yadage-schemas`](https://github.com/yadage/yadage-schemas).
 
 Packtivities define
 
@@ -19,11 +19,11 @@ At run-time they are paired with a concrete set of parameters supplied as JSON d
 
 ## Packtivity in Yadage
 
-This package is used by https://github.com/lukasheinrich/yadage to execute the individual steps of yadage workflows.
+This package is used by [`yadage`](https://github.com/yadage/yadage) to execute the individual steps of yadage workflows.
 
 ## Example Packtivity spec
 
-This packtivity spec is part of a number of yadage workflow and runs the Delphes detector simulation on a HepMC file and outputs events in the LHCO and ROOT file formats. This packtivity is (stored in a public location)[https://github.com/lukasheinrich/yadage-workflows/blob/master/phenochain/delphes.yml] from which it can be later retrieved:
+This packtivity spec is part of a number of yadage workflow and runs the Delphes detector simulation on a HepMC file and outputs events in the LHCO and ROOT file formats. This packtivity is [stored in a public location](https://github.com/lukasheinrich/yadage-workflows/blob/8422d9fe8e21f709243cbb47b5adb66f2e432e51/phenochain/delphes.yml) from which it can be later retrieved:
 
     process:
       process_type: 'string-interpolated-cmd'
