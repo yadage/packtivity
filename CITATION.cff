@@ -10,10 +10,10 @@ authors:
   given-names: "Matthew"
   orcid: "https://orcid.org/0000-0003-4124-7862"
   affiliation: "University of Wisconsin-Madison"
-title: "packtivity: v0.16.2"
-version: 0.16.2
+title: "packtivity: v0.17.0"
+version: 0.17.0
 doi: 10.5281/zenodo.309302
-repository-code: "https://github.com/yadage/packtivity/releases/tag/v0.16.2"
+repository-code: "https://github.com/yadage/packtivity/releases/tag/v0.17.0"
 url: "https://github.com/yadage/packtivity/"
 keywords:
   - python
