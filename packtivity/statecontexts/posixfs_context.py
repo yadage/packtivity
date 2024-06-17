@@ -117,9 +117,7 @@ class LocalFSState(object):
         return: SHA1 hash
         """
         # hash the upstream / input state
-        dep_checksums = [
-            dirhash(d, "sha1") for d in self.readonly if os.path.isdir(d)
-        ]
+        dep_checksums = [dirhash(d, "sha1") for d in self.readonly if os.path.isdir(d)]
 
         # hash out writing state
         state_checksums = [
