@@ -1,4 +1,3 @@
-import os
 from setuptools import setup, find_packages
 from pathlib import Path
 
@@ -26,8 +25,9 @@ setup(
     long_description=(this_directory / "README.md").read_text(),
     long_description_content_type="text/markdown",
     url="https://github.com/yadage/packtivity",
-    author="Lukas Heinrich",
-    author_email="lukas.heinrich@cern.ch",
+    author = 'Lukas Heinrich, Matthew Feickert',
+    author_email = 'lukas.heinrich@gmail.com, matthew.feickert@cern.ch',
+    license="MIT",
     packages=find_packages(),
     python_requires=">=3.8",
     include_package_data=True,
