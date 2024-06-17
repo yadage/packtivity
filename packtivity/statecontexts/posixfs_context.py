@@ -1,10 +1,12 @@
 import hashlib
-import os
-import shutil
 import json
 import logging
-import checksumdir
+import os
+import shutil
+
 import six
+from dirhash import dirhash
+
 import packtivity.utils as utils
 
 log = logging.getLogger(__name__)
@@ -116,12 +118,12 @@ class LocalFSState(object):
         """
         # hash the upstream / input state
         dep_checksums = [
-            checksumdir.dirhash(d) for d in self.readonly if os.path.isdir(d)
+            dirhash(d, "sha1") for d in self.readonly if os.path.isdir(d)
         ]
 
         # hash out writing state
         state_checksums = [
-            checksumdir.dirhash(d) for d in self.readwrite if os.path.isdir(d)
+            dirhash(d, "sha1") for d in self.readwrite if os.path.isdir(d)
         ]
         return hashlib.sha1(
             json.dumps([dep_checksums, state_checksums]).encode("utf-8")

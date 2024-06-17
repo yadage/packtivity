@@ -14,7 +14,7 @@ deps = [
     "jq>=1.0.0",
     "yadage-schemas",
     "mock",
-    "checksumdir",
+    "dirhash>=0.4.0",
 ]
 
 if not "READTHEDOCS" in os.environ:
