@@ -1,0 +1,44 @@
+cff-version: 1.2.0
+message: "Please cite the following works when using this software."
+type: software
+authors:
+- family-names: "Heinrich"
+  given-names: "Lukas"
+  orcid: "https://orcid.org/0000-0002-4048-7584"
+  affiliation: "Technical University of Munich"
+- family-names: "Feickert"
+  given-names: "Matthew"
+  orcid: "https://orcid.org/0000-0003-4124-7862"
+  affiliation: "University of Wisconsin-Madison"
+title: "packtivity: v0.16.2"
+version: 0.16.2
+doi: 10.5281/zenodo.309302
+repository-code: "https://github.com/yadage/packtivity/releases/tag/v0.16.2"
+url: "https://github.com/yadage/packtivity/"
+keywords:
+  - python
+  - physics
+  - yadage
+  - reinterpretation
+  - analysis reuse
+license: "Apache-2.0"
+references:
+  - type: article
+    authors:
+    - family-names: "Cranmer"
+      given-names: "Kyle"
+      orcid: "https://orcid.org/0000-0002-5769-7094"
+      affiliation: "New York University"
+    - family-names: "Heinrich"
+      given-names: "Lukas"
+      orcid: "https://orcid.org/0000-0002-4048-7584"
+      affiliation: "New York University"
+    title: "Yadage and Packtivity - analysis preservation using parametrized workflows"
+    doi: 10.1088/1742-6596/898/10/102019
+    url: "https://doi.org/10.1088/1742-6596/898/10/102019"
+    year: 2017
+    publisher:
+      name: "IOPscience"
+    volume: 898
+    pages: 102019
+    journal: "Journal of Physics: Conference Series"
