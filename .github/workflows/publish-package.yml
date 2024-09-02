@@ -70,8 +70,8 @@ jobs:
       with:
         password: ${{ secrets.test_pypi_password }}
         repository-url: https://test.pypi.org/legacy/
-        attestations: true
         print-hash: true
+        attestations: true
 
     - name: Publish distribution 📦 to PyPI
       # publish to PyPI on releases
