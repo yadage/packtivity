@@ -11,7 +11,7 @@ deps = [
     "jsonpointer",
     "jsonpath-rw",
     "jq>=1.0.0",
-    "yadage-schemas",
+    "yadage-schemas>=0.11.1",
     "mock",
     "dirhash>=0.4.0",
 ]
