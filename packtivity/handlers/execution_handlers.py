@@ -3,7 +3,6 @@ import subprocess
 import sys
 import time
 import shlex
-import pipes
 
 import click
 import yaml
@@ -191,7 +190,7 @@ def docker_execution_cmdline(config, state, log, metadata, race_spec):
     custom_mod = " {}".format(config.container_config.container_runtime_modifier())
 
     # for running in subprocess
-    quoted_string = " ".join(map(pipes.quote, race_spec["argv"]))
+    quoted_string = " ".join(map(shlex.quote, race_spec["argv"]))
 
     # generic non-volume mount flags
     workdir_flag = (
@@ -222,7 +221,7 @@ def docker_execution_cmdline(config, state, log, metadata, race_spec):
 
 def singularity_execution_cmdline(state, log, metadata, race_spec, dirs):
     # for running in subprocess
-    quoted_string = " ".join(map(pipes.quote, race_spec["argv"]))
+    quoted_string = " ".join(map(shlex.quote, race_spec["argv"]))
     honor_mounts = [
         x for x in race_spec["mounts"] if x["destination"] == "/recast_auth"
     ] + [
