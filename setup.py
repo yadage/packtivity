@@ -20,7 +20,7 @@ this_directory = Path(__file__).parent
 
 setup(
     name="packtivity",
-    version="0.17.0",
+    version="0.17.1",
     description="packtivity - general purpose schema + bindings for PROV activities",
     long_description=(this_directory / "README.md").read_text(),
     long_description_content_type="text/markdown",
